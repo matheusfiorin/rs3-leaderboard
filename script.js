@@ -12,6 +12,14 @@ const API = {
   quests: (name) => `https://apps.runescape.com/runemetrics/quests?user=${encodeURIComponent(name)}`,
 };
 
+// Cached data URLs (GitHub Actions pre-fetched)
+const CACHED = {
+  profile: (name) => `data/${name.toLowerCase()}_profile.json`,
+  hiscores: (name) => `data/${name.toLowerCase()}_hiscores.json`,
+  quests: (name) => `data/${name.toLowerCase()}_quests.json`,
+  meta: 'data/meta.json',
+};
+
 const CORS_PROXIES = [
   (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
   (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
@@ -19,7 +27,6 @@ const CORS_PROXIES = [
 ];
 
 // ---- Skill Definitions ----
-// RuneMetrics skill IDs (0-28), hiscores IDs are offset by +1 (0=Overall)
 const SKILLS = [
   { id: 0, name: 'Attack', abbr: 'ATK', cat: 'combat', max: 99 },
   { id: 1, name: 'Defence', abbr: 'DEF', cat: 'combat', max: 99 },
@@ -52,11 +59,10 @@ const SKILLS = [
   { id: 28, name: 'Necromancy', abbr: 'NEC', cat: 'combat', max: 120 },
 ];
 
-const SKILL_MAP = new Map(SKILLS.map(s => [s.id, s]));
-
 // ---- State ----
 let playerData = [];
 let refreshTimer = null;
+let dataSource = 'live'; // 'live' or 'cached'
 
 // ---- DOM Refs ----
 const $ = (sel) => document.querySelector(sel);
@@ -64,14 +70,14 @@ const $$ = (sel) => document.querySelectorAll(sel);
 
 // ---- Fetch with CORS proxy fallback ----
 async function fetchWithProxy(url) {
-  // Try direct first (in case CORS is ever enabled)
+  // Try direct first
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
     if (res.ok) {
       const text = await res.text();
       return JSON.parse(text);
     }
-  } catch (_) { /* expected to fail due to CORS */ }
+  } catch (_) { /* expected CORS failure */ }
 
   // Try proxies
   for (const proxyFn of CORS_PROXIES) {
@@ -85,44 +91,40 @@ async function fetchWithProxy(url) {
     } catch (_) { continue; }
   }
 
-  throw new Error(`All fetch methods failed for: ${url}`);
+  throw new Error(`All proxies failed for: ${url}`);
 }
 
-// ---- Fetch all data for a player ----
-async function fetchPlayerData(name) {
-  const [profile, hiscores, quests] = await Promise.allSettled([
-    fetchWithProxy(API.profile(name)),
-    fetchWithProxy(API.hiscores(name)),
-    fetchWithProxy(API.quests(name)),
-  ]);
+// ---- Fetch cached data (from data/ directory) ----
+async function fetchCached(path) {
+  const res = await fetch(path, { signal: AbortSignal.timeout(5000), cache: 'no-cache' });
+  if (!res.ok) throw new Error(`Cache miss: ${path}`);
+  return res.json();
+}
 
-  if (profile.status === 'rejected') {
-    throw new Error(`Failed to load profile for ${name}`);
-  }
+// ---- Parse profile data into unified format ----
+function parseProfile(profileData, hiscoresData, questsData) {
+  if (profileData.error) throw new Error(profileData.error);
 
-  const profileData = profile.value;
-  if (profileData.error) {
-    throw new Error(`${name}: ${profileData.error}`);
-  }
-
-  // Build skill map from RuneMetrics profile (primary source)
   const skills = {};
   for (const sv of (profileData.skillvalues || [])) {
     skills[sv.id] = {
       level: sv.level,
-      xp: Math.floor(sv.xp / 10), // RuneMetrics XP is 10x
+      xp: Math.floor(sv.xp / 10),
       rank: sv.rank,
     };
   }
 
-  // Fill in from hiscores if available (has names, useful for activities)
-  let activities = [];
   let runeScore = 0;
-  if (hiscores.status === 'fulfilled' && hiscores.value.activities) {
-    for (const act of hiscores.value.activities) {
+  let clueScrolls = { easy: 0, medium: 0, hard: 0, elite: 0, master: 0 };
+  if (hiscoresData && hiscoresData.activities) {
+    for (const act of hiscoresData.activities) {
       if (act.name === 'RuneScore') runeScore = act.score;
+      if (act.name === 'Clue Scrolls (easy)') clueScrolls.easy = act.score;
+      if (act.name === 'Clue Scrolls (medium)') clueScrolls.medium = act.score;
+      if (act.name === 'Clue Scrolls (hard)') clueScrolls.hard = act.score;
+      if (act.name === 'Clue Scrolls (elite)') clueScrolls.elite = act.score;
+      if (act.name === 'Clue Scrolls (master)') clueScrolls.master = act.score;
     }
-    activities = hiscores.value.activities;
   }
 
   return {
@@ -140,21 +142,53 @@ async function fetchPlayerData(name) {
     recentActivities: profileData.activities || [],
     skills,
     runeScore,
-    hiscoreActivities: activities,
-    quests: quests.status === 'fulfilled' ? (quests.value.quests || []) : [],
+    clueScrolls,
+    quests: questsData && questsData.quests ? questsData.quests : [],
   };
+}
+
+// ---- Fetch all data for a player (live via CORS proxy) ----
+async function fetchPlayerLive(name) {
+  const [profile, hiscores, quests] = await Promise.allSettled([
+    fetchWithProxy(API.profile(name)),
+    fetchWithProxy(API.hiscores(name)),
+    fetchWithProxy(API.quests(name)),
+  ]);
+
+  if (profile.status === 'rejected') throw new Error(`Live fetch failed for ${name}`);
+  return parseProfile(
+    profile.value,
+    hiscores.status === 'fulfilled' ? hiscores.value : null,
+    quests.status === 'fulfilled' ? quests.value : null,
+  );
+}
+
+// ---- Fetch all data for a player (cached from data/) ----
+async function fetchPlayerCached(name) {
+  const [profile, hiscores, quests] = await Promise.allSettled([
+    fetchCached(CACHED.profile(name)),
+    fetchCached(CACHED.hiscores(name)),
+    fetchCached(CACHED.quests(name)),
+  ]);
+
+  if (profile.status === 'rejected') throw new Error(`Cache fetch failed for ${name}`);
+  return parseProfile(
+    profile.value,
+    hiscores.status === 'fulfilled' ? hiscores.value : null,
+    quests.status === 'fulfilled' ? quests.value : null,
+  );
 }
 
 // ---- Number Formatting ----
 function fmtNum(n) {
-  if (n == null) return '—';
+  if (n == null) return '\u2014';
   return n.toLocaleString('en-US');
 }
 
 function fmtXpShort(xp) {
   if (xp >= 1_000_000) return (xp / 1_000_000).toFixed(1) + 'M';
   if (xp >= 1_000) return (xp / 1_000).toFixed(1) + 'K';
-  return xp.toString();
+  return String(xp);
 }
 
 // ---- Render Overview Cards ----
@@ -163,8 +197,9 @@ function renderOverview(players) {
   grid.innerHTML = players.map((p, i) => {
     const cls = i === 0 ? 'p1' : 'p2';
     const questTotal = p.questsComplete + p.questsStarted + p.questsNotStarted;
+    const totalClues = p.clueScrolls.easy + p.clueScrolls.medium + p.clueScrolls.hard + p.clueScrolls.elite + p.clueScrolls.master;
     return `
-      <div class="player-card ${cls} fade-in" style="animation-delay: ${i * 0.1}s">
+      <div class="player-card ${cls} fade-in" style="animation-delay:${i * 0.1}s">
         <div class="player-name">${esc(p.name)}</div>
         <div class="player-rank">Overall Rank #${esc(p.rank)}</div>
         <div class="combat-badge">Combat Level ${p.combatLevel}</div>
@@ -190,8 +225,8 @@ function renderOverview(players) {
             <div class="stat-label">Total Quests</div>
           </div>
           <div class="stat-box">
-            <div class="stat-value">${fmtXpShort(p.melee + p.magic + p.ranged)}</div>
-            <div class="stat-label">Combat XP</div>
+            <div class="stat-value">${totalClues}</div>
+            <div class="stat-label">Clue Scrolls</div>
           </div>
         </div>
       </div>
@@ -214,10 +249,10 @@ function renderComparison(players) {
   ];
 
   container.innerHTML = `
-    <div class="comp-row" style="margin-bottom: 4px;">
-      <div style="text-align:right;font-size:0.75rem;font-weight:700;color:var(--player1);padding-right:8px;">${esc(p1.name)}</div>
+    <div class="comp-row" style="margin-bottom:4px">
+      <div style="text-align:right;font-size:0.75rem;font-weight:700;color:var(--player1);padding-right:8px">${esc(p1.name)}</div>
       <div></div>
-      <div style="text-align:left;font-size:0.75rem;font-weight:700;color:var(--player2);padding-left:8px;">${esc(p2.name)}</div>
+      <div style="text-align:left;font-size:0.75rem;font-weight:700;color:var(--player2);padding-left:8px">${esc(p2.name)}</div>
     </div>
     ${metrics.map(m => {
       const max = Math.max(m.v1, m.v2, 1);
@@ -280,9 +315,8 @@ function renderSkills(players) {
 // ---- Render Activity Feed ----
 function renderActivities(players) {
   const feed = $('#activity-feed');
-
-  // Merge and sort activities from both players
   const allActivities = [];
+
   players.forEach((p, i) => {
     for (const act of p.recentActivities) {
       allActivities.push({
@@ -299,7 +333,7 @@ function renderActivities(players) {
   allActivities.sort((a, b) => b.timestamp - a.timestamp);
 
   if (allActivities.length === 0) {
-    feed.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;">No recent activity</div>';
+    feed.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px">No recent activity</div>';
     return;
   }
 
@@ -310,7 +344,7 @@ function renderActivities(players) {
         <div class="activity-dot ${cls}"></div>
         <div>
           <div class="activity-text">
-            <span class="activity-player ${cls}">${esc(act.player)}</span> — ${esc(act.text)}
+            <span class="activity-player ${cls}">${esc(act.player)}</span> \u2014 ${esc(act.text)}
           </div>
           ${act.details ? `<div class="activity-detail">${esc(act.details)}</div>` : ''}
         </div>
@@ -359,14 +393,13 @@ function renderQuests(players) {
   }).join('');
 }
 
-// ---- Utility: parse RS date format "31-Mar-2026 21:14" ----
+// ---- Utility ----
 function parseRSDate(dateStr) {
   if (!dateStr) return 0;
   const d = new Date(dateStr.replace(/-/g, ' '));
   return isNaN(d.getTime()) ? 0 : d.getTime();
 }
 
-// ---- Utility: escape HTML ----
 function esc(str) {
   if (str == null) return '';
   const div = document.createElement('div');
@@ -374,39 +407,31 @@ function esc(str) {
   return div.innerHTML;
 }
 
-// ---- Skill Filter ----
+// ---- Skill Filters ----
 function setupFilters() {
-  const btns = $$('.filter-btn');
-  btns.forEach(btn => {
+  $$('.filter-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      btns.forEach(b => b.classList.remove('active'));
+      $$('.filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       const filter = btn.dataset.filter;
       $$('.skill-row').forEach(row => {
-        if (filter === 'all' || row.dataset.category === filter) {
-          row.classList.remove('hidden');
-        } else {
-          row.classList.add('hidden');
-        }
+        row.classList.toggle('hidden', filter !== 'all' && row.dataset.category !== filter);
       });
     });
   });
 }
 
-// ---- Status Updates ----
+// ---- Status ----
 function setStatus(state, text) {
-  const badge = $('#status-badge');
-  const dot = badge.querySelector('.status-dot');
-  const label = badge.querySelector('.status-text');
+  const dot = $('#status-badge .status-dot');
+  const label = $('#status-badge .status-text');
   dot.className = 'status-dot ' + state;
   label.textContent = text;
 }
 
 function showError(msg) {
-  const banner = $('#error-banner');
-  const msgEl = $('#error-message');
-  msgEl.textContent = msg;
-  banner.classList.remove('hidden');
+  $('#error-message').textContent = msg;
+  $('#error-banner').classList.remove('hidden');
 }
 
 function hideError() {
@@ -420,40 +445,68 @@ async function loadData() {
   setStatus('loading', 'Refreshing...');
   hideError();
 
+  let results = null;
+
+  // Strategy 1: Try live data via CORS proxies
   try {
-    const results = await Promise.all(PLAYERS.map(fetchPlayerData));
-    playerData = results;
+    results = await Promise.all(PLAYERS.map(fetchPlayerLive));
+    dataSource = 'live';
+  } catch (liveErr) {
+    console.warn('Live fetch failed, trying cached data:', liveErr.message);
 
-    renderOverview(results);
-    renderComparison(results);
-    renderSkills(results);
-    renderActivities(results);
-    renderQuests(results);
-    setupFilters();
+    // Strategy 2: Fall back to cached data from data/ directory
+    try {
+      results = await Promise.all(PLAYERS.map(fetchPlayerCached));
+      dataSource = 'cached';
+    } catch (cacheErr) {
+      console.error('Both live and cached fetch failed:', cacheErr.message);
+      setStatus('error', 'Error');
+      showError('Failed to load data from all sources. Will retry in 30s.');
+      $('#loading-overlay').classList.add('hidden');
+      $('#main-content').classList.add('visible');
+      refreshBtn.classList.remove('spinning');
 
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    $('#last-updated').textContent = `Last updated: ${timeStr}`;
-    setStatus('', `Updated ${timeStr}`);
-
-    // Show main content, hide loading
-    $('#loading-overlay').classList.add('hidden');
-    $('#main-content').classList.add('visible');
-  } catch (err) {
-    console.error('Load error:', err);
-    setStatus('error', 'Error');
-    showError(`Failed to load data: ${err.message}. Retrying in 30s...`);
-    $('#loading-overlay').classList.add('hidden');
-    $('#main-content').classList.add('visible');
-    // Retry sooner on error
-    clearInterval(refreshTimer);
-    setTimeout(() => {
-      loadData();
-      refreshTimer = setInterval(loadData, REFRESH_INTERVAL);
-    }, 30000);
-  } finally {
-    refreshBtn.classList.remove('spinning');
+      clearInterval(refreshTimer);
+      setTimeout(() => {
+        loadData();
+        refreshTimer = setInterval(loadData, REFRESH_INTERVAL);
+      }, 30000);
+      return;
+    }
   }
+
+  playerData = results;
+
+  renderOverview(results);
+  renderComparison(results);
+  renderSkills(results);
+  renderActivities(results);
+  renderQuests(results);
+  setupFilters();
+
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+  if (dataSource === 'cached') {
+    // Show when the cached data was fetched
+    try {
+      const meta = await fetchCached(CACHED.meta);
+      const cacheTime = new Date(meta.timestamp);
+      const ago = Math.round((now - cacheTime) / 60000);
+      setStatus('', `Cached (${ago}m ago)`);
+      $('#last-updated').textContent = `Cached data from ${ago}m ago \u00b7 ${timeStr}`;
+    } catch (_) {
+      setStatus('', `Cached \u00b7 ${timeStr}`);
+      $('#last-updated').textContent = `Using cached data \u00b7 ${timeStr}`;
+    }
+  } else {
+    setStatus('', `Live \u00b7 ${timeStr}`);
+    $('#last-updated').textContent = `Live data \u00b7 Last updated: ${timeStr}`;
+  }
+
+  $('#loading-overlay').classList.add('hidden');
+  $('#main-content').classList.add('visible');
+  refreshBtn.classList.remove('spinning');
 }
 
 // ---- Init ----
