@@ -126,25 +126,37 @@ const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
 
 // ---- Fetch helpers ----
-async function proxyFetch(url) {
-  try {
-    const r = await fetch(url, { signal: AbortSignal.timeout(4000) });
-    if (r.ok) return r.json();
-  } catch (_) {}
+function timeoutSignal(ms) {
+  const c = new AbortController();
+  setTimeout(() => c.abort(), ms);
+  return c.signal;
+}
 
+async function proxyFetch(url) {
+  // Try direct
+  try {
+    const r = await fetch(url, { signal: timeoutSignal(4000) });
+    if (r.ok) return await r.json();
+  } catch (e) { console.log('[direct fail]', url.slice(0, 60), e.message); }
+
+  // Try proxies
   for (const px of PROXIES) {
     try {
-      const r = await fetch(px(url), { signal: AbortSignal.timeout(10000) });
-      if (r.ok) return r.json();
-    } catch (_) {}
+      const purl = px(url);
+      console.log('[proxy]', purl.slice(0, 80));
+      const r = await fetch(purl, { signal: timeoutSignal(10000) });
+      if (r.ok) return await r.json();
+      console.log('[proxy status]', r.status);
+    } catch (e) { console.log('[proxy fail]', e.message); }
   }
-  throw new Error('proxy_fail');
+  throw new Error('All proxies failed for: ' + url.slice(0, 60));
 }
 
 async function cacheFetch(path) {
-  const r = await fetch(path, { signal: AbortSignal.timeout(5000), cache: 'no-cache' });
-  if (!r.ok) throw new Error('cache_miss');
-  return r.json();
+  console.log('[cache]', path);
+  const r = await fetch(path, { signal: timeoutSignal(5000), cache: 'no-cache' });
+  if (!r.ok) throw new Error('cache_miss: ' + path + ' status=' + r.status);
+  return await r.json();
 }
 
 // ---- Parse ----
