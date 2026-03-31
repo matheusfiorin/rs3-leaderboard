@@ -2,11 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RS3 Leaderboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>RS3 Leaderboard — Fiorovizk vs Decxus</title>
+  <meta name="description" content="Real-time RuneScape 3 player stats tracker and leaderboard">
+  <meta name="theme-color" content="#07070d">
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9876;</text></svg>">
 </head>
 <body>
@@ -16,12 +19,12 @@
       <div class="header-content">
         <div class="header-left">
           <h1 class="logo">RS3 <span class="accent">Leaderboard</span></h1>
-          <p class="subtitle">Real-time player comparison</p>
+          <p class="subtitle">Live player tracking</p>
         </div>
         <div class="header-right">
-          <div class="status-badge" id="status-badge">
-            <span class="status-dot"></span>
-            <span class="status-text">Loading...</span>
+          <div class="data-source-badge" id="data-source-badge" title="Data source">
+            <span class="source-dot"></span>
+            <span class="source-text">Loading...</span>
           </div>
           <button class="btn-refresh" id="btn-refresh" title="Refresh now">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -33,65 +36,97 @@
       </div>
     </header>
 
-    <!-- Loading Overlay -->
+    <!-- Loading Screen -->
     <div id="loading-overlay" class="loading-overlay">
       <div class="loader">
         <div class="loader-ring"></div>
-        <p>Fetching player data...</p>
+        <div class="loader-swords">&#9876;</div>
+        <p class="loader-text">Loading player data...</p>
       </div>
     </div>
 
     <!-- Error Banner -->
     <div id="error-banner" class="error-banner hidden">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
       <span id="error-message"></span>
       <button class="btn-dismiss" id="btn-dismiss-error">&times;</button>
     </div>
 
     <!-- Main Content -->
-    <main class="main-content" id="main-content">
-      <!-- Player Overview Cards -->
-      <section class="section overview-section">
-        <div class="overview-grid" id="overview-grid"></div>
+    <main class="main" id="main-content">
+
+      <!-- Player Cards -->
+      <section class="section" id="sec-overview">
+        <div class="player-cards" id="player-cards"></div>
       </section>
 
-      <!-- Stats Summary -->
-      <section class="section">
-        <h2 class="section-title">Head to Head</h2>
-        <div class="comparison-bars" id="comparison-bars"></div>
+      <!-- Head to Head Comparison -->
+      <section class="section" id="sec-h2h">
+        <div class="section-head">
+          <h2 class="section-title">Head to Head</h2>
+        </div>
+        <div class="h2h-container" id="h2h-container"></div>
       </section>
 
-      <!-- Skills Comparison -->
-      <section class="section">
-        <div class="section-header">
-          <h2 class="section-title">Skills</h2>
-          <div class="skill-filters">
-            <button class="filter-btn active" data-filter="all">All</button>
-            <button class="filter-btn" data-filter="combat">Combat</button>
-            <button class="filter-btn" data-filter="gathering">Gathering</button>
-            <button class="filter-btn" data-filter="artisan">Artisan</button>
-            <button class="filter-btn" data-filter="support">Support</button>
+      <!-- Skills -->
+      <section class="section" id="sec-skills">
+        <div class="section-head">
+          <h2 class="section-title">All Skills</h2>
+          <div class="pill-filters" id="skill-filters">
+            <button class="pill active" data-filter="all">All</button>
+            <button class="pill" data-filter="combat">Combat</button>
+            <button class="pill" data-filter="gathering">Gathering</button>
+            <button class="pill" data-filter="artisan">Artisan</button>
+            <button class="pill" data-filter="support">Support</button>
           </div>
+        </div>
+        <div class="skills-legend">
+          <span class="legend-item"><span class="legend-swatch p1"></span><span id="legend-p1">Player 1</span></span>
+          <span class="legend-item"><span class="legend-swatch p2"></span><span id="legend-p2">Player 2</span></span>
+          <span class="legend-item"><span class="legend-swatch ahead-swatch"></span>Ahead</span>
         </div>
         <div class="skills-grid" id="skills-grid"></div>
       </section>
 
-      <!-- Activity Feed -->
-      <section class="section">
-        <h2 class="section-title">Recent Activity</h2>
+      <!-- Activity Timeline -->
+      <section class="section" id="sec-activity">
+        <div class="section-head">
+          <h2 class="section-title">Recent Activity</h2>
+          <span class="badge" id="activity-count">0</span>
+        </div>
         <div class="activity-feed" id="activity-feed"></div>
       </section>
 
       <!-- Quest Progress -->
-      <section class="section">
-        <h2 class="section-title">Quest Progress</h2>
-        <div class="quest-grid" id="quest-grid"></div>
+      <section class="section" id="sec-quests">
+        <div class="section-head">
+          <h2 class="section-title">Quests</h2>
+        </div>
+        <div class="quest-cards" id="quest-cards"></div>
       </section>
+
+      <!-- Journal / Achievement Tracker -->
+      <section class="section" id="sec-journal">
+        <div class="section-head">
+          <h2 class="section-title">Adventure Journal</h2>
+          <div class="pill-filters" id="journal-filters">
+            <button class="pill active" data-jfilter="all">All</button>
+            <button class="pill" data-jfilter="combat">Combat</button>
+            <button class="pill" data-jfilter="skills">Skills</button>
+            <button class="pill" data-jfilter="quests">Quests</button>
+            <button class="pill" data-jfilter="xp">XP</button>
+          </div>
+        </div>
+        <div class="journal-scores" id="journal-scores"></div>
+        <div class="journal-grid" id="journal-grid"></div>
+      </section>
+
     </main>
 
     <!-- Footer -->
     <footer class="footer">
-      <p>Data from <a href="https://runescape.wiki/w/Application_programming_interface" target="_blank">Jagex RuneMetrics & Hiscores API</a></p>
-      <p class="footer-sub">Auto-refreshes every 5 minutes &middot; <span id="last-updated">Never</span></p>
+      <p>Data from <a href="https://runescape.wiki/w/Application_programming_interface" target="_blank" rel="noopener">RuneMetrics & Hiscores API</a></p>
+      <p class="footer-meta">Auto-refreshes every 5 min &middot; <span id="last-updated">Never</span></p>
     </footer>
   </div>
 
