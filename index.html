@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RS3 Leaderboard</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9876;</text></svg>">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="logo">RS3 <span class="accent">Leaderboard</span></h1>
+          <p class="subtitle">Real-time player comparison</p>
+        </div>
+        <div class="header-right">
+          <div class="status-badge" id="status-badge">
+            <span class="status-dot"></span>
+            <span class="status-text">Loading...</span>
+          </div>
+          <button class="btn-refresh" id="btn-refresh" title="Refresh now">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+      <div class="loader">
+        <div class="loader-ring"></div>
+        <p>Fetching player data...</p>
+      </div>
+    </div>
+
+    <!-- Error Banner -->
+    <div id="error-banner" class="error-banner hidden">
+      <span id="error-message"></span>
+      <button class="btn-dismiss" id="btn-dismiss-error">&times;</button>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content" id="main-content">
+      <!-- Player Overview Cards -->
+      <section class="section overview-section">
+        <div class="overview-grid" id="overview-grid"></div>
+      </section>
+
+      <!-- Stats Summary -->
+      <section class="section">
+        <h2 class="section-title">Head to Head</h2>
+        <div class="comparison-bars" id="comparison-bars"></div>
+      </section>
+
+      <!-- Skills Comparison -->
+      <section class="section">
+        <div class="section-header">
+          <h2 class="section-title">Skills</h2>
+          <div class="skill-filters">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="combat">Combat</button>
+            <button class="filter-btn" data-filter="gathering">Gathering</button>
+            <button class="filter-btn" data-filter="artisan">Artisan</button>
+            <button class="filter-btn" data-filter="support">Support</button>
+          </div>
+        </div>
+        <div class="skills-grid" id="skills-grid"></div>
+      </section>
+
+      <!-- Activity Feed -->
+      <section class="section">
+        <h2 class="section-title">Recent Activity</h2>
+        <div class="activity-feed" id="activity-feed"></div>
+      </section>
+
+      <!-- Quest Progress -->
+      <section class="section">
+        <h2 class="section-title">Quest Progress</h2>
+        <div class="quest-grid" id="quest-grid"></div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>Data from <a href="https://runescape.wiki/w/Application_programming_interface" target="_blank">Jagex RuneMetrics & Hiscores API</a></p>
+      <p class="footer-sub">Auto-refreshes every 5 minutes &middot; <span id="last-updated">Never</span></p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
