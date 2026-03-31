@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>RS3 Leaderboard — Fiorovizk vs Decxus</title>
-  <meta name="description" content="Real-time RuneScape 3 player stats tracker and leaderboard">
+  <title>RS3 Placar — Fiorovizk vs Decxus</title>
+  <meta name="description" content="Acompanhamento em tempo real de jogadores de RuneScape 3">
   <meta name="theme-color" content="#07070d">
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -14,122 +14,134 @@
 </head>
 <body>
   <div id="app">
-    <!-- Header -->
     <header class="header">
       <div class="header-content">
         <div class="header-left">
-          <h1 class="logo">RS3 <span class="accent">Leaderboard</span></h1>
-          <p class="subtitle">Live player tracking</p>
+          <h1 class="logo" id="logo-text">RS3 <span class="accent">Placar</span></h1>
+          <p class="subtitle" id="subtitle-text">Acompanhamento em tempo real</p>
         </div>
         <div class="header-right">
-          <div class="data-source-badge" id="data-source-badge" title="Data source">
+          <button class="lang-toggle" id="lang-toggle" title="Switch language">
+            <span id="lang-label">EN</span>
+          </button>
+          <div class="data-source-badge" id="data-source-badge">
             <span class="source-dot"></span>
-            <span class="source-text">Loading...</span>
+            <span class="source-text" id="source-text">...</span>
           </div>
-          <button class="btn-refresh" id="btn-refresh" title="Refresh now">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="23 4 23 10 17 10"></polyline>
-              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-            </svg>
+          <button class="btn-refresh" id="btn-refresh" title="Atualizar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
           </button>
         </div>
       </div>
+      <!-- Tab Navigation -->
+      <nav class="tabs" id="tabs">
+        <button class="tab active" data-tab="overview" id="tab-overview">Vis\u00e3o Geral</button>
+        <button class="tab" data-tab="skills" id="tab-skills">Habilidades</button>
+        <button class="tab" data-tab="journal" id="tab-journal">Di\u00e1rio</button>
+        <button class="tab" data-tab="quests" id="tab-quests">Miss\u00f5es</button>
+        <button class="tab" data-tab="activity" id="tab-activity">Atividade</button>
+        <button class="tab easter-tab" data-tab="easter" id="tab-easter">&#x1f95a; P\u00e1scoa</button>
+      </nav>
     </header>
 
-    <!-- Loading Screen -->
+    <!-- Loading -->
     <div id="loading-overlay" class="loading-overlay">
       <div class="loader">
         <div class="loader-ring"></div>
         <div class="loader-swords">&#9876;</div>
-        <p class="loader-text">Loading player data...</p>
+        <p class="loader-text" id="loader-text">Carregando dados...</p>
       </div>
     </div>
 
-    <!-- Error Banner -->
+    <!-- Error -->
     <div id="error-banner" class="error-banner hidden">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
       <span id="error-message"></span>
       <button class="btn-dismiss" id="btn-dismiss-error">&times;</button>
     </div>
 
-    <!-- Main Content -->
+    <!-- Main -->
     <main class="main" id="main-content">
 
-      <!-- Player Cards -->
-      <section class="section" id="sec-overview">
+      <!-- OVERVIEW (Landing) -->
+      <section class="page active" data-page="overview">
         <div class="player-cards" id="player-cards"></div>
-      </section>
-
-      <!-- Head to Head Comparison -->
-      <section class="section" id="sec-h2h">
-        <div class="section-head">
-          <h2 class="section-title">Head to Head</h2>
-        </div>
+        <div class="section-head"><h2 class="section-title" id="h2h-title">Frente a Frente</h2></div>
         <div class="h2h-container" id="h2h-container"></div>
+        <div class="section-head" style="margin-top:24px"><h2 class="section-title" id="journal-score-title">Di\u00e1rio de Aventuras</h2></div>
+        <div class="journal-scores" id="journal-scores"></div>
       </section>
 
-      <!-- Skills -->
-      <section class="section" id="sec-skills">
+      <!-- SKILLS -->
+      <section class="page" data-page="skills">
         <div class="section-head">
-          <h2 class="section-title">All Skills</h2>
+          <h2 class="section-title" id="skills-title">Todas as Habilidades</h2>
           <div class="pill-filters" id="skill-filters">
-            <button class="pill active" data-filter="all">All</button>
-            <button class="pill" data-filter="combat">Combat</button>
-            <button class="pill" data-filter="gathering">Gathering</button>
-            <button class="pill" data-filter="artisan">Artisan</button>
-            <button class="pill" data-filter="support">Support</button>
+            <button class="pill active" data-filter="all" id="filter-all">Todas</button>
+            <button class="pill" data-filter="combat" id="filter-combat">Combate</button>
+            <button class="pill" data-filter="gathering" id="filter-gathering">Coleta</button>
+            <button class="pill" data-filter="artisan" id="filter-artisan">Produ\u00e7\u00e3o</button>
+            <button class="pill" data-filter="support" id="filter-support">Suporte</button>
           </div>
         </div>
         <div class="skills-legend">
           <span class="legend-item"><span class="legend-swatch p1"></span><span id="legend-p1">Player 1</span></span>
           <span class="legend-item"><span class="legend-swatch p2"></span><span id="legend-p2">Player 2</span></span>
-          <span class="legend-item"><span class="legend-swatch ahead-swatch"></span>Ahead</span>
+          <span class="legend-item"><span class="legend-swatch ahead-swatch"></span><span id="legend-ahead">\u00c0 frente</span></span>
         </div>
         <div class="skills-grid" id="skills-grid"></div>
       </section>
 
-      <!-- Activity Timeline -->
-      <section class="section" id="sec-activity">
+      <!-- JOURNAL -->
+      <section class="page" data-page="journal">
         <div class="section-head">
-          <h2 class="section-title">Recent Activity</h2>
+          <h2 class="section-title" id="journal-title">Di\u00e1rio de Aventuras</h2>
+          <div class="pill-filters" id="journal-filters">
+            <button class="pill active" data-jfilter="all" id="jfilter-all">Todas</button>
+            <button class="pill" data-jfilter="combat" id="jfilter-combat">Combate</button>
+            <button class="pill" data-jfilter="skills" id="jfilter-skills">Habilidades</button>
+            <button class="pill" data-jfilter="quests" id="jfilter-quests">Miss\u00f5es</button>
+            <button class="pill" data-jfilter="xp" id="jfilter-xp">XP</button>
+          </div>
+        </div>
+        <div class="journal-scores" id="journal-scores-full"></div>
+        <div class="journal-grid" id="journal-grid"></div>
+      </section>
+
+      <!-- QUESTS -->
+      <section class="page" data-page="quests">
+        <div class="section-head"><h2 class="section-title" id="quests-title">Miss\u00f5es</h2></div>
+        <div class="quest-cards" id="quest-cards"></div>
+      </section>
+
+      <!-- ACTIVITY -->
+      <section class="page" data-page="activity">
+        <div class="section-head">
+          <h2 class="section-title" id="activity-title">Atividade Recente</h2>
           <span class="badge" id="activity-count">0</span>
         </div>
         <div class="activity-feed" id="activity-feed"></div>
       </section>
 
-      <!-- Quest Progress -->
-      <section class="section" id="sec-quests">
-        <div class="section-head">
-          <h2 class="section-title">Quests</h2>
+      <!-- EASTER -->
+      <section class="page" data-page="easter">
+        <div class="easter-hero">
+          <div class="easter-hero-icon">&#x1f95a;</div>
+          <h2 class="easter-hero-title" id="easter-title">Gielinor Egg Hunt 2026</h2>
+          <p class="easter-hero-sub" id="easter-sub">Blooming Burrow &middot; 30 Mar - 20 Abr</p>
         </div>
-        <div class="quest-cards" id="quest-cards"></div>
-      </section>
-
-      <!-- Journal / Achievement Tracker -->
-      <section class="section" id="sec-journal">
-        <div class="section-head">
-          <h2 class="section-title">Adventure Journal</h2>
-          <div class="pill-filters" id="journal-filters">
-            <button class="pill active" data-jfilter="all">All</button>
-            <button class="pill" data-jfilter="combat">Combat</button>
-            <button class="pill" data-jfilter="skills">Skills</button>
-            <button class="pill" data-jfilter="quests">Quests</button>
-            <button class="pill" data-jfilter="xp">XP</button>
-          </div>
-        </div>
-        <div class="journal-scores" id="journal-scores"></div>
-        <div class="journal-grid" id="journal-grid"></div>
+        <div class="easter-checklist" id="easter-checklist"></div>
+        <div class="easter-info" id="easter-info"></div>
       </section>
 
     </main>
 
-    <!-- Footer -->
     <footer class="footer">
-      <p>Data from <a href="https://runescape.wiki/w/Application_programming_interface" target="_blank" rel="noopener">RuneMetrics & Hiscores API</a></p>
-      <p class="footer-meta">Auto-refreshes every 5 min &middot; <span id="last-updated">Never</span></p>
+      <p id="footer-api">Dados da API RuneMetrics & Hiscores</p>
+      <p class="footer-meta"><span id="footer-refresh">Atualiza a cada 5 min</span> &middot; <span id="last-updated">...</span></p>
     </footer>
   </div>
 
-  <script src="script.js?v=4"></script>
+  <script src="i18n.js?v=5"></script>
+  <script src="script.js?v=5"></script>
 </body>
 </html>
