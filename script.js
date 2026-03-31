@@ -135,16 +135,16 @@ function timeoutSignal(ms) {
 async function proxyFetch(url) {
   // Try direct
   try {
-    const r = await fetch(url, { signal: timeoutSignal(4000) });
+    const r = await fetch(url, { signal: timeoutSignal(3000) });
     if (r.ok) return await r.json();
   } catch (e) { console.log('[direct fail]', url.slice(0, 60), e.message); }
 
-  // Try proxies
+  // Try proxies (short timeouts — cached data is primary)
   for (const px of PROXIES) {
     try {
       const purl = px(url);
       console.log('[proxy]', purl.slice(0, 80));
-      const r = await fetch(purl, { signal: timeoutSignal(10000) });
+      const r = await fetch(purl, { signal: timeoutSignal(5000) });
       if (r.ok) return await r.json();
       console.log('[proxy status]', r.status);
     } catch (e) { console.log('[proxy fail]', e.message); }
@@ -479,34 +479,8 @@ function setSource(state, text) {
 function showError(msg) { $('#error-message').textContent = msg; $('#error-banner').classList.remove('hidden'); }
 function hideError() { $('#error-banner').classList.add('hidden'); }
 
-// ---- Main ----
-async function load() {
-  const btn = $('#btn-refresh');
-  btn.classList.add('spinning');
-  setSource('loading', 'Refreshing...');
-  hideError();
-
-  let results = null;
-
-  try {
-    results = await Promise.all(PLAYERS.map(fetchLive));
-    source = 'live';
-  } catch (_) {
-    try {
-      results = await Promise.all(PLAYERS.map(fetchCached));
-      source = 'cached';
-    } catch (__) {
-      setSource('error', 'Offline');
-      showError('Could not load data. Retrying in 30s...');
-      $('#loading-overlay').classList.add('hidden');
-      $('#main-content').classList.add('visible');
-      btn.classList.remove('spinning');
-      clearInterval(timer);
-      setTimeout(() => { load(); timer = setInterval(load, REFRESH_MS); }, 30000);
-      return;
-    }
-  }
-
+// ---- Render all sections ----
+function renderAll(results) {
   data = results;
   renderCards(results);
   renderH2H(results);
@@ -515,10 +489,52 @@ async function load() {
   renderQuests(results);
   renderJournal(results);
   initFilters();
+  $('#loading-overlay').classList.add('hidden');
+  $('#main-content').classList.add('visible');
+}
 
-  const t = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+// ---- Main: cache-first, then upgrade to live ----
+async function load() {
+  const btn = $('#btn-refresh');
+  btn.classList.add('spinning');
+  setSource('loading', 'Loading...');
+  hideError();
 
-  if (source === 'cached') {
+  // Step 1: Show cached data instantly
+  let hasCached = false;
+  try {
+    const cached = await Promise.all(PLAYERS.map(fetchCached));
+    renderAll(cached);
+    source = 'cached';
+    hasCached = true;
+
+    try {
+      const meta = await cacheFetch(CACHE.meta);
+      const ago = Math.round((Date.now() - new Date(meta.timestamp)) / 60000);
+      setSource('loading', `Cached (${ago}m ago) \u2014 updating...`);
+    } catch (_) {
+      setSource('loading', 'Cached \u2014 updating...');
+    }
+  } catch (e) {
+    console.warn('[cache failed]', e.message);
+  }
+
+  // Step 2: Try live data in parallel (upgrade if successful)
+  try {
+    const live = await Promise.all(PLAYERS.map(fetchLive));
+    renderAll(live);
+    source = 'live';
+    const t = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    setSource('', `Live \u00b7 ${t}`);
+    $('#last-updated').textContent = `Live \u00b7 ${t}`;
+    btn.classList.remove('spinning');
+    return;
+  } catch (e) {
+    console.warn('[live failed]', e.message);
+  }
+
+  // Step 3: If live failed but we have cached, just stay on cached
+  if (hasCached) {
     try {
       const meta = await cacheFetch(CACHE.meta);
       const ago = Math.round((Date.now() - new Date(meta.timestamp)) / 60000);
@@ -528,14 +544,18 @@ async function load() {
       setSource('', 'Cached');
       $('#last-updated').textContent = 'Cached data';
     }
-  } else {
-    setSource('', 'Live');
-    $('#last-updated').textContent = `Updated ${t}`;
+    btn.classList.remove('spinning');
+    return;
   }
 
+  // Step 4: Nothing worked
+  setSource('error', 'Offline');
+  showError('Could not load data. Retrying in 30s...');
   $('#loading-overlay').classList.add('hidden');
   $('#main-content').classList.add('visible');
   btn.classList.remove('spinning');
+  clearInterval(timer);
+  setTimeout(() => { load(); timer = setInterval(load, REFRESH_MS); }, 30000);
 }
 
 // ---- Init ----
