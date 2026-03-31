@@ -423,6 +423,11 @@ function updateUIText() {
   const eLang = EASTER_I18N[lang] || EASTER_I18N.en;
   $('#easter-title').textContent = 'Gielinor Egg Hunt 2026';
   $('#easter-sub').textContent = 'Blooming Burrow \u00b7 30 Mar - 20 ' + (lang==='pt'?'Abr':'Apr');
+  // Money
+  $('#money-title').innerHTML = '\uD83D\uDCB0 ' + (lang==='pt'?'Formas de Ganhar GP':'Money Making');
+  $('#money-disclaimer').textContent = lang==='pt'
+    ? 'Pre\u00e7os do Grand Exchange atualizados via GitHub Actions. Lucro real pode variar.'
+    : 'Grand Exchange prices updated via GitHub Actions. Actual profit may vary.';
 }
 
 // ---- Tabs ----
@@ -449,6 +454,173 @@ function initFilters() {
   }));
 }
 
+// ---- Money Making Methods ----
+// Skill IDs: 0=ATK 1=DEF 2=STR 3=HP 4=RNG 5=PRA 6=MAG 7=COK 8=WC 9=FLE 10=FSH 11=FM 12=CRA 13=SMI 14=MIN 15=HER 16=AGI 17=THI 18=SLA 19=FAR 20=RC 21=HUN 22=CON 23=SUM 24=DG 25=DIV 26=INV 27=ARC 28=NEC
+const MONEY_METHODS = [
+  {
+    id:'headless_arrows',
+    pt:{name:'Fazer Flechas sem Ponta',desc:'Compre hastes de flecha e penas, faça flechas sem ponta no GE'},
+    en:{name:'Fletch Headless Arrows',desc:'Buy arrow shafts and feathers, fletch into headless arrows'},
+    reqs:{}, members:false,
+    inputs:[{id:52,qty:15,name:'Arrow shaft'},{id:314,qty:15,name:'Feather'}],
+    outputs:[{id:53,qty:15,name:'Headless arrow'}],
+    actionsPerHour:2700,
+  },
+  {
+    id:'tan_leather',
+    pt:{name:'Curtir Couro',desc:'Compre couros crus, curta no curtidor de Al Kharid, venda couro'},
+    en:{name:'Tan Leather',desc:'Buy cowhides, tan at Al Kharid tanner, sell leather'},
+    reqs:{}, members:false,
+    inputs:[{id:1739,qty:1,name:'Cowhide',extraCost:3}],
+    outputs:[{id:1743,qty:1,name:'Hard leather'}],
+    actionsPerHour:2000,
+  },
+  {
+    id:'smelt_iron',
+    pt:{name:'Fundir Barras de Ferro',desc:'Funda min\u00e9rio de ferro em barras (com anel de forja para 100%)'},
+    en:{name:'Smelt Iron Bars',desc:'Smelt iron ore into bars (ring of forging for 100% success)'},
+    reqs:{13:15}, members:false,
+    inputs:[{id:440,qty:1,name:'Iron ore'}],
+    outputs:[{id:2351,qty:1,name:'Iron bar'}],
+    actionsPerHour:1100,
+  },
+  {
+    id:'smelt_steel',
+    pt:{name:'Fundir Barras de A\u00e7o',desc:'Funda 1 min\u00e9rio de ferro + 2 carv\u00f5es em barras de a\u00e7o'},
+    en:{name:'Smelt Steel Bars',desc:'Smelt 1 iron ore + 2 coal into steel bars'},
+    reqs:{13:30}, members:false,
+    inputs:[{id:440,qty:1,name:'Iron ore'},{id:453,qty:2,name:'Coal'}],
+    outputs:[{id:2353,qty:1,name:'Steel bar'}],
+    actionsPerHour:1100,
+  },
+  {
+    id:'spin_flax',
+    pt:{name:'Fiar Linho',desc:'Transforme linho em cordas de arco na roda de fiar'},
+    en:{name:'Spin Flax',desc:'Spin flax into bowstrings on a spinning wheel'},
+    reqs:{12:10}, members:true,
+    inputs:[{id:1779,qty:1,name:'Flax'}],
+    outputs:[{id:1777,qty:1,name:'Bowstring'}],
+    actionsPerHour:1500,
+  },
+  {
+    id:'smelt_gold',
+    pt:{name:'Fundir Barras de Ouro',desc:'Funda min\u00e9rio de ouro em barras no forno'},
+    en:{name:'Smelt Gold Bars',desc:'Smelt gold ore into gold bars at a furnace'},
+    reqs:{13:40}, members:false,
+    inputs:[{id:444,qty:1,name:'Gold ore'}],
+    outputs:[{id:2357,qty:1,name:'Gold bar'}],
+    actionsPerHour:1100,
+  },
+  {
+    id:'cut_yews',
+    pt:{name:'Cortar Teixos',desc:'Corte \u00e1rvores de teixo e venda os troncos'},
+    en:{name:'Cut Yew Trees',desc:'Chop yew trees and sell the logs'},
+    reqs:{8:60}, members:false,
+    inputs:[],
+    outputs:[{id:1515,qty:1,name:'Yew logs'}],
+    actionsPerHour:180,
+  },
+  {
+    id:'cut_magics',
+    pt:{name:'Cortar \u00c1rvores M\u00e1gicas',desc:'Corte \u00e1rvores m\u00e1gicas e venda os troncos'},
+    en:{name:'Cut Magic Trees',desc:'Chop magic trees and sell the logs'},
+    reqs:{8:75}, members:true,
+    inputs:[],
+    outputs:[{id:1513,qty:1,name:'Magic logs'}],
+    actionsPerHour:130,
+  },
+  {
+    id:'cook_sharks',
+    pt:{name:'Cozinhar Tubar\u00f5es',desc:'Compre tubar\u00f5es crus, cozinhe e venda'},
+    en:{name:'Cook Sharks',desc:'Buy raw sharks, cook and sell cooked sharks'},
+    reqs:{7:80}, members:true,
+    inputs:[{id:383,qty:1,name:'Raw shark'}],
+    outputs:[{id:385,qty:1,name:'Shark'}],
+    actionsPerHour:1300,
+  },
+  {
+    id:'nature_runes',
+    pt:{name:'Criar Runas da Natureza',desc:'Crie runas da natureza no altar (requer acesso ao abismo)'},
+    en:{name:'Craft Nature Runes',desc:'Craft nature runes at the altar (requires abyss access)'},
+    reqs:{20:44}, members:true,
+    inputs:[],
+    outputs:[{id:561,qty:1,name:'Nature rune'}],
+    actionsPerHour:2500,
+  },
+];
+
+let gePrices = {};
+
+async function loadGEPrices() {
+  try { gePrices = await cacheFetch('data/ge_prices.json'); }
+  catch(_) { gePrices = {}; }
+}
+
+function getPrice(itemId) {
+  const p = gePrices[String(itemId)];
+  return p ? p.price : 0;
+}
+
+function calcProfit(method) {
+  let inputCost = 0;
+  for (const inp of method.inputs) {
+    inputCost += (getPrice(inp.id) + (inp.extraCost||0)) * inp.qty;
+  }
+  let outputValue = 0;
+  for (const out of method.outputs) {
+    outputValue += getPrice(out.id) * out.qty;
+  }
+  const profitPerAction = outputValue - inputCost;
+  return profitPerAction * method.actionsPerHour;
+}
+
+function canDoMethod(player, method) {
+  for (const [skillId, reqLevel] of Object.entries(method.reqs)) {
+    const sk = player.skills[Number(skillId)];
+    if (!sk || sk.level < reqLevel) return false;
+  }
+  return true;
+}
+
+function renderMoney(players) {
+  const lang = currentLang;
+  const avgHoursPerDay = 3; // "medium gameplay day"
+
+  const sorted = MONEY_METHODS.map(m => ({ ...m, profit: calcProfit(m) })).sort((a,b) => b.profit - a.profit);
+
+  $('#money-grid').innerHTML = sorted.map(m => {
+    const info = m[lang] || m.en;
+    const profitStr = m.profit > 0 ? fmtShort(m.profit) + ' gp/h' : '?';
+    const dailyGp = m.profit * avgHoursPerDay;
+
+    // Requirement tags
+    const reqTags = Object.entries(m.reqs).map(([sid, lvl]) => {
+      const sName = tSkill(Number(sid));
+      const p1met = canDoMethod(players[0], m);
+      const p2met = canDoMethod(players[1], m);
+      return `<span class="money-req">${sName} ${lvl}</span>`;
+    }).join('') || `<span class="money-req met">${lang==='pt'?'Sem requisitos':'No requirements'}</span>`;
+
+    const p1can = canDoMethod(players[0], m);
+    const p2can = canDoMethod(players[1], m);
+
+    return `
+      <div class="money-card">
+        <div class="money-card-header">
+          <div class="money-card-title">${info.name}${m.members?' \u2B50':''}</div>
+          <div class="money-card-profit">${profitStr}</div>
+        </div>
+        <div class="money-card-desc">${info.desc}</div>
+        <div class="money-card-reqs">${reqTags}</div>
+        <div class="money-card-players">
+          <span class="money-player-tag ${p1can?'can':'cant'}">${esc(players[0].name)} ${p1can?'\u2713':'\u2717'}</span>
+          <span class="money-player-tag ${p2can?'can':'cant'}">${esc(players[1].name)} ${p2can?'\u2713':'\u2717'}</span>
+        </div>
+        ${dailyGp>0?`<div class="money-card-daily">${lang==='pt'?'~3h/dia':'~3h/day'}: <strong>${fmtShort(dailyGp)} gp</strong></div>`:''}
+      </div>`;
+  }).join('');
+}
+
 // ---- Status ----
 function setSource(state,text) { $('.source-dot').className='source-dot '+state; $('#source-text').textContent=text; }
 function showError(msg) { $('#error-message').textContent=msg; $('#error-banner').classList.remove('hidden'); }
@@ -465,6 +637,7 @@ function renderAll(results) {
   renderJournal(results,'#journal-scores',null);
   renderJournal(results,'#journal-scores-full','#journal-grid');
   renderEaster(results);
+  renderMoney(results);
   initFilters();
   $('#loading-overlay').classList.add('hidden');
   $('#main-content').classList.add('visible');
@@ -512,7 +685,7 @@ async function load() {
 document.addEventListener('DOMContentLoaded', () => {
   updateUIText();
   initTabs();
-  load();
+  loadGEPrices().then(() => load());
   timer = setInterval(load, REFRESH_MS);
   $('#btn-refresh').addEventListener('click',()=>{clearInterval(timer);load();timer=setInterval(load,REFRESH_MS);});
   $('#btn-dismiss-error').addEventListener('click', hideError);
