@@ -1221,50 +1221,129 @@ a:hover { text-decoration: underline; }
   line-height: 1;
 }
 
-/* Tooltip on hover */
-.revo-slot::after {
-  content: attr(title);
+/* RS3-style ability tooltip (custom, not browser title) */
+.revo-slot .ability-tooltip {
+  display: none;
   position: absolute;
-  bottom: calc(100% + 6px);
+  bottom: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
-  background: #1a1a2e;
-  color: var(--text);
-  font-size: 0.6rem;
-  font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 4px;
-  white-space: pre;
+  background: #0c0c18;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  padding: 8px 10px;
   pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.15s;
-  z-index: 10;
-  border: 1px solid var(--border-glow);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-  line-height: 1.35;
-  max-width: 200px;
+  z-index: 100;
+  min-width: 180px;
+  max-width: 240px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04);
 }
-.revo-slot:hover::after { opacity: 1; }
+.revo-slot:hover .ability-tooltip { display: block; }
 
-/* Gear */
-.combat-gear {
+.revo-slot.basic .ability-tooltip { border-left: 3px solid rgba(255,255,255,0.25); }
+.revo-slot.enhanced .ability-tooltip { border-left: 3px solid var(--orange); }
+.revo-slot.ultimate .ability-tooltip { border-left: 3px solid var(--purple); }
+
+.ability-tooltip-name {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  margin-bottom: 2px;
+}
+.revo-slot.basic .ability-tooltip-name { color: var(--text); }
+.revo-slot.enhanced .ability-tooltip-name { color: var(--orange); }
+.revo-slot.ultimate .ability-tooltip-name { color: var(--purple); }
+
+.ability-tooltip-type {
+  font-size: 0.55rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-3);
+  margin-bottom: 4px;
+}
+
+.ability-tooltip-desc {
+  font-size: 0.65rem;
+  color: var(--text-2);
+  line-height: 1.4;
+}
+
+.ability-tooltip-lvl {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  color: var(--text-3);
+  margin-top: 4px;
+}
+
+/* Gear tiles (wiki-style with images) */
+.gear-tiles {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  gap: var(--sp-2);
 }
 
-.gear-item {
+.gear-tile {
+  flex: 1;
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: 5px 8px;
-  background: var(--bg-raised);
+  padding: 6px 8px;
+  background: linear-gradient(180deg, #12121e, #0a0a14);
+  border: 1px solid rgba(255,255,255,0.06);
   border-radius: var(--radius-xs);
-  font-size: 0.72rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+.gear-tile:hover {
+  border-color: rgba(255,255,255,0.12);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 2px 8px rgba(0,0,0,0.3);
 }
 
-.gear-icon { font-size: 0.85rem; flex-shrink: 0; }
-.gear-text { color: var(--text-2); font-weight: 500; }
+.gear-tile-img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.02);
+  image-rendering: auto;
+}
+
+.gear-tile-fallback {
+  display: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.gear-tile-info { min-width: 0; }
+
+.gear-tile-label {
+  font-size: 0.52rem;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.gear-tile-name {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Responsive gear */
+@media (max-width: 640px) {
+  .gear-tiles { flex-direction: column; }
+  .gear-tile-img { width: 28px; height: 28px; }
+}
 
 /* Responsive: combat grid stacks on mobile */
 @media (max-width: 640px) {
