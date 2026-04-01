@@ -59,43 +59,71 @@ const ABILITIES = {
   },
 };
 
-// ---- Gear with wiki image references ----
+// ---- Gear with wiki image references + combat stats ----
+// dmg = weapon tier damage, armour = armour rating, hp = LP bonus from armour
 const GEAR = {
   melee: [
-    { minLvl:1,  weapon:{name:'Bronze sword',icon:'Bronze_sword'},           armor:{name:'Bronze armour',icon:'Bronze_platebody'}, tier:'T1' },
-    { minLvl:10, weapon:{name:'Black sword',icon:'Black_longsword'},         armor:{name:'Black armour',icon:'Black_platebody'}, tier:'T10' },
-    { minLvl:20, weapon:{name:'Mithril 2h sword',icon:'Mithril_2h_sword'},  armor:{name:'Mithril armour',icon:'Mithril_platebody'}, tier:'T20' },
-    { minLvl:30, weapon:{name:'Adamant 2h sword',icon:'Adamant_2h_sword'},  armor:{name:'Adamant armour',icon:'Adamant_platebody'}, tier:'T30' },
-    { minLvl:40, weapon:{name:'Rune 2h sword',icon:'Rune_2h_sword'},        armor:{name:'Rune armour',icon:'Rune_platebody'}, tier:'T40' },
-    { minLvl:50, weapon:{name:'Granite maul',icon:'Granite_maul'},           armor:{name:'Rock-shell armour',icon:'Rock-shell_plate'}, tier:'T50' },
-    { minLvl:60, weapon:{name:'Dragon rider lance',icon:'Dragon_Rider_lance'}, armor:{name:'Dragon armour',icon:'Dragon_platebody'}, tier:'T60' },
-    { minLvl:70, weapon:{name:'Abyssal whip',icon:'Abyssal_whip'},          armor:{name:'Bandos armour',icon:'Bandos_chestplate'}, tier:'T70' },
+    { minLvl:1,  dmg:48,   armour:33,  hp:300,  weapon:{name:'Bronze sword',icon:'Bronze_sword'},           armor:{name:'Bronze armour',icon:'Bronze_platebody'}, tier:'T1' },
+    { minLvl:10, dmg:96,   armour:108, hp:500,  weapon:{name:'Black sword',icon:'Black_longsword'},         armor:{name:'Black armour',icon:'Black_platebody'}, tier:'T10' },
+    { minLvl:20, dmg:192,  armour:226, hp:700,  weapon:{name:'Mithril 2h sword',icon:'Mithril_2h_sword'},  armor:{name:'Mithril armour',icon:'Mithril_platebody'}, tier:'T20' },
+    { minLvl:30, dmg:288,  armour:338, hp:900,  weapon:{name:'Adamant 2h sword',icon:'Adamant_2h_sword'},  armor:{name:'Adamant armour',icon:'Adamant_platebody'}, tier:'T30' },
+    { minLvl:40, dmg:384,  armour:451, hp:1100, weapon:{name:'Rune 2h sword',icon:'Rune_2h_sword'},        armor:{name:'Rune armour',icon:'Rune_platebody'}, tier:'T40' },
+    { minLvl:50, dmg:480,  armour:563, hp:1300, weapon:{name:'Granite maul',icon:'Granite_maul'},           armor:{name:'Rock-shell armour',icon:'Rock-shell_plate'}, tier:'T50' },
+    { minLvl:60, dmg:768,  armour:675, hp:1500, weapon:{name:'Dragon rider lance',icon:'Dragon_Rider_lance'}, armor:{name:'Dragon armour',icon:'Dragon_platebody'}, tier:'T60' },
+    { minLvl:70, dmg:864,  armour:788, hp:1700, weapon:{name:'Abyssal whip',icon:'Abyssal_whip'},          armor:{name:'Bandos armour',icon:'Bandos_chestplate'}, tier:'T70' },
   ],
   ranged: [
-    { minLvl:1,  weapon:{name:'Chargebow',icon:'Chargebow'},               armor:{name:'Leather armour',icon:'Leather_body'}, tier:'T1' },
-    { minLvl:20, weapon:{name:'Willow shortbow',icon:'Willow_shortbow'},    armor:{name:'Studded leather',icon:'Studded_body'}, tier:'T20' },
-    { minLvl:30, weapon:{name:'Maple shortbow',icon:'Maple_shortbow'},      armor:{name:'Snakeskin set',icon:'Snakeskin_body'}, tier:'T30' },
-    { minLvl:40, weapon:{name:'Magic shortbow',icon:'Magic_shortbow'},      armor:{name:'Green d\'hide',icon:'Green_dragonhide_body'}, tier:'T40' },
-    { minLvl:50, weapon:{name:'Rune crossbow',icon:'Rune_crossbow'},        armor:{name:'Blue d\'hide',icon:'Blue_dragonhide_body'}, tier:'T50' },
-    { minLvl:60, weapon:{name:'Dragon crossbow',icon:'Dragon_crossbow'},    armor:{name:'Black d\'hide',icon:'Black_dragonhide_body'}, tier:'T60' },
-    { minLvl:70, weapon:{name:'Crystal bow',icon:'Crystal_bow'},            armor:{name:'Armadyl armour',icon:'Armadyl_chestplate'}, tier:'T70' },
+    { minLvl:1,  dmg:48,   armour:27,  hp:300,  weapon:{name:'Chargebow',icon:'Chargebow'},               armor:{name:'Leather armour',icon:'Leather_body'}, tier:'T1' },
+    { minLvl:20, dmg:192,  armour:170, hp:600,  weapon:{name:'Willow shortbow',icon:'Willow_shortbow'},    armor:{name:'Studded leather',icon:'Studded_body'}, tier:'T20' },
+    { minLvl:30, dmg:288,  armour:260, hp:800,  weapon:{name:'Maple shortbow',icon:'Maple_shortbow'},      armor:{name:'Snakeskin set',icon:'Snakeskin_body'}, tier:'T30' },
+    { minLvl:40, dmg:384,  armour:338, hp:1000, weapon:{name:'Magic shortbow',icon:'Magic_shortbow'},      armor:{name:'Green d\'hide',icon:'Green_dragonhide_body'}, tier:'T40' },
+    { minLvl:50, dmg:480,  armour:451, hp:1200, weapon:{name:'Rune crossbow',icon:'Rune_crossbow'},        armor:{name:'Blue d\'hide',icon:'Blue_dragonhide_body'}, tier:'T50' },
+    { minLvl:60, dmg:768,  armour:563, hp:1400, weapon:{name:'Dragon crossbow',icon:'Dragon_crossbow'},    armor:{name:'Black d\'hide',icon:'Black_dragonhide_body'}, tier:'T60' },
+    { minLvl:70, dmg:864,  armour:675, hp:1600, weapon:{name:'Crystal bow',icon:'Crystal_bow'},            armor:{name:'Armadyl armour',icon:'Armadyl_chestplate'}, tier:'T70' },
   ],
   magic: [
-    { minLvl:1,  weapon:{name:'Air staff',icon:'Staff_of_air'},             armor:{name:'Wizard robes',icon:'Blue_wizard_robe_top'}, tier:'T1' },
-    { minLvl:30, weapon:{name:'Mystic wand',icon:'Mystic_wand'},            armor:{name:'Mystic robes',icon:'Mystic_robe_top'}, tier:'T30' },
-    { minLvl:40, weapon:{name:'Mystic staff',icon:'Mystic_staff'},          armor:{name:'Splitbark',icon:'Splitbark_body'}, tier:'T40' },
-    { minLvl:50, weapon:{name:'Grifolic wand',icon:'Grifolic_wand'},        armor:{name:'Grifolic',icon:'Grifolic_poncho'}, tier:'T50' },
-    { minLvl:60, weapon:{name:'Staff of light',icon:'Staff_of_light'},      armor:{name:'Ganodermic',icon:'Ganodermic_poncho'}, tier:'T60' },
-    { minLvl:70, weapon:{name:'Wand of the Cywir',icon:'Wand_of_the_Cywir_elders'}, armor:{name:'Subjugation',icon:'Garb_of_subjugation'}, tier:'T70' },
+    { minLvl:1,  dmg:48,   armour:27,  hp:300,  weapon:{name:'Air staff',icon:'Staff_of_air'},             armor:{name:'Wizard robes',icon:'Blue_wizard_robe_top'}, tier:'T1' },
+    { minLvl:30, dmg:288,  armour:260, hp:800,  weapon:{name:'Mystic wand',icon:'Mystic_wand'},            armor:{name:'Mystic robes',icon:'Mystic_robe_top'}, tier:'T30' },
+    { minLvl:40, dmg:384,  armour:338, hp:1000, weapon:{name:'Mystic staff',icon:'Mystic_staff'},          armor:{name:'Splitbark',icon:'Splitbark_body'}, tier:'T40' },
+    { minLvl:50, dmg:480,  armour:451, hp:1200, weapon:{name:'Grifolic wand',icon:'Grifolic_wand'},        armor:{name:'Grifolic',icon:'Grifolic_poncho'}, tier:'T50' },
+    { minLvl:60, dmg:768,  armour:563, hp:1400, weapon:{name:'Staff of light',icon:'Staff_of_light'},      armor:{name:'Ganodermic',icon:'Ganodermic_poncho'}, tier:'T60' },
+    { minLvl:70, dmg:864,  armour:675, hp:1600, weapon:{name:'Wand of the Cywir',icon:'Wand_of_the_Cywir_elders'}, armor:{name:'Subjugation',icon:'Garb_of_subjugation'}, tier:'T70' },
   ],
   necro: [
-    { minLvl:1,  weapon:{name:'Deathwarden T1',icon:'Deathwarden_hood_(tier_1)'}, armor:{name:'Deathwarden T1',icon:'Deathwarden_robe_top_(tier_1)'}, tier:'T1' },
-    { minLvl:20, weapon:{name:'Deathwarden T20',icon:'Deathwarden_hood_(tier_20)'}, armor:{name:'Deathwarden T20',icon:'Deathwarden_robe_top_(tier_20)'}, tier:'T20' },
-    { minLvl:40, weapon:{name:'Deathwarden T40',icon:'Deathwarden_hood_(tier_40)'}, armor:{name:'Deathwarden T40',icon:'Deathwarden_robe_top_(tier_40)'}, tier:'T40' },
-    { minLvl:60, weapon:{name:'Deathwarden T60',icon:'Deathwarden_hood_(tier_60)'}, armor:{name:'Deathwarden T60',icon:'Deathwarden_robe_top_(tier_60)'}, tier:'T60' },
-    { minLvl:70, weapon:{name:'Death guard T70',icon:'Death_guard_(tier_70)'}, armor:{name:'Deathwarden T70',icon:'Deathwarden_robe_top_(tier_70)'}, tier:'T70' },
+    { minLvl:1,  dmg:48,   armour:27,  hp:300,  weapon:{name:'Deathwarden T1',icon:'Deathwarden_hood_(tier_1)'}, armor:{name:'Deathwarden T1',icon:'Deathwarden_robe_top_(tier_1)'}, tier:'T1' },
+    { minLvl:20, dmg:192,  armour:170, hp:600,  weapon:{name:'Deathwarden T20',icon:'Deathwarden_hood_(tier_20)'}, armor:{name:'Deathwarden T20',icon:'Deathwarden_robe_top_(tier_20)'}, tier:'T20' },
+    { minLvl:40, dmg:384,  armour:338, hp:1000, weapon:{name:'Deathwarden T40',icon:'Deathwarden_hood_(tier_40)'}, armor:{name:'Deathwarden T40',icon:'Deathwarden_robe_top_(tier_40)'}, tier:'T40' },
+    { minLvl:60, dmg:768,  armour:563, hp:1400, weapon:{name:'Deathwarden T60',icon:'Deathwarden_hood_(tier_60)'}, armor:{name:'Deathwarden T60',icon:'Deathwarden_robe_top_(tier_60)'}, tier:'T60' },
+    { minLvl:70, dmg:864,  armour:675, hp:1600, weapon:{name:'Death guard T70',icon:'Death_guard_(tier_70)'}, armor:{name:'Deathwarden T70',icon:'Deathwarden_robe_top_(tier_70)'}, tier:'T70' },
   ],
 };
+
+// ---- DPS Estimation ----
+// Simplified RS3 damage formula: ability damage = level * 4 + weapon_dmg
+// Average ability % with revolution: ~120% (basics avg ~110%, enhanced ~160%, weighted)
+// Ticks per ability cycle: ~5 (3s average with GCD)
+function estimateDPS(level, gear, barAbilities) {
+  const abilityDmg = level * 4 + gear.dmg;
+  // Calculate weighted average ability % from the bar
+  let totalPct = 0;
+  let count = 0;
+  for (const ab of barAbilities) {
+    // Average the ability damage range
+    const desc = ab.desc.en || '';
+    const nums = desc.match(/(\d+)-(\d+)%/);
+    if (nums) {
+      totalPct += (parseInt(nums[1]) + parseInt(nums[2])) / 2;
+      count++;
+    } else {
+      totalPct += 110; // default basic average
+      count++;
+    }
+  }
+  const avgPct = count > 0 ? totalPct / count : 110;
+  // DPS = (abilityDmg * avgPct/100) / 1.8s (avg GCD)
+  const dpsRaw = (abilityDmg * avgPct / 100) / 1.8;
+  return { dps: Math.round(dpsRaw), abilityDmg, avgPct: Math.round(avgPct), armour: gear.armour, hp: gear.hp };
+}
 
 function getGearForLevel(style, level) {
   const tiers = GEAR[style] || [];
@@ -183,12 +211,46 @@ function renderCombat(players) {
         const bars = getBarsForStyle(style, level);
         const gear = getGearForLevel(style, level);
         const styleName = info.label[lang] || info.label.en;
+        const dps = estimateDPS(level, gear, bars.single);
+        const dpsAoe = estimateDPS(level, gear, bars.aoe);
+        const hitRange = { min: Math.round(dps.abilityDmg * 0.9), max: Math.round(dps.abilityDmg * 1.3) };
+        const constitution = (p.skills[3] || {}).level || 10;
+        const maxHp = constitution * 100 + gear.hp;
+
         return `<div class="combat-style-card" style="--style-color:${info.color}">
           <div class="combat-style-header">
             <span class="combat-style-icon">${info.icon}</span>
             <span class="combat-style-name">${styleName}</span>
             <span class="combat-style-level">Lv. ${level}</span>
           </div>
+
+          <div class="dps-stats">
+            <div class="dps-stat">
+              <div class="dps-stat-val" style="color:var(--style-color)">${dps.dps}</div>
+              <div class="dps-stat-label">DPS (${L.single.split(' ')[0]})</div>
+            </div>
+            <div class="dps-stat">
+              <div class="dps-stat-val" style="color:var(--style-color)">${dpsAoe.dps}</div>
+              <div class="dps-stat-label">DPS (AoE)</div>
+            </div>
+            <div class="dps-stat">
+              <div class="dps-stat-val">${hitRange.min}-${hitRange.max}</div>
+              <div class="dps-stat-label">${lang==='pt'?'Dano Base':'Base Hit'}</div>
+            </div>
+            <div class="dps-stat">
+              <div class="dps-stat-val">${dps.armour}</div>
+              <div class="dps-stat-label">${lang==='pt'?'Armadura':'Armour'}</div>
+            </div>
+            <div class="dps-stat">
+              <div class="dps-stat-val">${maxHp.toLocaleString()}</div>
+              <div class="dps-stat-label">${lang==='pt'?'Vida M\u00e1x':'Max HP'}</div>
+            </div>
+            <div class="dps-stat">
+              <div class="dps-stat-val">${dps.avgPct}%</div>
+              <div class="dps-stat-label">${lang==='pt'?'M\u00e9dia Hab.':'Avg Ability'}</div>
+            </div>
+          </div>
+
           <div class="combat-subsection">
             <div class="combat-sub-label">${L.single}</div>
             <div class="revo-bar">${renderBar(bars.single, lang)}</div>

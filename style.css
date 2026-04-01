@@ -1135,6 +1135,43 @@ a:hover { text-decoration: underline; }
   border: 1px solid rgba(255,255,255,0.06);
 }
 
+/* DPS Stats panel */
+.dps-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-bottom: var(--sp-3);
+  padding: 6px;
+  background: #050509;
+  border-radius: var(--radius-xs);
+  border: 1px solid rgba(255,255,255,0.03);
+  box-shadow: inset 0 1px 4px rgba(0,0,0,0.4);
+}
+
+.dps-stat {
+  text-align: center;
+  padding: 6px 2px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.015);
+}
+
+.dps-stat-val {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.dps-stat-label {
+  font-size: 0.48rem;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
 .combat-subsection {
   margin-bottom: var(--sp-3);
 }
