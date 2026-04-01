@@ -464,6 +464,18 @@ function initFilters() {
 const MONEY_METHODS = [
   // HIGH PROFIT - available now
   {
+    id:'tan_dhide', fixedProfit:14000000,
+    pt:{name:'Curtir Dragonhide (Portable Crafter)',desc:'Compre green/blue dragonhide no GE, curta no Portable Crafter. 60K hides/hr. Precisa ~5M capital.'},
+    en:{name:'Tan Dragonhide (Portable Crafter)',desc:'Buy green/blue dragonhide on GE, tan at Portable Crafter. 60K hides/hr. Needs ~5M capital.'},
+    reqs:{}, members:true, inputs:[], outputs:[], actionsPerHour:1,
+  },
+  {
+    id:'combo_runes', fixedProfit:6000000,
+    pt:{name:'Criar Runas Combinadas (Mist/Dust)',desc:'Crie mist ou dust runes com Binding Necklace. RC 6+. ~4-8M/hr sem Magic Imbue.'},
+    en:{name:'Craft Combination Runes (Mist/Dust)',desc:'Craft mist or dust runes with Binding Necklace. RC 6+. ~4-8M/hr without Magic Imbue.'},
+    reqs:{20:6}, members:true, inputs:[], outputs:[], actionsPerHour:1,
+  },
+  {
     id:'cut_granite', fixedProfit:5600000,
     pt:{name:'Cortar Granito (2kg \u2192 500g)',desc:'Compre Granite (2kg) no GE, corte em pe\u00e7as de 500g. Precisa de ~6.5M de capital inicial.'},
     en:{name:'Cut Granite (2kg \u2192 500g)',desc:'Buy Granite (2kg) from GE, cut into 500g pieces. Needs ~6.5M starting capital.'},
@@ -523,6 +535,24 @@ const MONEY_METHODS = [
     pt:{name:'Ritual Candles (Necromancia)',desc:'Upgrade ritual candles. Precisa Necromancia 60. Fiorovizk: faltam 1 n\u00edvel!'},
     en:{name:'Ritual Candles (Necromancy)',desc:'Upgrade ritual candles. Needs Necromancy 60. Fiorovizk: 1 level away!'},
     reqs:{28:60}, members:true, inputs:[], outputs:[], actionsPerHour:1,
+  },
+  {
+    id:'miasma_runes', fixedProfit:23000000, almostUnlocked:true,
+    pt:{name:'Criar Runas de Miasma',desc:'Cria\u00e7\u00e3o de Runas 60. Fiorovizk: 10 n\u00edveis! Melhor m\u00e9todo de RC.'},
+    en:{name:'Craft Miasma Runes',desc:'Runecrafting 60. Fiorovizk: 10 levels away! Best RC method.'},
+    reqs:{20:60}, members:true, inputs:[], outputs:[], actionsPerHour:1,
+  },
+  {
+    id:'necronium_bars', fixedProfit:6000000, almostUnlocked:true,
+    pt:{name:'Fundir Barras de Necr\u00f4nio',desc:'Metalurgia 70. Fiorovizk: 5 n\u00edveis! 3000+ barras/hr com b\u00f4nus de duplica\u00e7\u00e3o.'},
+    en:{name:'Smelt Necronium Bars',desc:'Smithing 70. Fiorovizk: 5 levels away! 3000+ bars/hr with doubling bonus.'},
+    reqs:{13:70}, members:true, inputs:[], outputs:[], actionsPerHour:1,
+  },
+  {
+    id:'combo_magic_imbue', fixedProfit:17000000, almostUnlocked:true,
+    pt:{name:'Runas Combinadas + Magic Imbue',desc:'Magia 82 = 100% sucesso sem talism\u00e3. 14-20M/hr! Ambos longe, mas vale o grind.'},
+    en:{name:'Combo Runes + Magic Imbue',desc:'Magic 82 = 100% success, no talisman needed. 14-20M/hr! Worth the grind.'},
+    reqs:{6:82}, members:true, inputs:[], outputs:[], actionsPerHour:1,
   },
   {
     id:'cut_yews', almostUnlocked:true,

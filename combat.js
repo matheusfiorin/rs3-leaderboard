@@ -5,55 +5,50 @@
    ============================================= */
 
 // Wiki ability icon URL pattern
-const WIKI_IMG = (name) => `https://runescape.wiki/images/${name.replace(/ /g, '_')}.png`;
+const WIKI_IMG = (name) => `https://runescape.wiki/w/Special:FilePath/${name.replace(/ /g, '_')}.png`;
 const WIKI_LINK = (name) => `https://runescape.wiki/w/${name.replace(/ /g, '_')}`;
 
 // ---- Ability Database (post-March 2026 Combat Modernisation) ----
 // Abilities listed with unlock level, whether they're basics/enhanced/ultimates
 const ABILITIES = {
-  // MELEE (all now require Attack level only)
+  // MELEE (post-March 2026: all require Attack level only, Strength book removed)
   melee: {
-    slice:          { name:'Slice',           lvl:1,  type:'basic',    desc:'Deal 30-120% damage', icon:'Slice' },
-    punish:         { name:'Punish',          lvl:5,  type:'basic',    desc:'Deal 31.2-156% damage. Reduced cooldown on kill.', icon:'Punish' },
-    dismember:      { name:'Dismember',       lvl:14, type:'basic',    desc:'Bleed: 5 hits of 20-100% over 6s', icon:'Dismember' },
-    backhand:       { name:'Backhand',        lvl:15, type:'basic',    desc:'Deal 30-120% damage. Stuns for 1.2s.', icon:'Backhand' },
-    adaptive_str:   { name:'Adaptive Strike',  lvl:20, type:'basic',   desc:'2H: 45-135%. DW: 30-120% + bleed', icon:'Smash' },
-    fury:           { name:'Fury',            lvl:24, type:'basic',    desc:'3 hits, generates Bloodlust', icon:'Fury' },
-    sever:          { name:'Sever',           lvl:30, type:'basic',    desc:'Deal 37.6-188% damage', icon:'Sever' },
-    flurry:         { name:'Flurry',          lvl:37, type:'enhanced', desc:'4 hits, heals per hit. Costs 20% adren.', icon:'Flurry' },
-    assault:        { name:'Assault',         lvl:55, type:'enhanced', desc:'4 hits of 43.8-175%. Consumes Bloodlust.', icon:'Assault' },
-    hurricane:      { name:'Hurricane',       lvl:45, type:'enhanced', desc:'AoE 66-219%. Resets CD on multi-hit.', icon:'Hurricane' },
+    attack_basic:   { name:'Attack',          lvl:1,  type:'basic',    desc:'110-130% damage. Basic melee attack.', icon:'Slice' },
+    assault:        { name:'Assault',         lvl:3,  type:'enhanced', desc:'4 hits of 130-150%. Consumes Bloodlust for healing.', icon:'Assault' },
+    adaptive_str:   { name:'Adaptive Strike', lvl:7,  type:'basic',    desc:'2H: AoE up to 9 targets. DW: single + bleed.', icon:'Smash' },
+    rend:           { name:'Rend',            lvl:18, type:'basic',    desc:'135-165% damage. Generates 2 Bloodlust stacks.', icon:'Sever' },
+    fury:           { name:'Fury',            lvl:21, type:'basic',    desc:'110-130% + 25% crit chance on next attack.', icon:'Fury' },
+    hurricane:      { name:'Hurricane',       lvl:37, type:'enhanced', desc:'AoE 220-260%. Resets CD on multi-hit. 2H only.', icon:'Hurricane' },
+    dismember:      { name:'Dismember',       lvl:50, type:'enhanced', desc:'Bleed: 8 hits. Replaces Slaughter/Massacre.', icon:'Dismember' },
+    punish:         { name:'Punish',          lvl:60, type:'basic',    desc:'110-130%. 2.5x damage on targets below 50% HP.', icon:'Punish' },
     berserk:        { name:'Berserk',         lvl:42, type:'ultimate', desc:'Double damage for 20s. Costs 100%.', icon:'Berserk' },
-    cleave:         { name:'Cleave',          lvl:10, type:'basic',    desc:'AoE 37.6-188% (2H only)', icon:'Cleave' },
   },
-  // RANGED
+  // RANGED (post-March 2026: fixed impact timings, new Galeshot/Imbue)
   ranged: {
-    piercing:       { name:'Piercing Shot',   lvl:1,  type:'basic',    desc:'Deal 30-120% damage', icon:'Piercing_Shot' },
-    needle:         { name:'Needle Strike',   lvl:5,  type:'basic',    desc:'Deal 31.2-156% damage', icon:'Needle_Strike' },
-    binding:        { name:'Binding Shot',    lvl:15, type:'basic',    desc:'Deal 30-120%, binds for 3.6s', icon:'Binding_Shot' },
-    snipe:          { name:'Snipe',           lvl:20, type:'basic',    desc:'Charge 1.8s, deal 39-195% damage', icon:'Snipe' },
-    ricochet:       { name:'Ricochet',        lvl:10, type:'basic',    desc:'AoE: hits up to 3 targets', icon:'Ricochet' },
-    dazing:         { name:'Dazing Shot',     lvl:8,  type:'basic',    desc:'Deal 31.4-157%', icon:'Dazing_Shot' },
-    frag:           { name:'Fragmentation Shot', lvl:14, type:'basic', desc:'Bleed: 5 hits over 6s', icon:'Fragmentation_Shot' },
-    snap:           { name:'Snap Shot',       lvl:40, type:'enhanced', desc:'2 hits of 50-140%', icon:'Snap_Shot' },
-    rapid:          { name:'Rapid Fire',      lvl:37, type:'enhanced', desc:'8 hits in 5.4s', icon:'Rapid_Fire' },
-    bombardment:    { name:'Bombardment',     lvl:30, type:'enhanced', desc:'AoE 43.8-219%', icon:'Bombardment' },
-    deadshot:       { name:'Deadshot',        lvl:55, type:'ultimate', desc:'Big hit + bleed', icon:'Deadshot' },
-    death_swiftness:{ name:'Death\'s Swiftness', lvl:50, type:'ultimate', desc:'+50% damage for 30s', icon:'Death%27s_Swiftness' },
+    ranged_basic:   { name:'Ranged',          lvl:1,  type:'basic',    desc:'90-110% damage. Basic ranged attack.', icon:'Piercing_Shot' },
+    snap:           { name:'Snap Shot',       lvl:3,  type:'enhanced', desc:'145-175% x2 hits. 25% adrenaline.', icon:'Snap_Shot' },
+    snipe:          { name:'Snipe',           lvl:5,  type:'enhanced', desc:'300-360% single hit. 1min CD.', icon:'Snipe' },
+    piercing:       { name:'Piercing Shot',   lvl:13, type:'basic',    desc:'45-55% x2 hits. Reduces Snipe CD.', icon:'Needle_Strike' },
+    deadshot:       { name:'Deadshot',        lvl:21, type:'ultimate', desc:'125-145% x5 hits.', icon:'Deadshot' },
+    binding:        { name:'Binding Shot',    lvl:31, type:'basic',    desc:'65-75% + stun/bind for 3.6s.', icon:'Binding_Shot' },
+    bombardment:    { name:'Bombardment',     lvl:36, type:'enhanced', desc:'AoE 220-260% in 5x5 area.', icon:'Bombardment' },
+    galeshot:       { name:'Galeshot',        lvl:58, type:'basic',    desc:'Applies Searing Winds buff.', icon:'Dazing_Shot' },
+    rapid:          { name:'Rapid Fire',      lvl:62, type:'enhanced', desc:'Channel: 8 hits of 75-85%.', icon:'Rapid_Fire' },
+    ricochet:       { name:'Ricochet',        lvl:67, type:'basic',    desc:'AoE: bounces to nearby targets. Includes Greater effect.', icon:'Ricochet' },
   },
-  // MAGIC
+  // MAGIC (post-March 2026: Runic Charge mechanic, rune consumption chance)
   magic: {
-    wrack:          { name:'Wrack',           lvl:1,  type:'basic',    desc:'Deal 30-120% damage', icon:'Wrack' },
-    sonic:          { name:'Sonic Wave',      lvl:5,  type:'basic',    desc:'Deal 31.2-156%, reduces next ability cost', icon:'Sonic_Wave' },
-    impact:         { name:'Impact',          lvl:15, type:'basic',    desc:'Deal 30-120%, stuns 1.2s', icon:'Impact' },
-    dragon_breath:  { name:'Dragon Breath',   lvl:20, type:'basic',    desc:'AoE 37.6-188% in a line', icon:'Dragon_Breath' },
-    combust:        { name:'Combust',         lvl:14, type:'basic',    desc:'Bleed: 5 hits over 6s', icon:'Combust' },
-    chain:          { name:'Chain',           lvl:10, type:'basic',    desc:'AoE: hits up to 3 targets', icon:'Chain' },
-    wild_magic:     { name:'Wild Magic',      lvl:40, type:'enhanced', desc:'2 hits of 50-140%', icon:'Wild_Magic' },
-    asphyxiate:     { name:'Asphyxiate',      lvl:37, type:'enhanced', desc:'4 hits, stuns', icon:'Asphyxiate' },
-    detonate:       { name:'Detonate',        lvl:45, type:'enhanced', desc:'Charge AoE, up to 219%', icon:'Detonate' },
-    sunshine:       { name:'Sunshine',        lvl:50, type:'ultimate', desc:'+50% damage for 30s', icon:'Sunshine' },
-    omnipower:      { name:'Omnipower',       lvl:55, type:'ultimate', desc:'3 hits of 60-300%', icon:'Omnipower' },
+    magic_basic:    { name:'Magic',           lvl:1,  type:'basic',    desc:'90-110% damage. Basic magic attack.', icon:'Wrack' },
+    sonic:          { name:'Sonic Wave',      lvl:6,  type:'basic',    desc:'90-110%. Grants Flow (reduces next ability cost).', icon:'Sonic_Wave' },
+    combust:        { name:'Combust',         lvl:10, type:'basic',    desc:'Burn DoT: 10 hits of ~30% = 300% total.', icon:'Combust' },
+    omnipower:      { name:'Omnipower',       lvl:12, type:'ultimate', desc:'420-500% damage.', icon:'Omnipower' },
+    dragon_breath:  { name:'Dragon Breath',   lvl:19, type:'basic',    desc:'AoE 110-130% line. +25% vs burning targets.', icon:'Dragon_Breath' },
+    runic_charge:   { name:'Runic Charge',    lvl:26, type:'basic',    desc:'Empowers next Sonic/Dragon Breath. No GCD.', icon:'Surge' },
+    impact:         { name:'Impact',          lvl:40, type:'basic',    desc:'65-75% + stun 1.2s.', icon:'Impact' },
+    chain:          { name:'Chain',           lvl:45, type:'basic',    desc:'AoE: 70-90% + 2 nearby. Shares 30% of next ability.', icon:'Chain' },
+    wild_magic:     { name:'Wild Magic',      lvl:55, type:'enhanced', desc:'125-155% x2 hits. 25% adrenaline.', icon:'Wild_Magic' },
+    conc_blast:     { name:'Concentrated Blast', lvl:66, type:'basic', desc:'35% x3 channel. Stacking crit chance.', icon:'Concentrated_Blast' },
+    sunshine:       { name:'Sunshine',        lvl:50, type:'ultimate', desc:'+50% damage for 30s.', icon:'Sunshine' },
   },
   // NECROMANCY
   necro: {
@@ -92,27 +87,23 @@ function getMeleeBars(a, lvl) {
   const single = [];
   const aoe = [];
 
-  // Single target priority
-  if (lvl >= 55) single.push(a.assault);
-  if (lvl >= 37) single.push(a.flurry);
-  if (lvl >= 30) single.push(a.sever);
-  if (lvl >= 24) single.push(a.fury);
-  if (lvl >= 14) single.push(a.dismember);
-  if (lvl >= 5)  single.push(a.punish);
-  single.push(a.slice);
-  if (lvl >= 15) single.push(a.backhand);
-  if (lvl >= 20) single.push(a.adaptive_str);
+  // Single target: enhanced spenders first, then strong basics
+  if (lvl >= 50) single.push(a.dismember);
+  if (lvl >= 3)  single.push(a.assault);
+  if (lvl >= 21) single.push(a.fury);
+  if (lvl >= 18) single.push(a.rend);
+  if (lvl >= 7)  single.push(a.adaptive_str);
+  single.push(a.attack_basic);
+  if (lvl >= 60) single.push(a.punish);
 
-  // AoE priority
-  if (lvl >= 45) aoe.push(a.hurricane);
-  if (lvl >= 55) aoe.push(a.assault);
-  if (lvl >= 10) aoe.push(a.cleave);
-  if (lvl >= 37) aoe.push(a.flurry);
-  if (lvl >= 14) aoe.push(a.dismember);
-  if (lvl >= 30) aoe.push(a.sever);
-  if (lvl >= 24) aoe.push(a.fury);
-  if (lvl >= 5)  aoe.push(a.punish);
-  aoe.push(a.slice);
+  // AoE: Hurricane + Adaptive Strike (2H hits 9 targets)
+  if (lvl >= 37) aoe.push(a.hurricane);
+  if (lvl >= 3)  aoe.push(a.assault);
+  if (lvl >= 7)  aoe.push(a.adaptive_str);
+  if (lvl >= 50) aoe.push(a.dismember);
+  if (lvl >= 21) aoe.push(a.fury);
+  if (lvl >= 18) aoe.push(a.rend);
+  aoe.push(a.attack_basic);
 
   return { single: single.slice(0, 9), aoe: aoe.slice(0, 9) };
 }
@@ -121,23 +112,23 @@ function getRangedBars(a, lvl) {
   const single = [];
   const aoe = [];
 
-  if (lvl >= 40) single.push(a.snap);
-  if (lvl >= 37) single.push(a.rapid);
-  if (lvl >= 20) single.push(a.snipe);
-  if (lvl >= 14) single.push(a.frag);
-  if (lvl >= 5)  single.push(a.needle);
-  single.push(a.piercing);
-  if (lvl >= 8)  single.push(a.dazing);
-  if (lvl >= 15) single.push(a.binding);
+  // Single: spenders, then Piercing (reduces Snipe CD), then basics
+  if (lvl >= 62) single.push(a.rapid);
+  if (lvl >= 3)  single.push(a.snap);
+  if (lvl >= 5)  single.push(a.snipe);
+  if (lvl >= 13) single.push(a.piercing);
+  if (lvl >= 58) single.push(a.galeshot);
+  if (lvl >= 31) single.push(a.binding);
+  single.push(a.ranged_basic);
 
-  if (lvl >= 30) aoe.push(a.bombardment);
-  if (lvl >= 40) aoe.push(a.snap);
-  if (lvl >= 10) aoe.push(a.ricochet);
-  if (lvl >= 37) aoe.push(a.rapid);
-  if (lvl >= 14) aoe.push(a.frag);
-  if (lvl >= 20) aoe.push(a.snipe);
-  if (lvl >= 5)  aoe.push(a.needle);
-  aoe.push(a.piercing);
+  // AoE: Bombardment first
+  if (lvl >= 36) aoe.push(a.bombardment);
+  if (lvl >= 67) aoe.push(a.ricochet);
+  if (lvl >= 3)  aoe.push(a.snap);
+  if (lvl >= 62) aoe.push(a.rapid);
+  if (lvl >= 13) aoe.push(a.piercing);
+  if (lvl >= 5)  aoe.push(a.snipe);
+  aoe.push(a.ranged_basic);
 
   return { single: single.slice(0, 9), aoe: aoe.slice(0, 9) };
 }
@@ -146,23 +137,24 @@ function getMagicBars(a, lvl) {
   const single = [];
   const aoe = [];
 
-  if (lvl >= 40) single.push(a.wild_magic);
-  if (lvl >= 37) single.push(a.asphyxiate);
-  if (lvl >= 20) single.push(a.dragon_breath);
-  if (lvl >= 14) single.push(a.combust);
-  if (lvl >= 5)  single.push(a.sonic);
-  single.push(a.wrack);
-  if (lvl >= 15) single.push(a.impact);
-  if (lvl >= 10) single.push(a.chain);
+  // Single: spenders, Dragon Breath (boosted by Combust), Sonic Wave (Flow)
+  if (lvl >= 55) single.push(a.wild_magic);
+  if (lvl >= 66) single.push(a.conc_blast);
+  if (lvl >= 19) single.push(a.dragon_breath);
+  if (lvl >= 6)  single.push(a.sonic);
+  if (lvl >= 10) single.push(a.combust);
+  single.push(a.magic_basic);
+  if (lvl >= 40) single.push(a.impact);
+  if (lvl >= 26) single.push(a.runic_charge);
 
-  if (lvl >= 45) aoe.push(a.detonate);
-  if (lvl >= 40) aoe.push(a.wild_magic);
-  if (lvl >= 20) aoe.push(a.dragon_breath);
-  if (lvl >= 10) aoe.push(a.chain);
-  if (lvl >= 37) aoe.push(a.asphyxiate);
-  if (lvl >= 14) aoe.push(a.combust);
-  if (lvl >= 5)  aoe.push(a.sonic);
-  aoe.push(a.wrack);
+  // AoE: Dragon Breath (line) + Chain (bounces + shares next ability)
+  if (lvl >= 19) aoe.push(a.dragon_breath);
+  if (lvl >= 45) aoe.push(a.chain);
+  if (lvl >= 55) aoe.push(a.wild_magic);
+  if (lvl >= 10) aoe.push(a.combust);
+  if (lvl >= 6)  aoe.push(a.sonic);
+  aoe.push(a.magic_basic);
+  if (lvl >= 26) aoe.push(a.runic_charge);
 
   return { single: single.slice(0, 9), aoe: aoe.slice(0, 9) };
 }
