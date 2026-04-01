@@ -1021,6 +1021,209 @@ a:hover { text-decoration: underline; }
 .j-check.p2-color { border-color: var(--teal-dim); }
 .j-check.p2-color.done { border-color: var(--teal); color: var(--teal); background: var(--teal-bg); }
 
+/* ===== COMBAT ===== */
+.combat-notice {
+  font-size: 0.7rem;
+  color: var(--text-3);
+  margin-bottom: var(--sp-4);
+  font-style: italic;
+}
+
+.wiki-link {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--gold);
+  text-decoration: none;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+.wiki-link:hover { opacity: 1; text-decoration: underline; }
+
+.combat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sp-4);
+}
+
+.combat-player-name {
+  font-size: 1rem;
+  font-weight: 800;
+  margin-bottom: var(--sp-3);
+  padding-bottom: var(--sp-2);
+  border-bottom: 2px solid var(--border);
+}
+.combat-player-name.p1 { color: var(--gold); border-color: var(--gold-dim); }
+.combat-player-name.p2 { color: var(--teal); border-color: var(--teal-dim); }
+
+.combat-player-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.combat-style-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--sp-3);
+  border-left: 3px solid var(--style-color, var(--text-3));
+}
+
+.combat-style-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+
+.combat-style-icon { font-size: 1.1rem; }
+
+.combat-style-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  flex: 1;
+}
+
+.combat-style-level {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--style-color);
+  padding: 2px 10px;
+  border-radius: 100px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.combat-subsection {
+  margin-bottom: var(--sp-3);
+}
+.combat-subsection:last-child { margin-bottom: 0; }
+
+.combat-sub-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: var(--sp-1);
+}
+
+/* Revolution bar */
+.revo-bar {
+  display: flex;
+  gap: 3px;
+  padding: 4px;
+  background: #0a0a14;
+  border-radius: var(--radius-xs);
+  border: 1px solid rgba(255,255,255,0.04);
+  overflow-x: auto;
+}
+
+.revo-slot {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1.5px solid rgba(255,255,255,0.08);
+  background: var(--bg-raised);
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.revo-slot:hover {
+  transform: scale(1.15);
+  z-index: 2;
+  border-color: rgba(255,255,255,0.25);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+/* Ability type coloring */
+.revo-slot.basic { border-color: rgba(255,255,255,0.1); }
+.revo-slot.enhanced { border-color: rgba(251,191,36,0.4); box-shadow: inset 0 0 4px rgba(251,191,36,0.1); }
+.revo-slot.ultimate { border-color: rgba(167,139,250,0.5); box-shadow: inset 0 0 4px rgba(167,139,250,0.15); }
+
+.revo-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  image-rendering: pixelated;
+}
+
+.revo-fallback {
+  display: none;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 0.5rem;
+  font-weight: 800;
+  color: var(--text-2);
+  text-transform: uppercase;
+}
+
+.revo-num {
+  position: absolute;
+  bottom: 1px;
+  right: 2px;
+  font-size: 0.45rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.35);
+  line-height: 1;
+}
+
+/* Tooltip on hover */
+.revo-slot::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a2e;
+  color: var(--text);
+  font-size: 0.6rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: pre;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 10;
+  border: 1px solid var(--border-glow);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  line-height: 1.35;
+  max-width: 200px;
+}
+.revo-slot:hover::after { opacity: 1; }
+
+/* Gear */
+.combat-gear {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.gear-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 5px 8px;
+  background: var(--bg-raised);
+  border-radius: var(--radius-xs);
+  font-size: 0.72rem;
+}
+
+.gear-icon { font-size: 0.85rem; flex-shrink: 0; }
+.gear-text { color: var(--text-2); font-weight: 500; }
+
+/* Responsive: combat grid stacks on mobile */
+@media (max-width: 640px) {
+  .combat-grid { grid-template-columns: 1fr; }
+  .revo-slot { width: 32px; height: 32px; }
+}
+
 /* ===== MONEY MAKING ===== */
 .money-grid {
   display: flex;

@@ -395,7 +395,12 @@ function updateUIText() {
   $('#tab-journal').textContent = t('navJournal');
   $('#tab-quests').textContent = t('navQuests');
   $('#tab-activity').textContent = t('navActivity');
+  $('#tab-combat').innerHTML = '\u2694\uFE0F ' + (lang==='pt'?'Combate':'Combat');
   $('#tab-easter').innerHTML = '\uD83E\uDD5A ' + (lang==='pt'?'P\u00e1scoa':'Easter');
+  // Combat section
+  $('#combat-title').innerHTML = '\u2694\uFE0F ' + (lang==='pt'?'Combate & Revolution':'Combat & Revolution');
+  $('#combat-notice').textContent = lang==='pt'?'Barras baseadas no Combat Style Modernisation (Mar\u00e7o 2026). Arraste habilidades no jogo para ajustar.':'Bars based on Combat Style Modernisation (March 2026). Drag abilities in-game to adjust.';
+  $('#combat-wiki-link').textContent = 'Wiki Revolution Bars \u2192';
   // Section titles
   $('#h2h-title').textContent = t('h2hTitle');
   $('#journal-score-title').textContent = t('journalTitle');
@@ -457,95 +462,81 @@ function initFilters() {
 // ---- Money Making Methods ----
 // Skill IDs: 0=ATK 1=DEF 2=STR 3=HP 4=RNG 5=PRA 6=MAG 7=COK 8=WC 9=FLE 10=FSH 11=FM 12=CRA 13=SMI 14=MIN 15=HER 16=AGI 17=THI 18=SLA 19=FAR 20=RC 21=HUN 22=CON 23=SUM 24=DG 25=DIV 26=INV 27=ARC 28=NEC
 const MONEY_METHODS = [
+  // HIGH PROFIT - available now
   {
-    id:'headless_arrows',
-    pt:{name:'Fazer Flechas sem Ponta',desc:'Compre hastes de flecha e penas, faça flechas sem ponta no GE'},
-    en:{name:'Fletch Headless Arrows',desc:'Buy arrow shafts and feathers, fletch into headless arrows'},
-    reqs:{}, members:false,
-    inputs:[{id:52,qty:15,name:'Arrow shaft'},{id:314,qty:15,name:'Feather'}],
-    outputs:[{id:53,qty:15,name:'Headless arrow'}],
-    actionsPerHour:2700,
+    id:'cut_granite', fixedProfit:5600000,
+    pt:{name:'Cortar Granito (2kg \u2192 500g)',desc:'Compre Granite (2kg) no GE, corte em pe\u00e7as de 500g. Precisa de ~6.5M de capital inicial.'},
+    en:{name:'Cut Granite (2kg \u2192 500g)',desc:'Buy Granite (2kg) from GE, cut into 500g pieces. Needs ~6.5M starting capital.'},
+    reqs:{}, members:false, inputs:[], outputs:[], actionsPerHour:1,
   },
   {
-    id:'tan_leather',
-    pt:{name:'Curtir Couro',desc:'Compre couros crus, curta no curtidor de Al Kharid, venda couro'},
-    en:{name:'Tan Leather',desc:'Buy cowhides, tan at Al Kharid tanner, sell leather'},
-    reqs:{}, members:false,
-    inputs:[{id:1739,qty:1,name:'Cowhide',extraCost:3}],
-    outputs:[{id:1743,qty:1,name:'Hard leather'}],
-    actionsPerHour:2000,
+    id:'fort_frames', fixedProfit:3400000,
+    pt:{name:'Fazer Wooden Frames (Fort Forinthry)',desc:'Quest: New Foundations. Transforme planks em frames no sawmill do forte. 1.440 planks/hr.'},
+    en:{name:'Make Wooden Frames (Fort Forinthry)',desc:'Quest: New Foundations. Turn planks into frames at fort sawmill. 1,440 planks/hr.'},
+    reqs:{22:1}, members:true, quest:'New Foundations', inputs:[], outputs:[], actionsPerHour:1,
   },
   {
     id:'smelt_iron',
-    pt:{name:'Fundir Barras de Ferro',desc:'Funda min\u00e9rio de ferro em barras (com anel de forja para 100%)'},
-    en:{name:'Smelt Iron Bars',desc:'Smelt iron ore into bars (ring of forging for 100% success)'},
+    pt:{name:'Fundir Barras de Ferro',desc:'Funda min\u00e9rio de ferro em barras (anel de forja = 100% sucesso)'},
+    en:{name:'Smelt Iron Bars',desc:'Smelt iron ore into bars (ring of forging for 100%)'},
     reqs:{13:15}, members:false,
-    inputs:[{id:440,qty:1,name:'Iron ore'}],
-    outputs:[{id:2351,qty:1,name:'Iron bar'}],
-    actionsPerHour:1100,
-  },
-  {
-    id:'smelt_steel',
-    pt:{name:'Fundir Barras de A\u00e7o',desc:'Funda 1 min\u00e9rio de ferro + 2 carv\u00f5es em barras de a\u00e7o'},
-    en:{name:'Smelt Steel Bars',desc:'Smelt 1 iron ore + 2 coal into steel bars'},
-    reqs:{13:30}, members:false,
-    inputs:[{id:440,qty:1,name:'Iron ore'},{id:453,qty:2,name:'Coal'}],
-    outputs:[{id:2353,qty:1,name:'Steel bar'}],
-    actionsPerHour:1100,
-  },
-  {
-    id:'spin_flax',
-    pt:{name:'Fiar Linho',desc:'Transforme linho em cordas de arco na roda de fiar'},
-    en:{name:'Spin Flax',desc:'Spin flax into bowstrings on a spinning wheel'},
-    reqs:{12:10}, members:true,
-    inputs:[{id:1779,qty:1,name:'Flax'}],
-    outputs:[{id:1777,qty:1,name:'Bowstring'}],
-    actionsPerHour:1500,
+    inputs:[{id:440,qty:1,name:'Iron ore'}], outputs:[{id:2351,qty:1,name:'Iron bar'}], actionsPerHour:1100,
   },
   {
     id:'smelt_gold',
-    pt:{name:'Fundir Barras de Ouro',desc:'Funda min\u00e9rio de ouro em barras no forno'},
-    en:{name:'Smelt Gold Bars',desc:'Smelt gold ore into gold bars at a furnace'},
+    pt:{name:'Fundir Barras de Ouro',desc:'Funda min\u00e9rio de ouro em barras. Goldsmith gauntlets recomendado.'},
+    en:{name:'Smelt Gold Bars',desc:'Smelt gold ore into gold bars. Goldsmith gauntlets recommended.'},
     reqs:{13:40}, members:false,
-    inputs:[{id:444,qty:1,name:'Gold ore'}],
-    outputs:[{id:2357,qty:1,name:'Gold bar'}],
-    actionsPerHour:1100,
+    inputs:[{id:444,qty:1,name:'Gold ore'}], outputs:[{id:2357,qty:1,name:'Gold bar'}], actionsPerHour:1100,
   },
   {
-    id:'cut_yews',
-    pt:{name:'Cortar Teixos',desc:'Corte \u00e1rvores de teixo e venda os troncos'},
-    en:{name:'Cut Yew Trees',desc:'Chop yew trees and sell the logs'},
-    reqs:{8:60}, members:false,
-    inputs:[],
-    outputs:[{id:1515,qty:1,name:'Yew logs'}],
-    actionsPerHour:180,
+    id:'headless_arrows',
+    pt:{name:'Fazer Flechas sem Ponta',desc:'Compre hastes + penas, fa\u00e7a flechas sem ponta. Baixo risco, f\u00e1cil.'},
+    en:{name:'Fletch Headless Arrows',desc:'Buy shafts + feathers, fletch headless arrows. Low risk, easy.'},
+    reqs:{}, members:false,
+    inputs:[{id:52,qty:15,name:'Arrow shaft'},{id:314,qty:15,name:'Feather'}], outputs:[{id:53,qty:15,name:'Headless arrow'}], actionsPerHour:2700,
   },
   {
-    id:'cut_magics',
-    pt:{name:'Cortar \u00c1rvores M\u00e1gicas',desc:'Corte \u00e1rvores m\u00e1gicas e venda os troncos'},
-    en:{name:'Cut Magic Trees',desc:'Chop magic trees and sell the logs'},
-    reqs:{8:75}, members:true,
-    inputs:[],
-    outputs:[{id:1513,qty:1,name:'Magic logs'}],
-    actionsPerHour:130,
-  },
-  {
-    id:'cook_sharks',
-    pt:{name:'Cozinhar Tubar\u00f5es',desc:'Compre tubar\u00f5es crus, cozinhe e venda'},
-    en:{name:'Cook Sharks',desc:'Buy raw sharks, cook and sell cooked sharks'},
-    reqs:{7:80}, members:true,
-    inputs:[{id:383,qty:1,name:'Raw shark'}],
-    outputs:[{id:385,qty:1,name:'Shark'}],
-    actionsPerHour:1300,
+    id:'spin_flax',
+    pt:{name:'Fiar Linho em Cordas de Arco',desc:'Roda de fiar em Lumbridge. Compre flax, venda bowstring.'},
+    en:{name:'Spin Flax into Bowstrings',desc:'Spinning wheel in Lumbridge. Buy flax, sell bowstrings.'},
+    reqs:{12:10}, members:true,
+    inputs:[{id:1779,qty:1,name:'Flax'}], outputs:[{id:1777,qty:1,name:'Bowstring'}], actionsPerHour:1500,
   },
   {
     id:'nature_runes',
-    pt:{name:'Criar Runas da Natureza',desc:'Crie runas da natureza no altar (requer acesso ao abismo)'},
-    en:{name:'Craft Nature Runes',desc:'Craft nature runes at the altar (requires abyss access)'},
+    pt:{name:'Criar Runas da Natureza',desc:'Altar via Abyss. Quest Enter the Abyss necess\u00e1ria.'},
+    en:{name:'Craft Nature Runes',desc:'Altar via Abyss. Enter the Abyss miniquest required.'},
     reqs:{20:44}, members:true,
-    inputs:[],
-    outputs:[{id:561,qty:1,name:'Nature rune'}],
-    actionsPerHour:2500,
+    inputs:[], outputs:[{id:561,qty:1,name:'Nature rune'}], actionsPerHour:2500,
+  },
+  // DAILY/RECURRING
+  {
+    id:'shop_run', fixedProfit:800000,
+    pt:{name:'Shop Run Di\u00e1ria (Penas + Runas)',desc:'Compre penas e runas baratas em lojas NPCs, venda no GE. ~10 min/dia.'},
+    en:{name:'Daily Shop Run (Feathers + Runes)',desc:'Buy cheap feathers & runes from NPC shops, sell on GE. ~10 min/day.'},
+    reqs:{}, members:true, daily:true, inputs:[], outputs:[], actionsPerHour:1,
+  },
+  // ALMOST UNLOCKED (within reach)
+  {
+    id:'necro_candles', fixedProfit:5000000, almostUnlocked:true,
+    pt:{name:'Ritual Candles (Necromancia)',desc:'Upgrade ritual candles. Precisa Necromancia 60. Fiorovizk: faltam 1 n\u00edvel!'},
+    en:{name:'Ritual Candles (Necromancy)',desc:'Upgrade ritual candles. Needs Necromancy 60. Fiorovizk: 1 level away!'},
+    reqs:{28:60}, members:true, inputs:[], outputs:[], actionsPerHour:1,
+  },
+  {
+    id:'cut_yews', almostUnlocked:true,
+    pt:{name:'Cortar Teixos',desc:'Corte teixos e venda. Precisa Corte de Lenha 60. Ambos perto!'},
+    en:{name:'Cut Yew Trees',desc:'Chop yew trees and sell logs. Needs Woodcutting 60.'},
+    reqs:{8:60}, members:false,
+    inputs:[], outputs:[{id:1515,qty:1,name:'Yew logs'}], actionsPerHour:180,
+  },
+  {
+    id:'smelt_steel',
+    pt:{name:'Fundir Barras de A\u00e7o',desc:'1 min\u00e9rio de ferro + 2 carv\u00f5es = 1 barra de a\u00e7o'},
+    en:{name:'Smelt Steel Bars',desc:'1 iron ore + 2 coal = 1 steel bar'},
+    reqs:{13:30}, members:false,
+    inputs:[{id:440,qty:1,name:'Iron ore'},{id:453,qty:2,name:'Coal'}], outputs:[{id:2353,qty:1,name:'Steel bar'}], actionsPerHour:1100,
   },
 ];
 
@@ -562,6 +553,7 @@ function getPrice(itemId) {
 }
 
 function calcProfit(method) {
+  if (method.fixedProfit) return method.fixedProfit;
   let inputCost = 0;
   for (const inp of method.inputs) {
     inputCost += (getPrice(inp.id) + (inp.extraCost||0)) * inp.qty;
@@ -604,10 +596,14 @@ function renderMoney(players) {
     const p1can = canDoMethod(players[0], m);
     const p2can = canDoMethod(players[1], m);
 
+    const badges = [];
+    if (m.almostUnlocked) badges.push(`<span style="font-size:0.6rem;color:var(--orange);background:rgba(251,191,36,0.08);padding:2px 6px;border-radius:100px;font-weight:700">${lang==='pt'?'QUASE':'SOON'}</span>`);
+    if (m.daily) badges.push(`<span style="font-size:0.6rem;color:var(--purple);background:var(--purple-bg);padding:2px 6px;border-radius:100px;font-weight:700">${lang==='pt'?'DI\u00c1RIO':'DAILY'}</span>`);
+
     return `
-      <div class="money-card">
+      <div class="money-card"${m.almostUnlocked?' style="border-left:3px solid var(--orange);opacity:0.85"':''}>
         <div class="money-card-header">
-          <div class="money-card-title">${info.name}${m.members?' \u2B50':''}</div>
+          <div class="money-card-title">${info.name}${m.members?' \u2B50':''}${badges.length?' '+badges.join(' '):''}</div>
           <div class="money-card-profit">${profitStr}</div>
         </div>
         <div class="money-card-desc">${info.desc}</div>
@@ -616,7 +612,7 @@ function renderMoney(players) {
           <span class="money-player-tag ${p1can?'can':'cant'}">${esc(players[0].name)} ${p1can?'\u2713':'\u2717'}</span>
           <span class="money-player-tag ${p2can?'can':'cant'}">${esc(players[1].name)} ${p2can?'\u2713':'\u2717'}</span>
         </div>
-        ${dailyGp>0?`<div class="money-card-daily">${lang==='pt'?'~3h/dia':'~3h/day'}: <strong>${fmtShort(dailyGp)} gp</strong></div>`:''}
+        ${!m.daily && dailyGp>0?`<div class="money-card-daily">${lang==='pt'?'~3h/dia':'~3h/day'}: <strong>${fmtShort(dailyGp)} gp</strong></div>`:''}
       </div>`;
   }).join('');
 }
@@ -638,6 +634,7 @@ function renderAll(results) {
   renderJournal(results,'#journal-scores-full','#journal-grid');
   renderEaster(results);
   renderMoney(results);
+  renderCombat(results);
   initFilters();
   $('#loading-overlay').classList.add('hidden');
   $('#main-content').classList.add('visible');
