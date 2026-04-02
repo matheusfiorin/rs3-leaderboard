@@ -388,7 +388,7 @@ function updateUIText() {
   $('#subtitle-text').textContent = t('subtitle');
   $('#lang-label').textContent = lang==='pt'?'EN':'PT';
   document.documentElement.lang = lang==='pt'?'pt-BR':'en';
-  document.title = lang==='pt'?'RS3 Placar \u2014 Fiorovizk vs Decxus':'RS3 Leaderboard \u2014 Fiorovizk vs Decxus';
+  document.title = lang==='pt'?'RS3 Placar \u2014 Fiorovizk & Decxus':'RS3 Leaderboard \u2014 Fiorovizk & Decxus';
   // Tabs
   $('#tab-overview').textContent = t('navOverview');
   $('#tab-skills').textContent = t('navSkills');

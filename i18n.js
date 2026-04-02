@@ -7,7 +7,7 @@ const LANG = {
   pt: {
     // Header
     title: 'RS3 Placar',
-    subtitle: 'Acompanhamento em tempo real',
+    subtitle: 'Jornada cooperativa em tempo real',
     refresh: 'Atualizar',
     loading: 'Carregando...',
     refreshing: 'Atualizando...',
@@ -25,7 +25,7 @@ const LANG = {
     navActivity: 'Atividade',
 
     // Overview
-    h2hTitle: 'Frente a Frente',
+    h2hTitle: 'Comparativo',
     totalLevel: 'Nível Total',
     totalXp: 'XP Total',
     combatLevel: 'Nível de Combate',
@@ -34,7 +34,7 @@ const LANG = {
     runeScore: 'RuneScore',
     questsDone: 'Missões',
     clueScrolls: 'Pergaminhos',
-    skillsAhead: 'À Frente',
+    skillsAhead: 'Liderando',
     rank: 'Posição',
     overallRank: 'Posição Global',
 
@@ -155,7 +155,7 @@ const LANG = {
 
   en: {
     title: 'RS3 Leaderboard',
-    subtitle: 'Live player tracking',
+    subtitle: 'Co-op adventure tracker',
     refresh: 'Refresh',
     loading: 'Loading...',
     refreshing: 'Refreshing...',
@@ -171,7 +171,7 @@ const LANG = {
     navQuests: 'Quests',
     navActivity: 'Activity',
 
-    h2hTitle: 'Head to Head',
+    h2hTitle: 'Side by Side',
     totalLevel: 'Total Level',
     totalXp: 'Total XP',
     combatLevel: 'Combat Level',
@@ -180,7 +180,7 @@ const LANG = {
     runeScore: 'RuneScore',
     questsDone: 'Quests',
     clueScrolls: 'Clue Scrolls',
-    skillsAhead: 'Skills Ahead',
+    skillsAhead: 'Leading',
     rank: 'Rank',
     overallRank: 'Overall Rank',
 
