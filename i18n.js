@@ -13,8 +13,8 @@ const LANG = {
     refreshing: 'Atualizando...',
     live: 'Ao vivo',
     cached: 'Cache',
-    offline: 'Offline',
-    agoMin: 'min atrás',
+    offline: 'Sem conex\u00e3o',
+    agoMin: 'min atr\u00e1s',
     updatingLive: 'atualizando...',
 
     // Navigation

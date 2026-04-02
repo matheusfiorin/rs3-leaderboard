@@ -413,23 +413,23 @@ a:hover { text-decoration: underline; }
 }
 
 /* Clipped-corner mixin via clip-path — RS3 interface signature */
+/* clip-path clips borders, so we use box-shadow inset to simulate border */
 .p-card {
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: none;
   border-radius: 2px;
   padding: 22px 20px;
   position: relative;
   overflow: hidden;
-  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease, border-color 0.35s ease;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3), inset 0 0 0 1px var(--border), inset 0 1px 0 rgba(255,255,255,0.03);
   clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
 }
 .p-card:hover {
   transform: translateY(-4px);
-  border-color: var(--border-glow);
 }
-.p-card.p1:hover { box-shadow: 0 16px 48px -12px rgba(212,168,67,0.22), inset 0 1px 0 rgba(212,168,67,0.08); border-color: rgba(212,168,67,0.2); }
-.p-card.p2:hover { box-shadow: 0 16px 48px -12px rgba(34,211,187,0.22), inset 0 1px 0 rgba(34,211,187,0.08); border-color: rgba(34,211,187,0.2); }
+.p-card.p1:hover { box-shadow: 0 16px 48px -12px rgba(212,168,67,0.22), inset 0 0 0 1px rgba(212,168,67,0.2), inset 0 1px 0 rgba(212,168,67,0.08); }
+.p-card.p2:hover { box-shadow: 0 16px 48px -12px rgba(34,211,187,0.22), inset 0 0 0 1px rgba(34,211,187,0.2), inset 0 1px 0 rgba(34,211,187,0.08); }
 
 /* Top glow bar */
 .p-card::before {
@@ -842,11 +842,12 @@ a:hover { text-decoration: underline; }
 
 .q-card {
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: none;
   border-radius: 2px;
   padding: 18px;
   position: relative;
   overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--border);
   clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
 }
 .q-card::before {
@@ -931,12 +932,13 @@ a:hover { text-decoration: underline; }
 
 .j-score-card {
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: none;
   border-radius: 2px;
   padding: 18px;
   text-align: center;
   position: relative;
   overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--border);
   clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
 }
 .j-score-card::before {
@@ -1510,7 +1512,8 @@ a:hover { text-decoration: underline; }
   padding: 32px 20px 24px;
   background: linear-gradient(180deg, rgba(212,168,67,0.08), transparent);
   border-radius: 2px;
-  border: 1px solid rgba(212,168,67,0.1);
+  border: none;
+  box-shadow: inset 0 0 0 1px rgba(212,168,67,0.1);
   margin-bottom: var(--sp-6);
   clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
 }
@@ -1740,7 +1743,8 @@ a:hover { text-decoration: underline; }
   padding: 32px 20px 24px;
   background: linear-gradient(180deg, var(--purple-bg), transparent);
   border-radius: 2px;
-  border: 1px solid rgba(167,139,250,0.12);
+  border: none;
+  box-shadow: inset 0 0 0 1px rgba(167,139,250,0.12);
   margin-bottom: 20px;
   clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
 }
@@ -1820,11 +1824,12 @@ a:hover { text-decoration: underline; }
 /* ===== CHARTS ===== */
 .chart-container {
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: none;
   border-radius: 2px;
   padding: var(--sp-4);
   margin-bottom: var(--sp-4);
   position: relative;
+  box-shadow: inset 0 0 0 1px var(--border);
   clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
 }
 .chart-container canvas {

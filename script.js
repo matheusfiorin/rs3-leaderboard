@@ -117,8 +117,8 @@ const EASTER_I18N = {
     e_week3:    { title: 'Encontrar Ovos da Semana 3', desc: '7 ovos dourados (3 F2P)' },
     e_all21:    { title: 'Encontrar todos os 21 ovos', desc: 'Mestre da Ca\u00e7a aos Ovos' },
     e_tokens:   { title: 'Gastar Spring Tokens', desc: 'Na loja Grand Eggs-change' },
-    e_reward:   { title: 'Receber Holiday Reward Casket', desc: 'Completar 12+ ovos e falar com Nougat Bunny' },
-    e_bunny:    { title: 'Desbloquear Bunny Pet Cosmetic', desc: 'Token de apar\u00eancia de bichinho de P\u00e1scoa' },
+    e_reward:   { title: 'Receber Ba\u00fa de Recompensa', desc: 'Completar 12+ ovos e falar com Nougat Bunny' },
+    e_bunny:    { title: 'Desbloquear Cosm\u00e9tico de Bichinho Coelho', desc: 'Token de apar\u00eancia de bichinho de P\u00e1scoa' },
     infoTitle:  'Sobre o Evento',
     infoItems: [
       'Blooming Burrow acess\u00edvel pelo portal ao norte do Grand Exchange em Varrock',
@@ -377,6 +377,15 @@ function localizeActivity(text) {
   out = out.replace(/Total levels gained/g, 'N\u00edveis totais alcan\u00e7ados');
   out = out.replace(/I levelled my/g, 'Subi n\u00edvel em');
   out = out.replace(/skill, I am now level/g, ', agora estou no n\u00edvel');
+  out = out.replace(/I killed (\d+) boss monsters?\s+in/g, 'Matei $1 bosses em');
+  out = out.replace(/I killed (\d+) boss monsters?\s+called:/g, 'Matei $1 bosses chamados:');
+  out = out.replace(/I killed (\d+) boss monsters?/g, 'Matei $1 bosses');
+  out = out.replace(/Dungeon floor (\d+) reached/g, 'Andar $1 de Dungeon alcan\u00e7ado');
+  out = out.replace(/I have breached floor (\d+) of Daemonheim for the first time/g, 'Alcancei o andar $1 de Daemonheim pela primeira vez');
+  out = out.replace(/I now have a total level of/g, 'Agora tenho um n\u00edvel total de');
+  out = out.replace(/split among all my skills/g, 'distribu\u00eddo entre todas as minhas habilidades');
+  out = out.replace(/I defeated/g, 'Derrotei');
+  out = out.replace(/Quest complete$/g, 'Miss\u00e3o completa');
   return out;
 }
 
@@ -399,8 +408,8 @@ function updateUIText() {
   $('#tab-easter').innerHTML = '\uD83E\uDD5A ' + (lang==='pt'?'P\u00e1scoa':'Easter');
   // Combat section
   $('#combat-title').innerHTML = '\u2694\uFE0F ' + (lang==='pt'?'Combate & Revolution':'Combat & Revolution');
-  $('#combat-notice').textContent = lang==='pt'?'Barras baseadas no Combat Style Modernisation (Mar\u00e7o 2026). Arraste habilidades no jogo para ajustar.':'Bars based on Combat Style Modernisation (March 2026). Drag abilities in-game to adjust.';
-  $('#combat-wiki-link').textContent = 'Wiki Revolution Bars \u2192';
+  $('#combat-notice').textContent = lang==='pt'?'Barras baseadas na Moderniza\u00e7\u00e3o de Estilos de Combate (Mar\u00e7o 2026). Arraste habilidades no jogo para ajustar.':'Bars based on Combat Style Modernisation (March 2026). Drag abilities in-game to adjust.';
+  $('#combat-wiki-link').textContent = lang === 'pt' ? 'Wiki Barras de Revolu\u00e7\u00e3o \u2192' : 'Wiki Revolution Bars \u2192';
   // Section titles
   $('#h2h-title').textContent = t('h2hTitle');
   $('#journal-score-title').textContent = t('journalTitle');
@@ -426,7 +435,7 @@ function updateUIText() {
   $('#loader-text').textContent = t('loading');
   // Easter
   const eLang = EASTER_I18N[lang] || EASTER_I18N.en;
-  $('#easter-title').textContent = 'Gielinor Egg Hunt 2026';
+  $('#easter-title').textContent = lang === 'pt' ? 'Ca\u00e7a aos Ovos de Gielinor 2026' : 'Gielinor Egg Hunt 2026';
   $('#easter-sub').textContent = 'Blooming Burrow \u00b7 30 Mar - 20 ' + (lang==='pt'?'Abr':'Apr');
   // Gains chart
   const gainsEl = $('#gains-title');

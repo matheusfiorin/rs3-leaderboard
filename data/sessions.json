@@ -8,8 +8,8 @@
     },
     "players": {
       "Fiorovizk": {
-        "totalXpGain": 467621,
-        "levelGain": 64,
+        "totalXpGain": 89402,
+        "levelGain": 11,
         "totalBefore": 1026,
         "totalAfter": 1090,
         "combatBefore": 81,
@@ -21,8 +21,8 @@
             "to": 38
           },
           "DEF": {
-            "xp": 90179,
-            "from": 58,
+            "xp": 28546,
+            "from": 60,
             "to": 61
           },
           "STR": {
@@ -31,14 +31,9 @@
             "to": 41
           },
           "HP": {
-            "xp": 60803,
-            "from": 54,
+            "xp": 36618,
+            "from": 55,
             "to": 57
-          },
-          "RNG": {
-            "xp": 84965,
-            "from": 34,
-            "to": 50
           },
           "PRA": {
             "xp": 887,
@@ -69,11 +64,6 @@
             "xp": 1674,
             "from": 65,
             "to": 65
-          },
-          "MIN": {
-            "xp": 207436,
-            "from": 23,
-            "to": 57
           },
           "THI": {
             "xp": 433,
