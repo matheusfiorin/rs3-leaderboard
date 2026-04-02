@@ -253,7 +253,7 @@ a:hover { text-decoration: underline; }
   appearance: none;
   background: none;
   border: none;
-  border-bottom: 2px solid transparent;
+  border-bottom: 3px solid transparent;
   color: var(--text-3);
   font-family: var(--font-display);
   font-size: 0.65rem;
@@ -286,8 +286,8 @@ a:hover { text-decoration: underline; }
   animation: pageIn 0.3s ease forwards;
 }
 @keyframes pageIn {
-  from { opacity: 0; transform: translateY(10px); filter: blur(2px); }
-  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ===== LOADING ===== */
@@ -411,7 +411,7 @@ a:hover { text-decoration: underline; }
 .player-cards {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: 16px;
 }
 
 .p-card {
@@ -437,19 +437,19 @@ a:hover { text-decoration: underline; }
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
+  height: 2px;
 }
-.p-card.p1::before { background: linear-gradient(90deg, var(--gold-bright), var(--gold), transparent 70%); }
-.p-card.p2::before { background: linear-gradient(90deg, var(--teal-bright), var(--teal), transparent 70%); }
+.p-card.p1::before { background: linear-gradient(90deg, var(--gold-bright), var(--gold-dim), transparent 80%); }
+.p-card.p2::before { background: linear-gradient(90deg, var(--teal-bright), var(--teal-dim), transparent 80%); }
 
 /* Radial glow */
 .p-card::after {
   content: '';
   position: absolute;
-  top: -40px;
-  left: -20px;
-  width: 200px;
-  height: 200px;
+  top: -60px;
+  left: -40px;
+  width: 280px;
+  height: 280px;
   border-radius: 50%;
   pointer-events: none;
 }
@@ -502,12 +502,12 @@ a:hover { text-decoration: underline; }
 .p-stat {
   background: var(--bg-raised);
   border-radius: var(--radius-xs);
-  padding: 10px 6px;
+  padding: 12px 8px 10px;
   text-align: center;
   border: 1px solid transparent;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, background 0.2s;
 }
-.p-stat:hover { border-color: var(--border-glow); }
+.p-stat:hover { border-color: var(--border-glow); background: var(--bg-hover); }
 
 .p-stat-val {
   font-family: var(--font-mono);
@@ -532,8 +532,11 @@ a:hover { text-decoration: underline; }
 .h2h-container {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
+
+/* Alternating subtle stripe for readability */
+.h2h-row:nth-child(odd) { background: var(--bg-card-alt); }
 
 .h2h-header {
   display: grid;
@@ -697,7 +700,7 @@ a:hover { text-decoration: underline; }
   border-radius: var(--radius-xs);
   transition: background 0.15s, border-color 0.15s;
 }
-.skill-row:hover { background: var(--bg-hover); border-color: var(--border-glow); }
+.skill-row:hover { background: var(--bg-hover); border-color: var(--border-glow); border-left-color: var(--gold-dim); }
 .skill-row.hidden { display: none; }
 
 .sk-name-col {
@@ -1509,10 +1512,11 @@ a:hover { text-decoration: underline; }
 
 .chat-key-prompt {
   text-align: center;
-  padding: 40px 20px;
+  padding: 48px 24px 40px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
 }
 .chat-key-icon { font-size: 2.5rem; margin-bottom: 8px; }
 .chat-key-prompt h3 { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px; }
@@ -1536,7 +1540,7 @@ a:hover { text-decoration: underline; }
   outline: none;
   transition: border-color 0.2s;
 }
-.chat-key-input:focus { border-color: var(--gold-dim); }
+.chat-key-input:focus { border-color: var(--gold-dim); box-shadow: 0 0 0 3px var(--gold-bg); }
 .chat-key-input::placeholder { color: var(--text-3); }
 
 .chat-key-btn {
@@ -1644,7 +1648,7 @@ a:hover { text-decoration: underline; }
   outline: none;
   transition: border-color 0.2s;
 }
-.chat-input:focus { border-color: var(--gold-dim); }
+.chat-input:focus { border-color: var(--gold-dim); box-shadow: 0 0 0 3px var(--gold-bg); }
 .chat-input::placeholder { color: var(--text-3); }
 
 .chat-send-btn {
