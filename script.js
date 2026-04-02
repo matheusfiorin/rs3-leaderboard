@@ -405,7 +405,21 @@ function updateUIText() {
   $('#tab-quests').textContent = t('navQuests');
   $('#tab-activity').textContent = t('navActivity');
   $('#tab-combat').innerHTML = '\u2694\uFE0F ' + (lang==='pt'?'Combate':'Combat');
+  $('#tab-chat').innerHTML = '\uD83E\uDD16 Chat';
   $('#tab-easter').innerHTML = '\uD83E\uDD5A ' + (lang==='pt'?'P\u00e1scoa':'Easter');
+  // Chat i18n
+  const chatTitle = document.getElementById('chat-key-title');
+  if (chatTitle) {
+    chatTitle.textContent = lang==='pt'?'Assistente RS3':'RS3 Assistant';
+    document.getElementById('chat-key-desc').textContent = lang==='pt'
+      ?'Cole sua API key da Anthropic para conversar. A key n\u00e3o \u00e9 salva \u2014 usada apenas durante esta sess\u00e3o.'
+      :'Paste your Anthropic API key to chat. The key is not saved \u2014 only used during this session.';
+    document.getElementById('chat-key-hint').textContent = lang==='pt'
+      ?'Usa Claude Haiku 4.5 (mais barato). Custo: ~$0.001 por mensagem.'
+      :'Uses Claude Haiku 4.5 (cheapest). Cost: ~$0.001 per message.';
+    document.getElementById('chat-key-submit').textContent = lang==='pt'?'Iniciar':'Start';
+    document.getElementById('chat-input').placeholder = lang==='pt'?'Pergunte sobre RS3...':'Ask about RS3...';
+  }
   // Combat section
   $('#combat-title').innerHTML = '\u2694\uFE0F ' + (lang==='pt'?'Combate & Revolution':'Combat & Revolution');
   $('#combat-notice').textContent = lang==='pt'?'Barras baseadas na Moderniza\u00e7\u00e3o de Estilos de Combate (Mar\u00e7o 2026). Arraste habilidades no jogo para ajustar.':'Bars based on Combat Style Modernisation (March 2026). Drag abilities in-game to adjust.';
@@ -726,6 +740,7 @@ async function load() {
 document.addEventListener('DOMContentLoaded', () => {
   updateUIText();
   initTabs();
+  if (typeof initChat === 'function') initChat();
   Promise.all([loadGEPrices(), typeof loadSessions === 'function' ? loadSessions() : Promise.resolve()]).then(() => load());
   timer = setInterval(load, REFRESH_MS);
   $('#btn-refresh').addEventListener('click',()=>{clearInterval(timer);load();timer=setInterval(load,REFRESH_MS);});
