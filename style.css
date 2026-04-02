@@ -414,23 +414,21 @@ a:hover { text-decoration: underline; }
   gap: 12px;
 }
 
-/* Clipped-corner mixin via clip-path — RS3 interface signature */
-/* clip-path clips borders, so we use box-shadow inset to simulate border */
 .p-card {
   background: var(--bg-card);
-  border: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   padding: 22px 20px;
   position: relative;
   overflow: hidden;
-  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.3), inset 0 0 0 1px var(--border), inset 0 1px 0 rgba(255,255,255,0.03);
-  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease, border-color 0.35s ease;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
 }
 .p-card:hover {
   transform: translateY(-4px);
 }
-.p-card.p1:hover { filter: drop-shadow(0 12px 32px rgba(212,168,67,0.18)); box-shadow: inset 0 0 0 1px rgba(212,168,67,0.2), inset 0 1px 0 rgba(212,168,67,0.08); }
-.p-card.p2:hover { filter: drop-shadow(0 12px 32px rgba(34,211,187,0.18)); box-shadow: inset 0 0 0 1px rgba(34,211,187,0.2), inset 0 1px 0 rgba(34,211,187,0.08); }
+.p-card.p1:hover { box-shadow: 0 12px 40px -8px rgba(212,168,67,0.18); border-color: rgba(212,168,67,0.2); }
+.p-card.p2:hover { box-shadow: 0 12px 40px -8px rgba(34,211,187,0.18); border-color: rgba(34,211,187,0.2); }
 
 /* Top glow bar */
 .p-card::before {
@@ -843,12 +841,11 @@ a:hover { text-decoration: underline; }
 
 .q-card {
   background: var(--bg-card);
-  border: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   padding: 18px;
   position: relative;
   overflow: hidden;
-  box-shadow: inset 0 0 0 1px var(--border);
-  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
 }
 .q-card::before {
   content: '';
@@ -932,13 +929,12 @@ a:hover { text-decoration: underline; }
 
 .j-score-card {
   background: var(--bg-card);
-  border: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   padding: 18px;
   text-align: center;
   position: relative;
   overflow: hidden;
-  box-shadow: inset 0 0 0 1px var(--border);
-  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
 }
 .j-score-card::before {
   content: '';
@@ -1515,8 +1511,8 @@ a:hover { text-decoration: underline; }
   text-align: center;
   padding: 40px 20px;
   background: var(--bg-card);
-  box-shadow: inset 0 0 0 1px var(--border);
-  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
 }
 .chat-key-icon { font-size: 2.5rem; margin-bottom: 8px; }
 .chat-key-prompt h3 { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px; }
@@ -1572,7 +1568,7 @@ a:hover { text-decoration: underline; }
   flex-direction: column;
   height: 520px;
   background: var(--bg-card);
-  box-shadow: inset 0 0 0 1px var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
 }
@@ -1679,10 +1675,9 @@ a:hover { text-decoration: underline; }
   text-align: center;
   padding: 32px 20px 24px;
   background: linear-gradient(180deg, rgba(212,168,67,0.08), transparent);
-  border: none;
-  box-shadow: inset 0 0 0 1px rgba(212,168,67,0.1);
+  border: 1px solid rgba(212,168,67,0.1);
+  border-radius: var(--radius-xl);
   margin-bottom: var(--sp-6);
-  clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
 }
 .meetup-hero-emoji { font-size: 2.8rem; margin-bottom: 6px; }
 .meetup-hero-title { font-size: 1.3rem; font-weight: 900; color: var(--gold-bright); letter-spacing: -0.5px; }
@@ -1909,10 +1904,9 @@ a:hover { text-decoration: underline; }
   text-align: center;
   padding: 32px 20px 24px;
   background: linear-gradient(180deg, var(--purple-bg), transparent);
-  border: none;
-  box-shadow: inset 0 0 0 1px rgba(167,139,250,0.12);
+  border: 1px solid rgba(167,139,250,0.12);
+  border-radius: var(--radius-xl);
   margin-bottom: 20px;
-  clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
 }
 .easter-hero-icon { font-size: 3rem; margin-bottom: 8px; }
 .easter-hero-title { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--purple); letter-spacing: 1px; text-transform: uppercase; text-shadow: 0 0 20px rgba(167,139,250,0.2); }
@@ -1994,8 +1988,8 @@ a:hover { text-decoration: underline; }
   padding: var(--sp-4);
   margin-bottom: var(--sp-4);
   position: relative;
-  box-shadow: inset 0 0 0 1px var(--border);
-  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
 }
 .chart-container canvas {
   width: 100% !important;

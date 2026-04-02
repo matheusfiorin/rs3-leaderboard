@@ -415,8 +415,8 @@ function updateUIText() {
       ?'Cole sua API key da Anthropic para conversar. A key n\u00e3o \u00e9 salva \u2014 usada apenas durante esta sess\u00e3o.'
       :'Paste your Anthropic API key to chat. The key is not saved \u2014 only used during this session.';
     document.getElementById('chat-key-hint').textContent = lang==='pt'
-      ?'Usa Claude Haiku 4.5 (mais barato). Custo: ~$0.001 por mensagem.'
-      :'Uses Claude Haiku 4.5 (cheapest). Cost: ~$0.001 per message.';
+      ?'Usa Claude Haiku 4.5 para respostas rapidas.'
+      :'Uses Claude Haiku 4.5 for fast responses.';
     document.getElementById('chat-key-submit').textContent = lang==='pt'?'Iniciar':'Start';
     document.getElementById('chat-input').placeholder = lang==='pt'?'Pergunte sobre RS3...':'Ask about RS3...';
   }
