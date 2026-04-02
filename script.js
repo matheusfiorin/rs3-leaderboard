@@ -428,6 +428,9 @@ function updateUIText() {
   const eLang = EASTER_I18N[lang] || EASTER_I18N.en;
   $('#easter-title').textContent = 'Gielinor Egg Hunt 2026';
   $('#easter-sub').textContent = 'Blooming Burrow \u00b7 30 Mar - 20 ' + (lang==='pt'?'Abr':'Apr');
+  // Gains chart
+  const gainsEl = $('#gains-title');
+  if (gainsEl) gainsEl.textContent = lang === 'pt' ? 'Ganhos desde o ultimo snapshot' : 'Gains since last snapshot';
   // Money
   $('#money-title').innerHTML = '\uD83D\uDCB0 ' + (lang==='pt'?'Formas de Ganhar GP':'Money Making');
   $('#money-disclaimer').textContent = lang==='pt'
@@ -666,6 +669,7 @@ function renderAll(results) {
   renderMoney(results);
   renderCombat(results);
   if (typeof renderMeetup === 'function') renderMeetup();
+  if (typeof renderOverviewGainsChart === 'function') renderOverviewGainsChart();
   initFilters();
   $('#loading-overlay').classList.add('hidden');
   $('#main-content').classList.add('visible');
@@ -713,7 +717,7 @@ async function load() {
 document.addEventListener('DOMContentLoaded', () => {
   updateUIText();
   initTabs();
-  loadGEPrices().then(() => load());
+  Promise.all([loadGEPrices(), typeof loadSessions === 'function' ? loadSessions() : Promise.resolve()]).then(() => load());
   timer = setInterval(load, REFRESH_MS);
   $('#btn-refresh').addEventListener('click',()=>{clearInterval(timer);load();timer=setInterval(load,REFRESH_MS);});
   $('#btn-dismiss-error').addEventListener('click', hideError);

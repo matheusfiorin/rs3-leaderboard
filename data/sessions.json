@@ -1,0 +1,207 @@
+[
+  {
+    "id": "2026-04-01",
+    "date": "2026-04-01",
+    "title": {
+      "pt": "Primeiro de Abril em Gielinor",
+      "en": "April Fools in Gielinor"
+    },
+    "players": {
+      "Fiorovizk": {
+        "totalXpGain": 467621,
+        "levelGain": 64,
+        "totalBefore": 1026,
+        "totalAfter": 1090,
+        "combatBefore": 81,
+        "combatAfter": 83,
+        "gains": {
+          "ATK": {
+            "xp": 4061,
+            "from": 37,
+            "to": 38
+          },
+          "DEF": {
+            "xp": 90179,
+            "from": 58,
+            "to": 61
+          },
+          "STR": {
+            "xp": 4060,
+            "from": 40,
+            "to": 41
+          },
+          "HP": {
+            "xp": 60803,
+            "from": 54,
+            "to": 57
+          },
+          "RNG": {
+            "xp": 84965,
+            "from": 34,
+            "to": 50
+          },
+          "PRA": {
+            "xp": 887,
+            "from": 93,
+            "to": 93
+          },
+          "MAG": {
+            "xp": 1948,
+            "from": 52,
+            "to": 52
+          },
+          "WC": {
+            "xp": 316,
+            "from": 22,
+            "to": 22
+          },
+          "FM": {
+            "xp": 902,
+            "from": 40,
+            "to": 41
+          },
+          "CRA": {
+            "xp": 429,
+            "from": 37,
+            "to": 37
+          },
+          "SMI": {
+            "xp": 1674,
+            "from": 65,
+            "to": 65
+          },
+          "MIN": {
+            "xp": 207436,
+            "from": 23,
+            "to": 57
+          },
+          "THI": {
+            "xp": 433,
+            "from": 22,
+            "to": 22
+          },
+          "RC": {
+            "xp": 31,
+            "from": 50,
+            "to": 50
+          },
+          "SUM": {
+            "xp": 377,
+            "from": 30,
+            "to": 31
+          },
+          "DG": {
+            "xp": 7969,
+            "from": 32,
+            "to": 36
+          },
+          "DIV": {
+            "xp": 1151,
+            "from": 30,
+            "to": 30
+          }
+        }
+      },
+      "Decxus": {
+        "totalXpGain": 30540,
+        "levelGain": 18,
+        "totalBefore": 697,
+        "totalAfter": 715,
+        "combatBefore": 63,
+        "combatAfter": 64,
+        "gains": {
+          "ATK": {
+            "xp": 880,
+            "from": 31,
+            "to": 32
+          },
+          "DEF": {
+            "xp": 4543,
+            "from": 48,
+            "to": 48
+          },
+          "STR": {
+            "xp": 879,
+            "from": 31,
+            "to": 32
+          },
+          "HP": {
+            "xp": 3288,
+            "from": 42,
+            "to": 43
+          },
+          "RNG": {
+            "xp": 6,
+            "from": 4,
+            "to": 4
+          },
+          "PRA": {
+            "xp": 217,
+            "from": 66,
+            "to": 66
+          },
+          "MAG": {
+            "xp": 135,
+            "from": 21,
+            "to": 21
+          },
+          "WC": {
+            "xp": 234,
+            "from": 39,
+            "to": 39
+          },
+          "FM": {
+            "xp": 1104,
+            "from": 43,
+            "to": 43
+          },
+          "CRA": {
+            "xp": 157,
+            "from": 37,
+            "to": 38
+          },
+          "SMI": {
+            "xp": 3287,
+            "from": 35,
+            "to": 36
+          },
+          "MIN": {
+            "xp": 461,
+            "from": 45,
+            "to": 45
+          },
+          "THI": {
+            "xp": 83,
+            "from": 18,
+            "to": 19
+          },
+          "FAR": {
+            "xp": 88,
+            "from": 1,
+            "to": 2
+          },
+          "RC": {
+            "xp": 150,
+            "from": 12,
+            "to": 13
+          },
+          "SUM": {
+            "xp": 5,
+            "from": 4,
+            "to": 4
+          },
+          "DG": {
+            "xp": 11474,
+            "from": 23,
+            "to": 32
+          },
+          "NEC": {
+            "xp": 3549,
+            "from": 49,
+            "to": 50
+          }
+        }
+      }
+    }
+  }
+]

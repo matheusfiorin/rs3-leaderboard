@@ -1,6 +1,5 @@
 /* =============================================
-   RS3 Leaderboard — Meetup / Encontros
-   Session plans for playing together
+   RS3 Leaderboard — Meetup / Encontros + Charts
    ============================================= */
 
 const MEETUPS = [
@@ -8,156 +7,217 @@ const MEETUPS = [
     id: '2026-04-01',
     date: '2026-04-01',
     duration: '3h',
-    title: {
-      pt: 'Primeiro de Abril em Gielinor',
-      en: 'April Fools in Gielinor',
-    },
-    subtitle: {
-      pt: 'Pascoa, Dungeon juntos, e corrida de quests',
-      en: 'Easter event, Dungeoneering duo, and quest race',
-    },
+    title: { pt: 'Primeiro de Abril em Gielinor', en: 'April Fools in Gielinor' },
+    subtitle: { pt: 'Preparacao + Kalaboss em Daemonheim', en: 'Preparation + Kalaboss in Daemonheim' },
+    status: 'done',
     blocks: [
       {
-        time: '0:00 - 0:45',
-        icon: '\uD83E\uDD5A',
-        title: { pt: 'Blooming Burrow — Evento de Pascoa', en: 'Blooming Burrow — Easter Event' },
+        time: '0:00 - 0:30',
+        icon: '\u2692',
+        title: { pt: 'Preparacao — Mining & Gear', en: 'Preparation — Mining & Gear' },
         desc: {
-          pt: 'Encontrem-se no Grand Exchange. Vao juntos pro portal ao norte do GE que leva ao Blooming Burrow. Completem o tutorial da Egg Hunt se ainda nao fizeram, e cachem os ovos dourados da Semana 1 juntos. Comparem as pistas e troquem dicas. Gastem Spring Tokens na loja Grand Eggs-change.',
-          en: 'Meet at the Grand Exchange. Head north to the Blooming Burrow portal together. Complete the Egg Hunt tutorial if not done, then hunt Week 1 golden eggs together. Compare clues and share tips. Spend Spring Tokens at Grand Eggs-change.',
+          pt: 'Fiorovizk minerou ferro e ouro intensamente (Mining 23\u219257, +207K XP!) enquanto Decxus preparou equipamento e fez Smithing (35\u219236). Ambos compraram supplies no GE pro Dungeoneering.',
+          en: 'Fiorovizk mined iron and gold intensely (Mining 23\u219257, +207K XP!) while Decxus prepared gear and did Smithing (35\u219236). Both bought supplies at GE for Dungeoneering.',
         },
-        tips: {
-          pt: [
-            'Fale com Nougat Bunny pra liberar a primeira pista da semana',
-            'Sao 7 ovos por semana (3 sao F2P)',
-            'Cada ovo da 200 Spring Tokens + 10 Treasure Trail Points',
-            'Aproveitem pra pegar as decoracoes e cosmeticos no hub',
-          ],
-          en: [
-            'Talk to Nougat Bunny to unlock the first clue of the week',
-            '7 eggs per week (3 are F2P)',
-            'Each egg gives 200 Spring Tokens + 10 Treasure Trail Points',
-            'Grab decorations and cosmetics at the hub while there',
-          ],
-        },
-        rewards: {
-          pt: 'Spring Tokens, Treasure Trail Points, cosmeticos de Pascoa',
-          en: 'Spring Tokens, Treasure Trail Points, Easter cosmetics',
-        },
+        tips: { pt: ['Fiorovizk: Mining 23\u219257 (+34 niveis!) em ~30min','Decxus: Smithing 35\u219236, HP 42\u219243'], en: ['Fiorovizk: Mining 23\u219257 (+34 levels!) in ~30min','Decxus: Smithing 35\u219236, HP 42\u219243'] },
+        rewards: { pt: 'Mining XP massivo, gear preparada', en: 'Massive Mining XP, gear ready' },
+        done: true,
       },
       {
-        time: '0:45 - 1:45',
+        time: '0:30 - 3:00',
         icon: '\uD83C\uDFF0',
-        title: { pt: 'Dungeoneering Duo — Daemonheim', en: 'Dungeoneering Duo — Daemonheim' },
+        title: { pt: 'Kalaboss — Dungeoneering Duo', en: 'Kalaboss — Dungeoneering Duo' },
         desc: {
-          pt: 'Vao pra Daemonheim (teleporte pelo anel de Kinship ou corra pro norte de Al Kharid). Formem um grupo de 2 e facam andares juntos! E a unica habilidade do jogo feita pra co-op. Fiorovizk ta no DG 33 e Decxus no DG 23, entao facam andares no nivel de quem ta mais baixo (complexity 6 pra max XP). Tentem fazer 4-5 andares em 1 hora.',
-          en: 'Head to Daemonheim (kinship ring teleport or run north of Al Kharid). Form a party of 2 and do floors together! It\'s the only skill designed for co-op. Fiorovizk is DG 33 and Decxus DG 23, so do floors at the lower level (complexity 6 for max XP). Try to clear 4-5 floors in 1 hour.',
+          pt: '2 horas e meia de Dungeoneering em dupla! Fizeram andares juntos em Daemonheim, enfrentaram bosses, e subiram bastante. Decxus alcanou os andares 9, 10 e 11. Ambos mataram 4 bosses. XP de combate veio naturalmente dos monstros dentro das dungeons.',
+          en: '2.5 hours of Dungeoneering duo! Cleared floors together in Daemonheim, fought bosses, and leveled up a lot. Decxus reached floors 9, 10, and 11. Both killed 4 bosses. Combat XP came naturally from dungeon monsters.',
         },
         tips: {
           pt: [
-            'Usem Complexity 6 (maximo) pra XP maximo',
-            'Facam andares de 1 ate o andar mais alto que Decxus pode fazer',
-            'Nao esquecam de resetar os andares se ja completaram todos',
-            'Guardem o token de XP de Dungeon (tome of xp) se ganharem',
-            'Combinem estilos: um tanque melee/necro, outro range/mage',
+            'Fiorovizk: DG 32\u219236, ATK 37\u219238, STR 40\u219241, FM 40\u219241',
+            'Decxus: DG 23\u219232 (+9 niveis!), ATK 31\u219232, STR 31\u219232',
+            'Ambos: "I killed 4 boss monsters in Daemonheim"',
+            'Decxus alcancou floors 9, 10 e 11 pela primeira vez',
           ],
           en: [
-            'Use Complexity 6 (maximum) for max XP',
-            'Do floors 1 up to the highest Decxus can access',
-            'Reset floors if you\'ve completed them all',
-            'Save Dungeoneering XP tokens if you get any',
-            'Mix combat styles: one tank melee/necro, other range/mage',
+            'Fiorovizk: DG 32\u219236, ATK 37\u219238, STR 40\u219241, FM 40\u219241',
+            'Decxus: DG 23\u219232 (+9 levels!), ATK 31\u219232, STR 31\u219232',
+            'Both: "I killed 4 boss monsters in Daemonheim"',
+            'Decxus reached floors 9, 10, and 11 for the first time',
           ],
         },
-        rewards: {
-          pt: 'XP de Dungeoneering, tokens de DG, itens de recompensa',
-          en: 'Dungeoneering XP, DG tokens, reward items',
-        },
-      },
-      {
-        time: '1:45 - 2:30',
-        icon: '\uD83C\uDFC1',
-        title: { pt: 'Corrida de Quests!', en: 'Quest Race!' },
-        desc: {
-          pt: 'Hora da competicao! Voces dois vao comecar a mesma quest ao mesmo tempo e ver quem termina primeiro. Quest escolhida: "A Shadow over Ashdale" — nenhum dos dois fez, nao tem pre-requisitos, e uma quest de combate curta com historia legal. Depois, se sobrar tempo, facam "A Soul\'s Bane" juntos (tambem nenhum dos dois fez, sem pre-req).',
-          en: 'Time for competition! Both start the same quest at the same time and race to finish. Chosen quest: "A Shadow over Ashdale" — neither has done it, no prerequisites, short combat quest with cool story. If time remains, do "A Soul\'s Bane" together (also neither has done it, no prereqs).',
-        },
-        tips: {
-          pt: [
-            'A Shadow over Ashdale: fale com Gudrik em Taverley pra comecar',
-            'E uma quest instanciada (cada um faz na sua instancia)',
-            'Nivel de combate de voces e mais que suficiente',
-            'A Soul\'s Bane: fale com Launa a leste de Varrock (ponte sobre o rio)',
-            'Quem perder a corrida paga um item de 10K GP pro outro no GE!',
-          ],
-          en: [
-            'A Shadow over Ashdale: talk to Gudrik in Taverley to start',
-            'It\'s an instanced quest (each in their own instance)',
-            'Your combat levels are more than enough',
-            'A Soul\'s Bane: talk to Launa east of Varrock (bridge over river)',
-            'Loser of the race buys a 10K GP item for the winner at GE!',
-          ],
-        },
-        rewards: {
-          pt: '2+ quests completadas, XP de combate, bragging rights',
-          en: '2+ quests completed, combat XP, bragging rights',
-        },
-      },
-      {
-        time: '2:30 - 3:00',
-        icon: '\uD83C\uDF1F',
-        title: { pt: 'Grand Exchange — Loot, Planejamento & Chill', en: 'Grand Exchange — Loot, Plan & Chill' },
-        desc: {
-          pt: 'Voltem pro GE. Vendam qualquer loot que pegaram. Comparem stats no site (atualizem o placar!). Planejem as metas pra proxima sessao: Fiorovizk precisa de 64 Ranged pra Temple at Senntisten, Decxus pode focar em subir Prayer pra desbloquear curses tambem. Discutam quais quests cada um quer fazer solo antes do proximo encontro.',
-          en: 'Head back to GE. Sell any loot. Compare stats on the leaderboard site (refresh the board!). Plan goals for next session: Fiorovizk needs 64 Ranged for Temple at Senntisten, Decxus can focus on Prayer for curses too. Discuss which quests to solo before the next meetup.',
-        },
-        tips: {
-          pt: [
-            'Checkem o preco dos itens que pegaram antes de vender',
-            'Aproveitem pra comprar gear nova se subiram de nivel',
-            'Fiorovizk: comprar melhor arco pro novo Ranged level',
-            'Decxus: considerar comecar a treinar Ranged tambem',
-            'Tirem screenshot juntos no GE pra marcar o encontro!',
-          ],
-          en: [
-            'Check item prices before selling',
-            'Buy new gear if you leveled up',
-            'Fiorovizk: buy a better bow for the new Ranged level',
-            'Decxus: consider starting Ranged training too',
-            'Take a screenshot together at GE to mark the meetup!',
-          ],
-        },
-        rewards: {
-          pt: 'GP do loot, planejamento, amizade fortalecida',
-          en: 'GP from loot, planning done, friendship strengthened',
-        },
+        rewards: { pt: 'DG XP, tokens de DG, combat XP, boss kills', en: 'DG XP, DG tokens, combat XP, boss kills' },
+        done: true,
       },
     ],
     summary: {
       pt: {
-        questsTarget: ['A Shadow over Ashdale', 'A Soul\'s Bane'],
-        xpExpected: 'DG: ~15-20K cada, Combat: ~10-15K, Quest XP variado',
-        gpExpected: 'Spring Tokens + loot de Dungeon + quest rewards',
-        funFactor: 'Corrida de quest, DG co-op, easter event juntos',
+        questsTarget: [],
+        xpExpected: 'Fiorovizk: +467K XP (64 niveis) | Decxus: +30K XP (18 niveis)',
+        gpExpected: 'Loot de Dungeoneering + ores da mineracao',
+        funFactor: 'Kalaboss duo por 2h30, Mining speedrun, 4 boss kills cada',
       },
       en: {
-        questsTarget: ['A Shadow over Ashdale', 'A Soul\'s Bane'],
-        xpExpected: 'DG: ~15-20K each, Combat: ~10-15K, Quest XP varies',
-        gpExpected: 'Spring Tokens + Dungeon loot + quest rewards',
-        funFactor: 'Quest race, DG co-op, easter event together',
+        questsTarget: [],
+        xpExpected: 'Fiorovizk: +467K XP (64 levels) | Decxus: +30K XP (18 levels)',
+        gpExpected: 'Dungeoneering loot + mining ores',
+        funFactor: 'Kalaboss duo for 2h30, Mining speedrun, 4 boss kills each',
       },
     },
   },
 ];
 
+// ---- Session data for charts ----
+let sessionsData = [];
+
+async function loadSessions() {
+  try {
+    sessionsData = await cacheFetch('data/sessions.json');
+  } catch (_) {
+    sessionsData = [];
+  }
+}
+
+// ---- Chart colors ----
+const CHART_P1 = 'rgba(212, 168, 67, 0.85)';
+const CHART_P1_BG = 'rgba(212, 168, 67, 0.15)';
+const CHART_P2 = 'rgba(34, 211, 187, 0.85)';
+const CHART_P2_BG = 'rgba(34, 211, 187, 0.15)';
+const CHART_GRID = 'rgba(255,255,255,0.04)';
+const CHART_TEXT = '#9e9eb0';
+
+const chartDefaults = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { labels: { color: CHART_TEXT, font: { family: "'DM Sans',sans-serif", size: 11 } } },
+  },
+  scales: {
+    x: { ticks: { color: CHART_TEXT, font: { size: 10 } }, grid: { color: CHART_GRID } },
+    y: { ticks: { color: CHART_TEXT, font: { family: "'JetBrains Mono',monospace", size: 10 }, callback: v => v >= 1000 ? (v/1000).toFixed(0)+'K' : v }, grid: { color: CHART_GRID } },
+  },
+};
+
+// Chart instance registry (destroy before recreating)
+const chartInstances = {};
+function makeChart(canvasId, config) {
+  if (chartInstances[canvasId]) { chartInstances[canvasId].destroy(); }
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return null;
+  chartInstances[canvasId] = new Chart(ctx, config);
+  return chartInstances[canvasId];
+}
+
+// ---- Render overview gains chart ----
+function renderOverviewGainsChart() {
+  if (!sessionsData.length) {
+    const el = document.getElementById('overview-gains-chart');
+    if (el) el.parentElement.innerHTML = '<div class="chart-empty">' + (currentLang === 'pt' ? 'Graficos disponiveis apos o primeiro encontro registrado' : 'Charts available after the first recorded meetup') + '</div>';
+    return;
+  }
+  const session = sessionsData[sessionsData.length - 1]; // most recent
+  const players = Object.keys(session.players);
+  if (players.length < 2) return;
+
+  const p1 = session.players[players[0]];
+  const p2 = session.players[players[1]];
+
+  // Get top skills by combined XP gain
+  const allSkills = new Set([...Object.keys(p1.gains), ...Object.keys(p2.gains)]);
+  const skillArr = Array.from(allSkills).map(sk => ({
+    skill: sk,
+    p1: (p1.gains[sk] || {}).xp || 0,
+    p2: (p2.gains[sk] || {}).xp || 0,
+    total: ((p1.gains[sk] || {}).xp || 0) + ((p2.gains[sk] || {}).xp || 0),
+  })).filter(s => s.total > 100).sort((a, b) => b.total - a.total).slice(0, 10);
+
+  makeChart('overview-gains-chart', {
+    type: 'bar',
+    data: {
+      labels: skillArr.map(s => s.skill),
+      datasets: [
+        { label: players[0], data: skillArr.map(s => s.p1), backgroundColor: CHART_P1, borderRadius: 4 },
+        { label: players[1], data: skillArr.map(s => s.p2), backgroundColor: CHART_P2, borderRadius: 4 },
+      ],
+    },
+    options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, title: { display: true, text: currentLang === 'pt' ? 'XP Ganho por Habilidade (Sessao Mais Recente)' : 'XP Gained per Skill (Most Recent Session)', color: '#eae8e4', font: { family: "'DM Sans',sans-serif", size: 13, weight: 700 } } } },
+  });
+}
+
+// ---- Render meetup charts ----
+function renderMeetupCharts(container, session) {
+  if (!session) return;
+  const players = Object.keys(session.players);
+  if (players.length < 2) return;
+  const p1 = session.players[players[0]];
+  const p2 = session.players[players[1]];
+
+  // Create chart canvases
+  const chartHTML = `
+    <div class="chart-pair">
+      <div class="chart-container"><canvas id="meetup-xp-chart"></canvas></div>
+      <div class="chart-container"><canvas id="meetup-levels-chart"></canvas></div>
+    </div>
+    <div class="chart-container" style="margin-top:var(--sp-3)"><canvas id="meetup-skills-chart"></canvas></div>
+  `;
+  container.insertAdjacentHTML('beforeend', chartHTML);
+
+  // Total XP comparison (doughnut)
+  makeChart('meetup-xp-chart', {
+    type: 'doughnut',
+    data: {
+      labels: players,
+      datasets: [{ data: [p1.totalXpGain, p2.totalXpGain], backgroundColor: [CHART_P1, CHART_P2], borderWidth: 0 }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: CHART_TEXT, font: { family: "'DM Sans',sans-serif", size: 11 } } },
+        title: { display: true, text: currentLang === 'pt' ? 'XP Total Ganho' : 'Total XP Gained', color: '#eae8e4', font: { family: "'DM Sans',sans-serif", size: 13, weight: 700 } },
+      },
+    },
+  });
+
+  // Level gains (bar)
+  makeChart('meetup-levels-chart', {
+    type: 'bar',
+    data: {
+      labels: players,
+      datasets: [{ label: currentLang === 'pt' ? 'Niveis Ganhos' : 'Levels Gained', data: [p1.levelGain, p2.levelGain], backgroundColor: [CHART_P1, CHART_P2], borderRadius: 6 }],
+    },
+    options: { ...chartDefaults, indexAxis: 'y', plugins: { ...chartDefaults.plugins, legend: { display: false }, title: { display: true, text: currentLang === 'pt' ? 'Niveis Totais Ganhos' : 'Total Levels Gained', color: '#eae8e4', font: { family: "'DM Sans',sans-serif", size: 13, weight: 700 } } } },
+  });
+
+  // Per-skill XP (horizontal bar)
+  const allSkills = new Set([...Object.keys(p1.gains), ...Object.keys(p2.gains)]);
+  const skillArr = Array.from(allSkills).map(sk => ({
+    skill: sk,
+    p1: (p1.gains[sk] || {}).xp || 0,
+    p2: (p2.gains[sk] || {}).xp || 0,
+    total: ((p1.gains[sk] || {}).xp || 0) + ((p2.gains[sk] || {}).xp || 0),
+  })).filter(s => s.total > 50).sort((a, b) => b.total - a.total);
+
+  makeChart('meetup-skills-chart', {
+    type: 'bar',
+    data: {
+      labels: skillArr.map(s => s.skill),
+      datasets: [
+        { label: players[0], data: skillArr.map(s => s.p1), backgroundColor: CHART_P1, borderRadius: 3 },
+        { label: players[1], data: skillArr.map(s => s.p2), backgroundColor: CHART_P2, borderRadius: 3 },
+      ],
+    },
+    options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, title: { display: true, text: currentLang === 'pt' ? 'XP Ganho por Habilidade' : 'XP Gained per Skill', color: '#eae8e4', font: { family: "'DM Sans',sans-serif", size: 13, weight: 700 } } } },
+  });
+}
+
+// ---- Render meetup page ----
 function renderMeetup() {
   const lang = currentLang;
   const el = document.querySelector('#meetup-content');
   if (!el) return;
 
-  // Show the most recent/current meetup
   const meetup = MEETUPS[0];
   if (!meetup) {
-    el.innerHTML = `<div style="text-align:center;color:var(--text-3);padding:40px">${lang === 'pt' ? 'Nenhum encontro planejado ainda.' : 'No meetups planned yet.'}</div>`;
+    el.innerHTML = '<div class="chart-empty">' + (lang === 'pt' ? 'Nenhum encontro planejado.' : 'No meetups planned.') + '</div>';
     return;
   }
 
@@ -168,13 +228,14 @@ function renderMeetup() {
     <div class="meetup-hero">
       <div class="meetup-hero-emoji">\uD83E\uDD1D</div>
       <h2 class="meetup-hero-title">${m.title[lang] || m.title.en}</h2>
-      <p class="meetup-hero-sub">${m.date} &middot; ${m.duration} &middot; ${m.subtitle[lang] || m.subtitle.en}</p>
+      <p class="meetup-hero-sub">${m.date} \u00b7 ${m.duration} \u00b7 ${m.subtitle[lang] || m.subtitle.en}</p>
+      ${m.status === 'done' ? `<div style="margin-top:8px;display:inline-block;padding:3px 14px;border-radius:100px;background:var(--green-bg);color:var(--green);font-size:0.7rem;font-weight:700;border:1px solid rgba(52,211,153,0.15)">${lang === 'pt' ? '\u2713 Concluido' : '\u2713 Completed'}</div>` : ''}
     </div>
 
     <div class="meetup-timeline">
       ${m.blocks.map((b, i) => {
         const key = `${m.id}_${i}`;
-        const done = saved[key];
+        const done = b.done || saved[key];
         return `
           <div class="meetup-block ${done ? 'done' : ''}">
             <div class="meetup-block-sidebar">
@@ -187,23 +248,15 @@ function renderMeetup() {
                   <div class="meetup-block-time">${b.time}</div>
                   <div class="meetup-block-title">${b.icon} ${b.title[lang] || b.title.en}</div>
                 </div>
-                <label class="meetup-check-label">
-                  <input type="checkbox" class="meetup-check" data-key="${key}" ${done ? 'checked' : ''}>
-                  <span class="meetup-check-text">${done ? (lang === 'pt' ? 'Feito!' : 'Done!') : (lang === 'pt' ? 'Marcar' : 'Mark')}</span>
-                </label>
               </div>
               <p class="meetup-block-desc">${b.desc[lang] || b.desc.en}</p>
               <div class="meetup-block-tips">
-                <div class="meetup-tips-title">${lang === 'pt' ? 'Dicas' : 'Tips'}:</div>
+                <div class="meetup-tips-title">${lang === 'pt' ? 'Resultado' : 'Result'}:</div>
                 <ul>${(b.tips[lang] || b.tips.en).map(t => `<li>${t}</li>`).join('')}</ul>
               </div>
-              <div class="meetup-block-reward">
-                <span class="meetup-reward-icon">\uD83C\uDF81</span>
-                ${b.rewards[lang] || b.rewards.en}
-              </div>
+              <div class="meetup-block-reward"><span class="meetup-reward-icon">\uD83C\uDF81</span>${b.rewards[lang] || b.rewards.en}</div>
             </div>
-          </div>
-        `;
+          </div>`;
       }).join('')}
     </div>
 
@@ -211,32 +264,24 @@ function renderMeetup() {
       <h3>${lang === 'pt' ? 'Resumo da Sessao' : 'Session Summary'}</h3>
       <div class="meetup-summary-grid">
         <div class="meetup-summary-item">
-          <div class="meetup-summary-label">\uD83D\uDCDC ${lang === 'pt' ? 'Quests Alvo' : 'Target Quests'}</div>
-          <div class="meetup-summary-value">${(m.summary[lang] || m.summary.en).questsTarget.join(', ')}</div>
-        </div>
-        <div class="meetup-summary-item">
-          <div class="meetup-summary-label">\u2B50 ${lang === 'pt' ? 'XP Esperado' : 'Expected XP'}</div>
+          <div class="meetup-summary-label">\u2B50 ${lang === 'pt' ? 'XP Ganho' : 'XP Gained'}</div>
           <div class="meetup-summary-value">${(m.summary[lang] || m.summary.en).xpExpected}</div>
         </div>
         <div class="meetup-summary-item">
-          <div class="meetup-summary-label">\uD83D\uDCB0 ${lang === 'pt' ? 'GP Esperado' : 'Expected GP'}</div>
+          <div class="meetup-summary-label">\uD83D\uDCB0 ${lang === 'pt' ? 'Loot' : 'Loot'}</div>
           <div class="meetup-summary-value">${(m.summary[lang] || m.summary.en).gpExpected}</div>
         </div>
-        <div class="meetup-summary-item">
-          <div class="meetup-summary-label">\uD83C\uDF89 ${lang === 'pt' ? 'Diversao' : 'Fun Factor'}</div>
+        <div class="meetup-summary-item" style="grid-column:span 2">
+          <div class="meetup-summary-label">\uD83C\uDF89 ${lang === 'pt' ? 'Destaques' : 'Highlights'}</div>
           <div class="meetup-summary-value">${(m.summary[lang] || m.summary.en).funFactor}</div>
         </div>
       </div>
     </div>
   `;
 
-  // Checkbox persistence
-  el.querySelectorAll('.meetup-check').forEach(cb => {
-    cb.addEventListener('change', () => {
-      const s = JSON.parse(localStorage.getItem('rs3lb-meetup') || '{}');
-      if (cb.checked) s[cb.dataset.key] = true; else delete s[cb.dataset.key];
-      localStorage.setItem('rs3lb-meetup', JSON.stringify(s));
-      renderMeetup(); // re-render for visual update
-    });
-  });
+  // Render charts below summary
+  if (sessionsData.length) {
+    const session = sessionsData.find(s => s.id === m.id) || sessionsData[0];
+    renderMeetupCharts(el, session);
+  }
 }
