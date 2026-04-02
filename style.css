@@ -161,6 +161,8 @@ a:hover { text-decoration: underline; }
   text-transform: uppercase;
 }
 
+.header-left { min-width: 0; }
+
 .header-right {
   display: flex;
   align-items: center;
@@ -417,7 +419,6 @@ a:hover { text-decoration: underline; }
 .p-card {
   background: var(--bg-card);
   border: none;
-  border-radius: 2px;
   padding: 22px 20px;
   position: relative;
   overflow: hidden;
@@ -428,8 +429,8 @@ a:hover { text-decoration: underline; }
 .p-card:hover {
   transform: translateY(-4px);
 }
-.p-card.p1:hover { box-shadow: 0 16px 48px -12px rgba(212,168,67,0.22), inset 0 0 0 1px rgba(212,168,67,0.2), inset 0 1px 0 rgba(212,168,67,0.08); }
-.p-card.p2:hover { box-shadow: 0 16px 48px -12px rgba(34,211,187,0.22), inset 0 0 0 1px rgba(34,211,187,0.2), inset 0 1px 0 rgba(34,211,187,0.08); }
+.p-card.p1:hover { filter: drop-shadow(0 12px 32px rgba(212,168,67,0.18)); box-shadow: inset 0 0 0 1px rgba(212,168,67,0.2), inset 0 1px 0 rgba(212,168,67,0.08); }
+.p-card.p2:hover { filter: drop-shadow(0 12px 32px rgba(34,211,187,0.18)); box-shadow: inset 0 0 0 1px rgba(34,211,187,0.2), inset 0 1px 0 rgba(34,211,187,0.08); }
 
 /* Top glow bar */
 .p-card::before {
@@ -843,7 +844,6 @@ a:hover { text-decoration: underline; }
 .q-card {
   background: var(--bg-card);
   border: none;
-  border-radius: 2px;
   padding: 18px;
   position: relative;
   overflow: hidden;
@@ -933,7 +933,6 @@ a:hover { text-decoration: underline; }
 .j-score-card {
   background: var(--bg-card);
   border: none;
-  border-radius: 2px;
   padding: 18px;
   text-align: center;
   position: relative;
@@ -1289,7 +1288,7 @@ a:hover { text-decoration: underline; }
   border-radius: 6px;
   padding: 8px 10px;
   pointer-events: none;
-  z-index: 100;
+  z-index: 10;
   min-width: 180px;
   max-width: 240px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04);
@@ -1511,7 +1510,6 @@ a:hover { text-decoration: underline; }
   text-align: center;
   padding: 32px 20px 24px;
   background: linear-gradient(180deg, rgba(212,168,67,0.08), transparent);
-  border-radius: 2px;
   border: none;
   box-shadow: inset 0 0 0 1px rgba(212,168,67,0.1);
   margin-bottom: var(--sp-6);
@@ -1742,7 +1740,6 @@ a:hover { text-decoration: underline; }
   text-align: center;
   padding: 32px 20px 24px;
   background: linear-gradient(180deg, var(--purple-bg), transparent);
-  border-radius: 2px;
   border: none;
   box-shadow: inset 0 0 0 1px rgba(167,139,250,0.12);
   margin-bottom: 20px;
@@ -1825,7 +1822,6 @@ a:hover { text-decoration: underline; }
 .chart-container {
   background: var(--bg-card);
   border: none;
-  border-radius: 2px;
   padding: var(--sp-4);
   margin-bottom: var(--sp-4);
   position: relative;
@@ -1918,6 +1914,7 @@ a:hover { text-decoration: underline; }
   .h2h-row { height: 32px; }
   .h2h-row, .h2h-header { grid-template-columns: 1fr 64px 1fr; }
   .h2h-val { font-size: 0.65rem; }
+  .h2h-label { font-size: 0.58rem; padding: 0 2px; }
 
   .skill-row { grid-template-columns: 100px 1fr 1fr; gap: 4px; padding: 6px 8px; }
   .sk-icon { width: 20px; height: 20px; font-size: 0.52rem; border-radius: 4px; }
@@ -1942,6 +1939,7 @@ a:hover { text-decoration: underline; }
   .sk-icon { display: none; }
 
   .h2h-row, .h2h-header { grid-template-columns: 1fr 52px 1fr; }
+  .h2h-label { font-size: 0.5rem; letter-spacing: 0; overflow: hidden; text-overflow: ellipsis; }
 }
 
 /* Scrollbar global */
