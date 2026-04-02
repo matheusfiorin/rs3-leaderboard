@@ -665,6 +665,7 @@ function renderAll(results) {
   renderEaster(results);
   renderMoney(results);
   renderCombat(results);
+  if (typeof renderMeetup === 'function') renderMeetup();
   initFilters();
   $('#loading-overlay').classList.add('hidden');
   $('#main-content').classList.add('visible');

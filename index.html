@@ -6,7 +6,7 @@
   <title>RS3 Placar — Fiorovizk vs Decxus</title>
   <meta name="description" content="Acompanhamento em tempo real de jogadores de RuneScape 3">
   <meta name="theme-color" content="#07070d">
-  <link rel="stylesheet" href="style.css?v=10">
+  <link rel="stylesheet" href="style.css?v=11">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;0,9..40,900;1,9..40,400&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
@@ -42,6 +42,7 @@
         <button class="tab" data-tab="activity" id="tab-activity">Atividade</button>
         <button class="tab" data-tab="combat" id="tab-combat">&#x2694;&#xFE0F; Combate</button>
         <button class="tab" data-tab="money" id="tab-money">&#x1f4b0; GP</button>
+        <button class="tab meetup-tab" data-tab="meetup" id="tab-meetup">&#x1f91d; Encontros</button>
         <button class="tab easter-tab" data-tab="easter" id="tab-easter">&#x1f95a; P\u00e1scoa</button>
       </nav>
     </header>
@@ -143,6 +144,11 @@
         <p class="money-disclaimer" id="money-disclaimer">Pre\u00e7os do Grand Exchange atualizados a cada 15 min via GitHub Actions. Lucro real pode variar.</p>
       </section>
 
+      <!-- MEETUP / ENCONTROS -->
+      <section class="page" data-page="meetup">
+        <div id="meetup-content"></div>
+      </section>
+
       <!-- EASTER -->
       <section class="page" data-page="easter">
         <div class="easter-hero">
@@ -162,8 +168,9 @@
     </footer>
   </div>
 
-  <script src="i18n.js?v=10"></script>
-  <script src="combat.js?v=10"></script>
-  <script src="script.js?v=10"></script>
+  <script src="i18n.js?v=11"></script>
+  <script src="combat.js?v=11"></script>
+  <script src="meetup.js?v=11"></script>
+  <script src="script.js?v=11"></script>
 </body>
 </html>
