@@ -11,6 +11,17 @@ const CHAT_KEY_STORAGE = "rs3lb-chat-key";
 let chatHistory = [];
 let chatStreaming = false;
 
+function renderMarkdown(text) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/^- (.+)$/gm, "<li>$1</li>")
+    .replace(/(<li>.*<\/li>\n?)+/g, "<ul>$&</ul>")
+    .replace(/\n/g, "<br>");
+}
+
 function buildSystemPrompt() {
   const lang = currentLang;
   const players = data; // from script.js global
@@ -24,6 +35,25 @@ function buildSystemPrompt() {
       }).join(", ");
 
       playerContext += `\n**${p.name}**: Combat ${p.combatLevel}, Total Level ${p.totalLevel}, Total XP ${p.totalXp}, Quests ${p.questsDone}/${p.totalQuests}, RuneScore ${p.runeScore}\nSkills: ${skillLines}\n`;
+
+      // Add quest summary
+      const completedQuests = p.questList
+        .filter((q) => q.status === "COMPLETED")
+        .map((q) => q.title);
+      const startedQuests = p.questList
+        .filter((q) => q.status === "STARTED")
+        .map((q) => q.title);
+      if (completedQuests.length)
+        playerContext += `Completed quests (${completedQuests.length}): ${completedQuests.slice(0, 30).join(", ")}${completedQuests.length > 30 ? "..." : ""}\n`;
+      if (startedQuests.length)
+        playerContext += `In-progress quests: ${startedQuests.join(", ")}\n`;
+
+      // Add recent activities
+      const recentActs = (p.activities || [])
+        .slice(0, 5)
+        .map((a) => a.text)
+        .join("; ");
+      if (recentActs) playerContext += `Recent activity: ${recentActs}\n`;
     }
   }
 
@@ -80,6 +110,7 @@ async function sendChatMessage(userMessage) {
 
   // Add user message
   chatHistory.push({ role: "user", content: userMessage });
+  sessionStorage.setItem("rs3lb-chat-history", JSON.stringify(chatHistory));
   appendChatMsg("user", userMessage);
 
   // Add streaming assistant placeholder
@@ -137,7 +168,7 @@ async function sendChatMessage(userMessage) {
           const event = JSON.parse(jsonStr);
           if (event.type === "content_block_delta" && event.delta?.text) {
             fullText += event.delta.text;
-            assistantEl.textContent = fullText;
+            assistantEl.innerHTML = renderMarkdown(fullText);
             msgList.scrollTop = msgList.scrollHeight;
           }
         } catch (_) {}
@@ -145,7 +176,9 @@ async function sendChatMessage(userMessage) {
     }
 
     assistantEl.classList.remove("streaming");
+    assistantEl.innerHTML = renderMarkdown(fullText);
     chatHistory.push({ role: "assistant", content: fullText });
+    sessionStorage.setItem("rs3lb-chat-history", JSON.stringify(chatHistory));
   } catch (err) {
     assistantEl.classList.remove("streaming");
     assistantEl.textContent = "";
@@ -183,6 +216,27 @@ function initChat() {
 
   if (!keySubmit) return;
 
+  // Restore chat history from sessionStorage
+  const savedHistory = sessionStorage.getItem("rs3lb-chat-history");
+  if (savedHistory) {
+    try {
+      chatHistory = JSON.parse(savedHistory);
+      // If there's history, skip key prompt and show messages
+      if (chatHistory.length && getChatApiKey()) {
+        keyPrompt.style.display = "none";
+        messages.classList.remove("hidden");
+        sendBtn.disabled = false;
+        for (const msg of chatHistory) {
+          if (msg.role === "user") appendChatMsg("user", msg.content);
+          else if (msg.role === "assistant") {
+            const el = appendChatMsg("assistant", "");
+            el.innerHTML = renderMarkdown(msg.content);
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
   keySubmit.addEventListener("click", () => {
     const key = keyInput.value.trim();
     if (!key) return;
@@ -201,6 +255,36 @@ function initChat() {
         ? "Ola! Sou seu assistente RS3. Tenho acesso aos stats de Fiorovizk e Decxus. Pergunte sobre treino, quests, gear, money making, ou qualquer coisa do jogo!"
         : "Hi! I'm your RS3 assistant. I have access to Fiorovizk and Decxus stats. Ask about training, quests, gear, money making, or anything about the game!";
     appendChatMsg("system", welcome);
+
+    // Add suggested prompts
+    const suggestions =
+      lang === "pt"
+        ? [
+            "O que devemos treinar juntos?",
+            "Que quests podemos fazer?",
+            "Melhor forma de ganhar GP?",
+            "Que boss podemos enfrentar?",
+          ]
+        : [
+            "What should we train together?",
+            "Which quests can we both do?",
+            "Best money making for us?",
+            "What boss can we fight?",
+          ];
+
+    const sugDiv = document.createElement("div");
+    sugDiv.className = "chat-suggestions";
+    sugDiv.innerHTML = suggestions
+      .map((s) => `<button class="chat-suggestion">${s}</button>`)
+      .join("");
+    document.getElementById("chat-msg-list").appendChild(sugDiv);
+
+    sugDiv.querySelectorAll(".chat-suggestion").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        sugDiv.remove();
+        sendChatMessage(btn.textContent);
+      });
+    });
   });
 
   keyInput.addEventListener("keydown", (e) => {

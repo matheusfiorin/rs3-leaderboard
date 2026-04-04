@@ -56,6 +56,35 @@ const SKILLS = [
   { id: 28, abbr: "NEC", cat: "combat", max: 120 },
 ];
 
+// RS3 XP table: xpForLevel[L] = total XP needed for level L (1-150)
+const _XP_TABLE = [0];
+(function () {
+  let total = 0;
+  for (let L = 1; L < 150; L++) {
+    total += Math.floor(L + 300 * Math.pow(2, L / 7)) / 4;
+    _XP_TABLE.push(Math.floor(total));
+  }
+})();
+
+function xpForLevel(level) {
+  if (level <= 1) return 0;
+  if (level > 150) return _XP_TABLE[149];
+  return _XP_TABLE[level - 1] || 0;
+}
+
+function xpToNextLevel(currentXp, currentLevel, maxLevel) {
+  if (currentLevel >= maxLevel) return { needed: 0, total: 0, pct: 100 };
+  const nextLvlXp = xpForLevel(currentLevel + 1);
+  const currLvlXp = xpForLevel(currentLevel);
+  const needed = Math.max(0, nextLvlXp - currentXp);
+  const levelXpRange = nextLvlXp - currLvlXp;
+  const progress =
+    levelXpRange > 0
+      ? Math.min(100, ((currentXp - currLvlXp) / levelXpRange) * 100)
+      : 100;
+  return { needed, total: levelXpRange, pct: Math.round(progress) };
+}
+
 // ---- Journal Goals ----
 const JOURNAL = [
   {
@@ -303,6 +332,76 @@ const JOURNAL = [
     pts: 8,
     check: (p) => hasQuest(p, "Rune Mysteries"),
   },
+  {
+    id: "all70",
+    cat: "skills",
+    icon: "🎯",
+    pts: 70,
+    check: (p) => SKILLS.every((s) => (p.skills[s.id] || {}).level >= 70),
+  },
+  {
+    id: "first120",
+    cat: "skills",
+    icon: "🌟",
+    pts: 80,
+    check: (p) => SKILLS.some((s) => (p.skills[s.id] || {}).level >= 120),
+  },
+  {
+    id: "qcape",
+    cat: "quests",
+    icon: "👑",
+    pts: 100,
+    check: (p) => p.questsDone >= p.totalQuests,
+  },
+  {
+    id: "rs1k",
+    cat: "xp",
+    icon: "🏅",
+    pts: 25,
+    check: (p) => p.runeScore >= 1000,
+  },
+  {
+    id: "rs5k",
+    cat: "xp",
+    icon: "🏅",
+    pts: 50,
+    check: (p) => p.runeScore >= 5000,
+  },
+  {
+    id: "xp250m",
+    cat: "xp",
+    icon: "💰",
+    pts: 75,
+    check: (p) => p.totalXp >= 250000000,
+  },
+  {
+    id: "xp500m",
+    cat: "xp",
+    icon: "💰",
+    pts: 90,
+    check: (p) => p.totalXp >= 500000000,
+  },
+  {
+    id: "qpe",
+    cat: "quests",
+    icon: "🌍",
+    pts: 15,
+    check: (p) => hasQuest(p, "Plague's End"),
+  },
+  {
+    id: "qwgs",
+    cat: "quests",
+    icon: "⚡",
+    pts: 20,
+    check: (p) => hasQuest(p, "While Guthix Sleeps"),
+  },
+  {
+    id: "qww2",
+    cat: "quests",
+    icon: "🌅",
+    pts: 15,
+    check: (p) => hasQuest(p, "The World Wakes"),
+  },
 ];
 function hasQuest(p, name) {
   return p.questList.some((q) => q.title === name && q.status === "COMPLETED");
@@ -458,6 +557,10 @@ function parse(profile, hiscores, quests) {
     runeScore,
     clues,
     questList: quests?.quests || [],
+    questPoints: (quests?.quests || []).reduce(
+      (sum, q) => sum + (q.status === "COMPLETED" ? q.questPoints || 0 : 0),
+      0,
+    ),
   };
 }
 async function fetchLive(n) {
@@ -545,6 +648,7 @@ function renderCards(players) {
 // ---- Render: H2H ----
 function renderH2H(players) {
   const [a, b] = players;
+  const lang = currentLang;
   const rows = [
     { label: t("totalLevel"), v1: a.totalLevel, v2: b.totalLevel },
     { label: t("totalXp"), v1: a.totalXp, v2: b.totalXp },
@@ -556,7 +660,31 @@ function renderH2H(players) {
       v1: a.melee + a.magic + a.ranged,
       v2: b.melee + b.magic + b.ranged,
     },
+    {
+      label: lang === "pt" ? "Pergaminhos" : "Clue Scrolls",
+      v1: Object.values(a.clues).reduce((s, v) => s + v, 0),
+      v2: Object.values(b.clues).reduce((s, v) => s + v, 0),
+    },
+    {
+      label: lang === "pt" ? "Hab. 50+" : "Skills 50+",
+      v1: SKILLS.filter((sk) => ((a.skills[sk.id] || {}).level || 0) >= 50)
+        .length,
+      v2: SKILLS.filter((sk) => ((b.skills[sk.id] || {}).level || 0) >= 50)
+        .length,
+    },
   ];
+
+  const winsA = rows.filter((r) => r.v1 > r.v2).length;
+  const winsB = rows.filter((r) => r.v2 > r.v1).length;
+  const verdict =
+    winsA > winsB
+      ? a.name
+      : winsB > winsA
+        ? b.name
+        : lang === "pt"
+          ? "Empate"
+          : "Tied";
+
   $("#h2h-container").innerHTML = `
     <div class="h2h-header"><div class="h2h-name p1" style="text-align:right">${esc(a.name)}</div><div></div><div class="h2h-name p2">${esc(b.name)}</div></div>
     ${rows
@@ -569,7 +697,11 @@ function renderH2H(players) {
         <div class="h2h-bar-wrap right${r.v2 >= r.v1 ? " winner" : ""}"><div class="h2h-bar" style="width:${(r.v2 / mx) * 100}%"></div><div class="h2h-val">${fmt(r.v2)}</div></div>
       </div>`;
       })
-      .join("")}`;
+      .join("")}
+    <div style="text-align:center;margin-top:8px;font-size:0.72rem;color:var(--text-3)">
+      ${lang === "pt" ? "Veredito" : "Verdict"}: <strong style="color:${winsA > winsB ? "var(--gold)" : winsB > winsA ? "var(--teal)" : "var(--text-2)"}">${esc(verdict)}</strong>
+      (${winsA}-${winsB})
+    </div>`;
 }
 
 // ---- Render: Skills ----
@@ -582,26 +714,84 @@ function renderSkills(players) {
       s2 = b.skills[sk.id] || { level: 1, xp: 0 };
     const a1 = s1.xp > s2.xp ? "ahead" : s1.xp < s2.xp ? "behind" : "tied";
     const a2 = s2.xp > s1.xp ? "ahead" : s2.xp < s1.xp ? "behind" : "tied";
+    const prog1 = xpToNextLevel(s1.xp, s1.level, sk.max);
+    const prog2 = xpToNextLevel(s2.xp, s2.level, sk.max);
+    const lang = currentLang;
+    const toNextLabel = (p, lvl, max) => {
+      if (lvl >= max) return lang === "pt" ? "Máximo" : "Maxed";
+      return `${fmt(p.needed)} → ${lvl + 1}`;
+    };
     return `
       <div class="skill-row" data-cat="${sk.cat}">
         <div class="sk-name-col"><div class="sk-icon ${sk.cat}">${sk.abbr}</div><div class="sk-name">${tSkill(sk.id)}</div></div>
-        <div class="sk-player-col"><div class="sk-level ${a1}">${s1.level}</div><div class="sk-xp">${fmt(s1.xp)} ${t("xp")}</div>
-          <div class="sk-bar"><div class="sk-bar-fill p1" style="width:${Math.min((s1.level / sk.max) * 100, 100)}%"></div></div></div>
-        <div class="sk-player-col"><div class="sk-level ${a2}">${s2.level}</div><div class="sk-xp">${fmt(s2.xp)} ${t("xp")}</div>
-          <div class="sk-bar"><div class="sk-bar-fill p2" style="width:${Math.min((s2.level / sk.max) * 100, 100)}%"></div></div></div>
+        <div class="sk-player-col">
+          <div class="sk-level ${a1}">${s1.level}</div>
+          <div class="sk-xp">${fmt(s1.xp)} ${t("xp")}</div>
+          <div class="sk-to-next">${toNextLabel(prog1, s1.level, sk.max)}</div>
+          <div class="sk-bar"><div class="sk-bar-fill p1" style="width:${prog1.pct}%"></div></div>
+        </div>
+        <div class="sk-player-col">
+          <div class="sk-level ${a2}">${s2.level}</div>
+          <div class="sk-xp">${fmt(s2.xp)} ${t("xp")}</div>
+          <div class="sk-to-next">${toNextLabel(prog2, s2.level, sk.max)}</div>
+          <div class="sk-bar"><div class="sk-bar-fill p2" style="width:${prog2.pct}%"></div></div>
+        </div>
       </div>`;
   }).join("");
 }
+
+// ---- Activity classification ----
+function classifyActivity(text) {
+  if (!text) return "other";
+  if (/Levelled up|I levelled/i.test(text)) return "levelup";
+  if (/Quest complete/i.test(text)) return "quest";
+  if (/I killed|I defeated|boss/i.test(text)) return "boss";
+  if (/Dungeon floor|breached floor/i.test(text)) return "dungeon";
+  return "other";
+}
+
+const ACT_ICONS = {
+  levelup: "⬆️",
+  quest: "📜",
+  boss: "⚔️",
+  dungeon: "🏰",
+  other: "💬",
+};
 
 // ---- Render: Activity ----
 function renderActivity(players) {
   const all = [];
   players.forEach((p, i) => {
     for (const a of p.activities)
-      all.push({ ...a, player: p.name, pi: i, ts: parseDate(a.date) });
+      all.push({
+        ...a,
+        player: p.name,
+        pi: i,
+        ts: parseDate(a.date),
+        type: classifyActivity(a.text),
+      });
   });
   all.sort((a, b) => b.ts - a.ts);
   $("#activity-count").textContent = all.length;
+
+  // Summary stats per player
+  const stats = players.map((p, i) => {
+    const acts = all.filter((a) => a.pi === i);
+    return {
+      levelups: acts.filter((a) => a.type === "levelup").length,
+      quests: acts.filter((a) => a.type === "quest").length,
+      bosses: acts.filter((a) => a.type === "boss").length,
+    };
+  });
+  const lang = currentLang;
+  $("#activity-summary").innerHTML = players
+    .map((p, i) => {
+      const s = stats[i];
+      const c = i === 0 ? "p1" : "p2";
+      return `<span style="font-size:0.72rem;color:var(--${c === "p1" ? "gold" : "teal"});font-weight:600">${esc(p.name)}</span>: ${s.levelups}⬆️ ${s.quests}📜 ${s.bosses}⚔️`;
+    })
+    .join(" &nbsp;·&nbsp; ");
+
   if (!all.length) {
     $("#activity-feed").innerHTML =
       `<div style="text-align:center;color:var(--text-3);padding:24px">${t("noActivity")}</div>`;
@@ -610,31 +800,138 @@ function renderActivity(players) {
   $("#activity-feed").innerHTML = all
     .map((a) => {
       const c = a.pi === 0 ? "p1" : "p2";
-      return `
-    <div class="act-item"><div class="act-dot ${c}"></div><div class="act-body">
-      <div class="act-text"><span class="act-player ${c}">${esc(a.player)}</span> \u2014 ${esc(localizeActivity(a.text))}</div>
-      ${a.details ? `<div class="act-detail">${esc(localizeActivity(a.details))}</div>` : ""}</div>
-      <div class="act-time">${fmtTime(a.date)}</div></div>`;
+      return `<div class="act-item" data-atype="${a.type}">
+      <div class="act-dot ${c}" title="${ACT_ICONS[a.type] || ""}">${ACT_ICONS[a.type] || ""}</div>
+      <div class="act-body">
+        <div class="act-text"><span class="act-player ${c}">${esc(a.player)}</span> — ${esc(localizeActivity(a.text))}</div>
+        ${a.details ? `<div class="act-detail">${esc(localizeActivity(a.details))}</div>` : ""}
+      </div>
+      <div class="act-time">${fmtTime(a.date)}</div>
+    </div>`;
     })
     .join("");
 }
 
 // ---- Render: Quests ----
 function renderQuests(players) {
+  const [a, b] = players;
+  const lang = currentLang;
+
+  // Build quest map: merge both players' quest lists
+  const questMap = new Map();
+  for (const p of players) {
+    for (const q of p.questList) {
+      if (!questMap.has(q.title)) questMap.set(q.title, { ...q, statuses: [] });
+      questMap.get(q.title).statuses.push(q.status);
+    }
+  }
+
+  // Summary cards with quest points
+  const qpA = a.questPoints || 0;
+  const qpB = b.questPoints || 0;
+
   $("#quest-cards").innerHTML = players
     .map((p, i) => {
       const c = i === 0 ? "p1" : "p2";
+      const qp = i === 0 ? qpA : qpB;
       const total = p.totalQuests || 1;
-      return `
-      <div class="q-card ${c} fade-in"><div class="q-header"><div class="q-name">${esc(p.name)}</div><div class="q-pct">${Math.round((p.questsDone / total) * 100)}%</div></div>
-        <div class="q-bar"><div class="q-bar-fill done" style="width:${(p.questsDone / total) * 100}%"></div><div class="q-bar-fill started" style="width:${(p.questsStarted / total) * 100}%"></div></div>
-        <div class="q-stats">
-          <div class="q-stat"><div class="q-stat-val done">${p.questsDone}</div><div class="q-stat-lbl">${t("complete")}</div></div>
-          <div class="q-stat"><div class="q-stat-val started">${p.questsStarted}</div><div class="q-stat-lbl">${t("started")}</div></div>
-          <div class="q-stat"><div class="q-stat-val none">${p.questsNone}</div><div class="q-stat-lbl">${t("remaining")}</div></div>
-        </div></div>`;
+      return `<div class="q-card ${c} fade-in">
+      <div class="q-header"><div class="q-name">${esc(p.name)}</div><div class="q-pct">${Math.round((p.questsDone / total) * 100)}%</div></div>
+      <div class="q-bar"><div class="q-bar-fill done" style="width:${(p.questsDone / total) * 100}%"></div><div class="q-bar-fill started" style="width:${(p.questsStarted / total) * 100}%"></div></div>
+      <div class="q-stats">
+        <div class="q-stat"><div class="q-stat-val done">${p.questsDone}</div><div class="q-stat-lbl">${t("complete")}</div></div>
+        <div class="q-stat"><div class="q-stat-val started">${p.questsStarted}</div><div class="q-stat-lbl">${t("started")}</div></div>
+        <div class="q-stat"><div class="q-stat-val none">${p.questsNone}</div><div class="q-stat-lbl">${t("remaining")}</div></div>
+      </div>
+      <div style="margin-top:10px;text-align:center;font-size:0.72rem;color:var(--text-3)">
+        <span style="font-family:var(--font-mono);font-weight:700;color:${i === 0 ? "var(--gold)" : "var(--teal)"}">${qp}</span> ${lang === "pt" ? "pontos de miss\u00e3o" : "quest points"}
+      </div>
+    </div>`;
     })
     .join("");
+
+  // Quest list
+  const quests = Array.from(questMap.values()).sort((x, y) =>
+    x.title.localeCompare(y.title),
+  );
+  const diffStars = (d) => "\u2605".repeat(Math.min(d, 5)) || "\u2606";
+  const statusClass = (s) =>
+    s === "COMPLETED" ? "done" : s === "STARTED" ? "started" : "none";
+  const statusIcon = (s) =>
+    s === "COMPLETED" ? "\u2713" : s === "STARTED" ? "~" : "";
+
+  const getQCat = (q) => {
+    const s0 = q.statuses[0] || "NOT_STARTED";
+    const s1 = q.statuses[1] || "NOT_STARTED";
+    if (s0 === "COMPLETED" && s1 === "COMPLETED") return "both-done";
+    if (s0 === "COMPLETED" || s1 === "COMPLETED") return "one-done";
+    if (s0 === "STARTED" || s1 === "STARTED") return "in-progress";
+    return "none";
+  };
+
+  // For "do next" we want quests where exactly one player completed it
+  const doNextQuests = quests.filter((q) => {
+    const s0 = q.statuses[0] || "NOT_STARTED";
+    const s1 = q.statuses[1] || "NOT_STARTED";
+    return (s0 === "COMPLETED") !== (s1 === "COMPLETED");
+  });
+
+  const questListEl = document.getElementById("quest-list");
+  if (questListEl) {
+    questListEl.innerHTML = quests
+      .map((q) => {
+        const cat = getQCat(q);
+        const isDN = doNextQuests.includes(q);
+        const wikiUrl = `https://runescape.wiki/w/${encodeURIComponent(q.title.replace(/ /g, "_"))}`;
+        return `<div class="ql-row" data-qcat="${cat}${isDN ? " do-next" : ""}">
+        <div class="ql-name"><a href="${wikiUrl}" target="_blank" rel="noopener">${esc(q.title)}</a>
+          <span class="ql-diff">${diffStars(q.difficulty)}</span>
+          ${q.members ? '<span class="ql-members">P2P</span>' : ""}
+        </div>
+        ${q.questPoints ? `<div class="ql-pts">${q.questPoints}QP</div>` : "<div></div>"}
+        <div class="ql-statuses">
+          <div class="ql-status ${statusClass(q.statuses[0] || "NOT_STARTED")}" title="${esc(a.name)}">${statusIcon(q.statuses[0] || "NOT_STARTED")}</div>
+          <div class="ql-status ${statusClass(q.statuses[1] || "NOT_STARTED")}" title="${esc(b.name)}">${statusIcon(q.statuses[1] || "NOT_STARTED")}</div>
+        </div>
+      </div>`;
+      })
+      .join("");
+  }
+
+  // Recommendations
+  const recA = doNextQuests
+    .filter(
+      (q) => q.statuses[1] === "COMPLETED" && q.statuses[0] !== "COMPLETED",
+    )
+    .sort((x, y) => x.difficulty - y.difficulty)
+    .slice(0, 5);
+  const recB = doNextQuests
+    .filter(
+      (q) => q.statuses[0] === "COMPLETED" && q.statuses[1] !== "COMPLETED",
+    )
+    .sort((x, y) => x.difficulty - y.difficulty)
+    .slice(0, 5);
+
+  let recHtml = "";
+  if (recA.length || recB.length) {
+    recHtml = `<div class="ql-recommend"><h3>${lang === "pt" ? "\uD83D\uDCDC Miss\u00f5es Recomendadas" : "\uD83D\uDCDC Recommended Quests"}</h3><div class="ql-recommend-list">`;
+    for (const q of recA)
+      recHtml += `<div class="ql-rec-item"><span class="ql-rec-player p1">${esc(a.name)}</span>${esc(q.title)} <span class="ql-diff">${diffStars(q.difficulty)}</span></div>`;
+    for (const q of recB)
+      recHtml += `<div class="ql-rec-item"><span class="ql-rec-player p2">${esc(b.name)}</span>${esc(q.title)} <span class="ql-diff">${diffStars(q.difficulty)}</span></div>`;
+    recHtml += "</div></div>";
+  }
+
+  // Append recommendations after quest list
+  const existingRec = document.getElementById("quest-recommend");
+  if (existingRec) existingRec.remove();
+  if (recHtml) {
+    const div = document.createElement("div");
+    div.id = "quest-recommend";
+    div.innerHTML = recHtml;
+    const questPage = document.querySelector('[data-page="quests"]');
+    if (questPage) questPage.appendChild(div);
+  }
 }
 
 // ---- Render: Journal ----
@@ -686,6 +983,32 @@ function renderEaster(players) {
   }
   const easterLang = EASTER_I18N[currentLang] || EASTER_I18N.en;
   const saved = JSON.parse(localStorage.getItem("rs3lb-easter") || "{}");
+
+  const p1Done = EASTER.filter(
+    (e) => saved[`${e.id}_${players[0].name}`],
+  ).length;
+  const p2Done = EASTER.filter(
+    (e) => saved[`${e.id}_${players[1].name}`],
+  ).length;
+
+  // Render progress
+  const progressEl =
+    document.getElementById("easter-progress") ||
+    (() => {
+      const div = document.createElement("div");
+      div.id = "easter-progress";
+      div.style.cssText =
+        "display:flex;gap:16px;justify-content:center;margin-bottom:16px";
+      document.querySelector(".easter-hero").after(div);
+      return div;
+    })();
+  progressEl.innerHTML = players
+    .map((p, i) => {
+      const done = i === 0 ? p1Done : p2Done;
+      const c = i === 0 ? "gold" : "teal";
+      return `<div style="text-align:center"><span style="font-size:0.72rem;font-weight:700;color:var(--${c})">${esc(p.name)}</span><div style="font-family:var(--font-mono);font-size:1.1rem;font-weight:800;color:var(--${c})">${done}/${EASTER.length}</div></div>`;
+    })
+    .join("");
 
   $("#easter-checklist").innerHTML = EASTER.map((e) => {
     const info = easterLang[e.id] || {};
@@ -806,11 +1129,11 @@ function updateUIText() {
   $("#tab-journal").textContent = t("navJournal");
   $("#tab-quests").textContent = t("navQuests");
   $("#tab-activity").textContent = t("navActivity");
-  $("#tab-combat").innerHTML =
-    "\u2694\uFE0F " + (lang === "pt" ? "Combate" : "Combat");
-  $("#tab-chat").innerHTML = "\uD83E\uDD16 Chat";
-  $("#tab-easter").innerHTML =
-    "\uD83E\uDD5A " + (lang === "pt" ? "P\u00e1scoa" : "Easter");
+  $("#tab-combat").innerHTML = "\u2694\uFE0F " + t("navCombat");
+  $("#tab-money").innerHTML = "\uD83D\uDCB0 " + t("navMoney");
+  $("#tab-chat").innerHTML = "\uD83E\uDD16 " + t("navChat");
+  $("#tab-meetup").innerHTML = "\uD83E\uDD1D " + t("navMeetup");
+  $("#tab-easter").innerHTML = "\uD83E\uDD5A " + t("navEaster");
   // Chat i18n
   const chatTitle = document.getElementById("chat-key-title");
   if (chatTitle) {
@@ -878,6 +1201,11 @@ function updateUIText() {
       lang === "pt"
         ? "Ganhos desde o ultimo snapshot"
         : "Gains since last snapshot";
+  // Next Steps
+  const nsTitle = $("#nextsteps-title");
+  if (nsTitle)
+    nsTitle.textContent =
+      lang === "pt" ? "🎯 Próximos Passos" : "🎯 Next Steps";
   // Money
   $("#money-title").innerHTML =
     "\uD83D\uDCB0 " + (lang === "pt" ? "Formas de Ganhar GP" : "Money Making");
@@ -901,6 +1229,7 @@ function initTabs() {
       $$(".page").forEach((p) =>
         p.classList.toggle("active", p.dataset.page === page),
       );
+      history.replaceState(null, "", "#" + page);
       if (data.length && !_rendered.has(page)) renderTab(page, data);
     });
   });
@@ -930,6 +1259,79 @@ function initFilters() {
           b.dataset.jfilter !== "all" && r.dataset.jcat !== b.dataset.jfilter,
         ),
       );
+    }),
+  );
+  $$("#skill-sort .pill").forEach((b) =>
+    b.addEventListener("click", () => {
+      $$("#skill-sort .pill").forEach((x) => x.classList.remove("active"));
+      b.classList.add("active");
+      const grid = document.getElementById("skills-grid");
+      const rows = Array.from(grid.querySelectorAll(".skill-row"));
+      const sortType = b.dataset.sort;
+
+      rows.sort((a, b) => {
+        if (sortType === "default") return 0;
+        if (sortType === "alpha")
+          return a
+            .querySelector(".sk-name")
+            .textContent.localeCompare(b.querySelector(".sk-name").textContent);
+        if (sortType === "gap") {
+          const getLevels = (r) =>
+            Array.from(r.querySelectorAll(".sk-level")).map(
+              (el) => parseInt(el.textContent) || 0,
+            );
+          const [a1, a2] = getLevels(a);
+          const [b1, b2] = getLevels(b);
+          return Math.abs(b1 - b2) - Math.abs(a1 - a2);
+        }
+        if (sortType === "combined-xp") {
+          const getXp = (r) =>
+            Array.from(r.querySelectorAll(".sk-xp")).reduce(
+              (s, el) =>
+                s + parseInt(el.textContent.replace(/[^0-9]/g, "") || "0"),
+              0,
+            );
+          return getXp(b) - getXp(a);
+        }
+        return 0;
+      });
+
+      if (sortType === "default" && data.length) {
+        renderSkills(data);
+        return;
+      }
+      rows.forEach((r) => grid.appendChild(r));
+    }),
+  );
+  $$("#quest-filters .pill").forEach((b) =>
+    b.addEventListener("click", () => {
+      $$("#quest-filters .pill").forEach((x) => x.classList.remove("active"));
+      b.classList.add("active");
+      const filter = b.dataset.qfilter;
+      $$(".ql-row").forEach((r) => {
+        if (filter === "all") {
+          r.classList.remove("hidden");
+          return;
+        }
+        const cats = r.dataset.qcat.split(" ");
+        r.classList.toggle("hidden", !cats.includes(filter));
+      });
+    }),
+  );
+  $$("#activity-filters .pill").forEach((b) =>
+    b.addEventListener("click", () => {
+      $$("#activity-filters .pill").forEach((x) =>
+        x.classList.remove("active"),
+      );
+      b.classList.add("active");
+      const filter = b.dataset.afilter;
+      $$(".act-item").forEach((r) => {
+        if (filter === "all") {
+          r.classList.remove("hidden");
+          return;
+        }
+        r.classList.toggle("hidden", r.dataset.atype !== filter);
+      });
     }),
   );
 }
@@ -1215,6 +1617,52 @@ const MONEY_METHODS = [
     outputs: [{ id: 2353, qty: 1, name: "Steel bar" }],
     actionsPerHour: 1100,
   },
+  {
+    id: "tan_cowhide",
+    pt: {
+      name: "Curtir Couro de Vaca",
+      desc: "Compre couro no GE, curta no artesão. Sem requisitos.",
+    },
+    en: {
+      name: "Tan Cowhide",
+      desc: "Buy cowhide on GE, tan at a tanner. No requirements.",
+    },
+    reqs: {},
+    members: false,
+    inputs: [{ id: 1739, qty: 1, name: "Cowhide" }],
+    outputs: [{ id: 1743, qty: 1, name: "Hard leather" }],
+    actionsPerHour: 2500,
+  },
+  {
+    id: "cook_sharks",
+    pt: {
+      name: "Cozinhar Tubarões",
+      desc: "Compre tubarões crus, cozinhe com luvas de culinária.",
+    },
+    en: {
+      name: "Cook Sharks",
+      desc: "Buy raw sharks, cook with cooking gauntlets.",
+    },
+    reqs: { 7: 80 },
+    members: true,
+    inputs: [{ id: 383, qty: 1, name: "Raw shark" }],
+    outputs: [{ id: 385, qty: 1, name: "Shark" }],
+    actionsPerHour: 1400,
+  },
+  {
+    id: "cut_magic_logs",
+    almostUnlocked: true,
+    pt: {
+      name: "Cortar Troncos Mágicos",
+      desc: "Corte de Lenha 75. Troncos valiosos.",
+    },
+    en: { name: "Cut Magic Trees", desc: "Woodcutting 75. Valuable logs." },
+    reqs: { 8: 75 },
+    members: true,
+    inputs: [],
+    outputs: [{ id: 1513, qty: 1, name: "Magic logs" }],
+    actionsPerHour: 120,
+  },
 ];
 
 let gePrices = {};
@@ -1266,6 +1714,26 @@ function renderMoney(players) {
   $("#money-grid").innerHTML = sorted
     .map((m) => {
       const info = m[lang] || m.en;
+      let desc = info.desc;
+      if (m.almostUnlocked) {
+        const parts = [];
+        for (const p of players) {
+          if (canDoMethod(p, m)) {
+            parts.push(`${p.name}: \u2713`);
+          } else {
+            for (const [sid, reqLvl] of Object.entries(m.reqs)) {
+              const sk = p.skills[Number(sid)];
+              const curLvl = sk ? sk.level : 1;
+              const gap = reqLvl - curLvl;
+              if (gap > 0)
+                parts.push(
+                  `${p.name}: ${tSkill(Number(sid))} ${curLvl}\u2192${reqLvl} (${gap} ${lang === "pt" ? "n\u00edveis" : "levels"})`,
+                );
+            }
+          }
+        }
+        if (parts.length) desc = parts.join(" | ");
+      }
       const profitStr = m.profit > 0 ? fmtShort(m.profit) + " gp/h" : "?";
       const dailyGp = m.profit * avgHoursPerDay;
 
@@ -1276,8 +1744,7 @@ function renderMoney(players) {
             const sName = tSkill(Number(sid));
             return `<span class="money-req">${sName} ${lvl}</span>`;
           })
-          .join("") ||
-        `<span class="money-req met">${lang === "pt" ? "Sem requisitos" : "No requirements"}</span>`;
+          .join("") || `<span class="money-req met">${t("noReqs")}</span>`;
 
       const p1can = canDoMethod(players[0], m);
       const p2can = canDoMethod(players[1], m);
@@ -1285,11 +1752,11 @@ function renderMoney(players) {
       const badges = [];
       if (m.almostUnlocked)
         badges.push(
-          `<span style="font-size:0.6rem;color:var(--orange);background:rgba(251,191,36,0.08);padding:2px 6px;border-radius:100px;font-weight:700">${lang === "pt" ? "QUASE" : "SOON"}</span>`,
+          `<span style="font-size:0.6rem;color:var(--orange);background:rgba(251,191,36,0.08);padding:2px 6px;border-radius:100px;font-weight:700">${t("soon")}</span>`,
         );
       if (m.daily)
         badges.push(
-          `<span style="font-size:0.6rem;color:var(--purple);background:var(--purple-bg);padding:2px 6px;border-radius:100px;font-weight:700">${lang === "pt" ? "DI\u00c1RIO" : "DAILY"}</span>`,
+          `<span style="font-size:0.6rem;color:var(--purple);background:var(--purple-bg);padding:2px 6px;border-radius:100px;font-weight:700">${t("daily")}</span>`,
         );
 
       return `
@@ -1298,7 +1765,7 @@ function renderMoney(players) {
           <div class="money-card-title">${info.name}${m.members ? " \u2B50" : ""}${badges.length ? " " + badges.join(" ") : ""}</div>
           <div class="money-card-profit">${profitStr}</div>
         </div>
-        <div class="money-card-desc">${info.desc}</div>
+        <div class="money-card-desc">${desc}</div>
         <div class="money-card-reqs">${reqTags}</div>
         <div class="money-card-players">
           <span class="money-player-tag ${p1can ? "can" : "cant"}">${esc(players[0].name)} ${p1can ? "\u2713" : "\u2717"}</span>
@@ -1331,6 +1798,7 @@ const _renderers = {
     renderJournal(r, "#journal-scores", null);
     if (typeof renderOverviewGainsChart === "function")
       renderOverviewGainsChart();
+    renderNextSteps(r);
   },
   skills: (r) => {
     renderSkills(r);
@@ -1377,7 +1845,55 @@ function renderTab(tab, results) {
   _rendered.add(tab);
 }
 
+function showToast(message, type) {
+  const container =
+    document.getElementById("toast-container") ||
+    (() => {
+      const div = document.createElement("div");
+      div.id = "toast-container";
+      div.style.cssText =
+        "position:fixed;top:80px;right:16px;z-index:300;display:flex;flex-direction:column;gap:8px;pointer-events:none";
+      document.body.appendChild(div);
+      return div;
+    })();
+  const toast = document.createElement("div");
+  toast.style.cssText = `padding:10px 16px;background:var(--bg-card);border:1px solid ${type === "quest" ? "var(--green)" : "var(--gold-dim)"};border-radius:var(--radius-sm);font-size:0.75rem;color:var(--text);box-shadow:0 4px 20px rgba(0,0,0,0.4);animation:fadeInUp 0.3s ease;pointer-events:auto`;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transition = "opacity 0.3s";
+    setTimeout(() => toast.remove(), 300);
+  }, 5000);
+}
+
 function renderAll(results) {
+  // Milestone notifications
+  if (data.length === 2 && results.length === 2) {
+    for (let i = 0; i < 2; i++) {
+      const old = data[i],
+        nw = results[i];
+      if (!old || !nw) continue;
+      // Level-ups
+      for (const sk of SKILLS) {
+        const oldLvl = (old.skills[sk.id] || {}).level || 0;
+        const newLvl = (nw.skills[sk.id] || {}).level || 0;
+        if (newLvl > oldLvl && oldLvl > 0) {
+          showToast(
+            `🎉 ${nw.name} ${currentLang === "pt" ? "alcançou" : "reached"} ${tSkill(sk.id)} ${newLvl}!`,
+            "level",
+          );
+        }
+      }
+      // Quest completions
+      if (nw.questsDone > (old.questsDone || 0) && old.questsDone > 0) {
+        showToast(
+          `📜 ${nw.name}: +${nw.questsDone - old.questsDone} ${currentLang === "pt" ? "missões completas" : "quests completed"}!`,
+          "quest",
+        );
+      }
+    }
+  }
   data = results;
   _rendered.clear();
   renderTab(getActiveTab(), results);
@@ -1405,6 +1921,14 @@ async function load() {
         "loading",
         `${t("cached")} (${ago}${t("agoMin")}) \u2014 ${t("updatingLive")}`,
       );
+      if (ago > 120) {
+        // more than 2 hours
+        showError(
+          currentLang === "pt"
+            ? `⚠️ Dados podem estar desatualizados — última atualização há ${ago} minutos`
+            : `⚠️ Data may be outdated — last updated ${ago} minutes ago`,
+        );
+      }
     } catch (_) {
       setSource("loading", `${t("cached")} \u2014 ${t("updatingLive")}`);
     }
@@ -1464,7 +1988,28 @@ async function scheduledLoad() {
 // ---- Init ----
 document.addEventListener("DOMContentLoaded", () => {
   updateUIText();
+  // URL deep linking: read hash
+  const hashTab = window.location.hash.replace("#", "");
+  if (hashTab) {
+    const tabEl = document.querySelector(`.tab[data-tab="${hashTab}"]`);
+    if (tabEl) {
+      $$(".tab").forEach((t) => {
+        t.classList.remove("active");
+        t.setAttribute("aria-selected", "false");
+      });
+      tabEl.classList.add("active");
+      tabEl.setAttribute("aria-selected", "true");
+      $$(".page").forEach((p) =>
+        p.classList.toggle("active", p.dataset.page === hashTab),
+      );
+    }
+  }
   initTabs();
+  window.addEventListener("hashchange", () => {
+    const tab = window.location.hash.replace("#", "");
+    const tabEl = document.querySelector(`.tab[data-tab="${tab}"]`);
+    if (tabEl && !tabEl.classList.contains("active")) tabEl.click();
+  });
   initFilters();
   if (typeof initChat === "function") initChat();
   // Easter event delegation (one-time)

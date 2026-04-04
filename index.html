@@ -216,6 +216,12 @@
           <div class="chart-container">
             <canvas id="overview-gains-chart"></canvas>
           </div>
+          <div class="section-head" style="margin-top: 24px">
+            <h2 class="section-title" id="nextsteps-title">
+              🎯 Próximos Passos
+            </h2>
+          </div>
+          <div class="next-steps" id="next-steps"></div>
         </section>
 
         <!-- SKILLS -->
@@ -244,6 +250,12 @@
               <button class="pill" data-filter="support" id="filter-support">
                 Suporte
               </button>
+            </div>
+            <div class="pill-filters" id="skill-sort" style="margin-top: 4px">
+              <button class="pill active" data-sort="default">ID</button>
+              <button class="pill" data-sort="gap">Gap</button>
+              <button class="pill" data-sort="alpha">A-Z</button>
+              <button class="pill" data-sort="combined-xp">XP</button>
             </div>
           </div>
           <div class="skills-legend">
@@ -295,6 +307,28 @@
             <h2 class="section-title" id="quests-title">Miss\u00f5es</h2>
           </div>
           <div class="quest-cards" id="quest-cards"></div>
+          <div
+            class="quest-filters"
+            id="quest-filters"
+            style="margin-top: 16px"
+          >
+            <div class="pill-filters">
+              <button class="pill active" data-qfilter="all" id="qfilter-all">
+                All
+              </button>
+              <button class="pill" data-qfilter="both-done">Both Done</button>
+              <button class="pill" data-qfilter="one-done">One Done</button>
+              <button class="pill" data-qfilter="do-next">Do Next</button>
+              <button class="pill" data-qfilter="in-progress">
+                In Progress
+              </button>
+            </div>
+          </div>
+          <div
+            class="quest-list"
+            id="quest-list"
+            style="margin-top: 12px"
+          ></div>
         </section>
 
         <!-- ACTIVITY -->
@@ -303,6 +337,22 @@
             <h2 class="section-title" id="activity-title">Atividade Recente</h2>
             <span class="badge" id="activity-count">0</span>
           </div>
+          <div
+            class="pill-filters"
+            id="activity-filters"
+            style="margin-bottom: 12px"
+          >
+            <button class="pill active" data-afilter="all">All</button>
+            <button class="pill" data-afilter="levelup">⬆️ Level-ups</button>
+            <button class="pill" data-afilter="quest">📜 Quests</button>
+            <button class="pill" data-afilter="boss">⚔️ Bosses</button>
+            <button class="pill" data-afilter="other">💬 Other</button>
+          </div>
+          <div
+            class="activity-summary"
+            id="activity-summary"
+            style="margin-bottom: 12px"
+          ></div>
           <div class="activity-feed" id="activity-feed"></div>
         </section>
 
