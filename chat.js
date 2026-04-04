@@ -3,7 +3,11 @@
    Direct browser-to-API, no backend needed
    ============================================= */
 
-let chatApiKey = '';
+// SECURITY WARNING: API keys stored in the browser are exposed to client-side code.
+// sessionStorage is used so the key is cleared when the tab is closed, but it is
+// still visible to any JS running on this page. Never use this pattern for
+// production apps — route requests through a backend proxy instead.
+const CHAT_KEY_STORAGE = "rs3lb-chat-key";
 let chatHistory = [];
 let chatStreaming = false;
 
@@ -11,13 +15,13 @@ function buildSystemPrompt() {
   const lang = currentLang;
   const players = data; // from script.js global
 
-  let playerContext = '';
+  let playerContext = "";
   if (players && players.length === 2) {
     for (const p of players) {
-      const skillLines = SKILLS.map(sk => {
+      const skillLines = SKILLS.map((sk) => {
         const s = p.skills[sk.id] || { level: 1, xp: 0 };
         return `${tSkill(sk.id)}: ${s.level} (${s.xp} xp)`;
-      }).join(', ');
+      }).join(", ");
 
       playerContext += `\n**${p.name}**: Combat ${p.combatLevel}, Total Level ${p.totalLevel}, Total XP ${p.totalXp}, Quests ${p.questsDone}/${p.totalQuests}, RuneScore ${p.runeScore}\nSkills: ${skillLines}\n`;
     }
@@ -55,38 +59,43 @@ RULES:
 - Keep responses short and focused (max 3-4 paragraphs)
 - Use simple formatting: **bold** for highlights, - for list items`;
 
-  return lang === 'pt' ? ptPrompt : enPrompt;
+  return lang === "pt" ? ptPrompt : enPrompt;
+}
+
+function getChatApiKey() {
+  return sessionStorage.getItem(CHAT_KEY_STORAGE) || "";
 }
 
 async function sendChatMessage(userMessage) {
+  const chatApiKey = getChatApiKey();
   if (chatStreaming || !chatApiKey || !userMessage.trim()) return;
 
   chatStreaming = true;
-  const input = document.getElementById('chat-input');
-  const sendBtn = document.getElementById('chat-send');
-  const msgList = document.getElementById('chat-msg-list');
+  const input = document.getElementById("chat-input");
+  const sendBtn = document.getElementById("chat-send");
+  const msgList = document.getElementById("chat-msg-list");
 
   input.disabled = true;
   sendBtn.disabled = true;
 
   // Add user message
-  chatHistory.push({ role: 'user', content: userMessage });
-  appendChatMsg('user', userMessage);
+  chatHistory.push({ role: "user", content: userMessage });
+  appendChatMsg("user", userMessage);
 
   // Add streaming assistant placeholder
-  const assistantEl = appendChatMsg('assistant', '', true);
+  const assistantEl = appendChatMsg("assistant", "", true);
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': chatApiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
+        "Content-Type": "application/json",
+        "x-api-key": chatApiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 1024,
         system: buildSystemPrompt(),
         messages: chatHistory.slice(-20), // keep last 20 messages for context
@@ -96,31 +105,37 @@ async function sendChatMessage(userMessage) {
 
     if (!response.ok) {
       const err = await response.text();
-      throw new Error(response.status === 401 ? (currentLang === 'pt' ? 'API key invalida' : 'Invalid API key') : `API error: ${response.status}`);
+      throw new Error(
+        response.status === 401
+          ? currentLang === "pt"
+            ? "API key invalida"
+            : "Invalid API key"
+          : `API error: ${response.status}`,
+      );
     }
 
     // Stream the response
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
-    let fullText = '';
-    let buffer = '';
+    let fullText = "";
+    let buffer = "";
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
 
       buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
 
       for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
+        if (!line.startsWith("data: ")) continue;
         const jsonStr = line.slice(6);
-        if (jsonStr === '[DONE]') continue;
+        if (jsonStr === "[DONE]") continue;
 
         try {
           const event = JSON.parse(jsonStr);
-          if (event.type === 'content_block_delta' && event.delta?.text) {
+          if (event.type === "content_block_delta" && event.delta?.text) {
             fullText += event.delta.text;
             assistantEl.textContent = fullText;
             msgList.scrollTop = msgList.scrollHeight;
@@ -129,15 +144,14 @@ async function sendChatMessage(userMessage) {
       }
     }
 
-    assistantEl.classList.remove('streaming');
-    chatHistory.push({ role: 'assistant', content: fullText });
-
+    assistantEl.classList.remove("streaming");
+    chatHistory.push({ role: "assistant", content: fullText });
   } catch (err) {
-    assistantEl.classList.remove('streaming');
-    assistantEl.textContent = '';
-    appendChatMsg('system', err.message);
+    assistantEl.classList.remove("streaming");
+    assistantEl.textContent = "";
+    appendChatMsg("system", err.message);
     // Remove the failed assistant message from history
-    if (chatHistory[chatHistory.length - 1]?.role === 'user') {
+    if (chatHistory[chatHistory.length - 1]?.role === "user") {
       chatHistory.pop();
     }
   }
@@ -145,14 +159,14 @@ async function sendChatMessage(userMessage) {
   chatStreaming = false;
   input.disabled = false;
   sendBtn.disabled = false;
-  input.value = '';
+  input.value = "";
   input.focus();
 }
 
 function appendChatMsg(role, text, streaming) {
-  const msgList = document.getElementById('chat-msg-list');
-  const div = document.createElement('div');
-  div.className = `chat-msg ${role}${streaming ? ' streaming' : ''}`;
+  const msgList = document.getElementById("chat-msg-list");
+  const div = document.createElement("div");
+  div.className = `chat-msg ${role}${streaming ? " streaming" : ""}`;
   div.textContent = text;
   msgList.appendChild(div);
   msgList.scrollTop = msgList.scrollHeight;
@@ -160,43 +174,45 @@ function appendChatMsg(role, text, streaming) {
 }
 
 function initChat() {
-  const keyInput = document.getElementById('chat-api-key');
-  const keySubmit = document.getElementById('chat-key-submit');
-  const keyPrompt = document.getElementById('chat-key-prompt');
-  const messages = document.getElementById('chat-messages');
-  const chatInput = document.getElementById('chat-input');
-  const sendBtn = document.getElementById('chat-send');
+  const keyInput = document.getElementById("chat-api-key");
+  const keySubmit = document.getElementById("chat-key-submit");
+  const keyPrompt = document.getElementById("chat-key-prompt");
+  const messages = document.getElementById("chat-messages");
+  const chatInput = document.getElementById("chat-input");
+  const sendBtn = document.getElementById("chat-send");
 
   if (!keySubmit) return;
 
-  keySubmit.addEventListener('click', () => {
+  keySubmit.addEventListener("click", () => {
     const key = keyInput.value.trim();
     if (!key) return;
-    chatApiKey = key;
+    sessionStorage.setItem(CHAT_KEY_STORAGE, key);
+    keyInput.value = ""; // clear input immediately so key isn't sitting in DOM
     chatHistory = [];
-    keyPrompt.style.display = 'none';
-    messages.classList.remove('hidden');
+    keyPrompt.style.display = "none";
+    messages.classList.remove("hidden");
     chatInput.focus();
     sendBtn.disabled = false;
 
     // Welcome message
     const lang = currentLang;
-    const welcome = lang === 'pt'
-      ? 'Ola! Sou seu assistente RS3. Tenho acesso aos stats de Fiorovizk e Decxus. Pergunte sobre treino, quests, gear, money making, ou qualquer coisa do jogo!'
-      : 'Hi! I\'m your RS3 assistant. I have access to Fiorovizk and Decxus stats. Ask about training, quests, gear, money making, or anything about the game!';
-    appendChatMsg('system', welcome);
+    const welcome =
+      lang === "pt"
+        ? "Ola! Sou seu assistente RS3. Tenho acesso aos stats de Fiorovizk e Decxus. Pergunte sobre treino, quests, gear, money making, ou qualquer coisa do jogo!"
+        : "Hi! I'm your RS3 assistant. I have access to Fiorovizk and Decxus stats. Ask about training, quests, gear, money making, or anything about the game!";
+    appendChatMsg("system", welcome);
   });
 
-  keyInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') keySubmit.click();
+  keyInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") keySubmit.click();
   });
 
-  sendBtn.addEventListener('click', () => {
+  sendBtn.addEventListener("click", () => {
     sendChatMessage(chatInput.value);
   });
 
-  chatInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+  chatInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendChatMessage(chatInput.value);
     }
