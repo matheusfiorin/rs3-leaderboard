@@ -970,6 +970,15 @@ a:hover { color: var(--gold-bright); text-decoration: underline; }
 .lk-skill-row:hover { background: var(--bg-hover); }
 .lk-quest-bar { height: 6px; background: rgba(255,255,255,0.04); border-radius: 3px; overflow: hidden; display: flex; margin: 8px 0; }
 
+/* ===== VISITOR STATS ===== */
+.visitor-stats {
+  max-width: var(--max-w); margin: 0 auto;
+  padding: 0 16px 8px; text-align: center;
+  font-size: 0.6rem; color: var(--text-3);
+  font-family: var(--font-mono);
+  letter-spacing: 0.5px;
+}
+
 /* ===== FOOTER ===== */
 .footer {
   max-width: var(--max-w); margin: 0 auto;

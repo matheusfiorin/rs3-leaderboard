@@ -1978,6 +1978,21 @@ function hideError() {
   $("#error-banner").classList.add("hidden");
 }
 
+// ---- Visitor stats (GoatCounter public API) ----
+async function loadVisitorStats() {
+  const el = document.getElementById("visitor-stats");
+  if (!el) return;
+  try {
+    const resp = await fetch("https://rs3placar.goatcounter.com/counter/TOTAL.json");
+    if (!resp.ok) return;
+    const json = await resp.json();
+    const count = json.count || json.count_unique || 0;
+    if (count > 0) {
+      el.textContent = `${count} ${currentLang === "pt" ? "visitas" : "visits"}`;
+    }
+  } catch (_) { /* GoatCounter not set up yet — silent fail */ }
+}
+
 // ---- Lazy tab rendering ----
 const _renderers = {
   overview: (r) => {
@@ -2205,7 +2220,7 @@ document.addEventListener("DOMContentLoaded", () => {
   Promise.all([
     loadGEPrices(),
     typeof loadSessions === "function" ? loadSessions() : Promise.resolve(),
-  ]).then(() => scheduledLoad());
+  ]).then(() => { scheduledLoad(); loadVisitorStats(); });
   $("#btn-refresh").addEventListener("click", () => {
     clearTimeout(timer);
     scheduledLoad();

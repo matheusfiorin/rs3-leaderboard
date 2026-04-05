@@ -14,7 +14,7 @@
     <meta name="theme-color" content="#07070d" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://runescape.wiki data:; connect-src 'self' https://apps.runescape.com https://secure.runescape.com"
+      content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://gc.zgo.at; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://runescape.wiki data:; connect-src 'self' https://apps.runescape.com https://secure.runescape.com https://*.goatcounter.com"
     />
     <link rel="stylesheet" href="style.css?v=17" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -355,6 +355,9 @@
         <!-- EASTER removed: seasonal event ended -->
       </main>
 
+      <!-- VISITOR STATS -->
+      <div class="visitor-stats" id="visitor-stats"></div>
+
       <footer class="footer">
         <p id="footer-api">Dados da API RuneMetrics & Hiscores</p>
         <p class="footer-meta">
@@ -381,5 +384,9 @@
     <script src="prifddinas.js?v=18"></script>
     <script src="major-goals.js?v=18"></script>
     <script src="script.js?v=18"></script>
+    <!-- GoatCounter analytics (privacy-friendly, no cookies) -->
+    <!-- TODO: Replace SITE_CODE with your goatcounter.com site code -->
+    <script data-goatcounter="https://rs3placar.goatcounter.com/count"
+            async src="//gc.zgo.at/count.js"></script>
   </body>
 </html>
