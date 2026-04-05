@@ -1137,6 +1137,7 @@ function updateUIText() {
   h("tab-easter", "\uD83E\uDD5A " + t("navEaster"));
   h("tab-lookup", "\uD83D\uDD0D " + t("navLookup"));
   h("tab-senntisten", "\u2694\uFE0F " + t("navSenntisten"));
+  h("tab-prifddinas", "\uD83C\uDFF0 " + t("navPrifddinas"));
 
   // Chat i18n (tab removed but keys kept safe)
   s("chat-key-title", t("chatAssistant"));
@@ -1220,7 +1221,12 @@ function initTabs() {
         p.classList.toggle("active", p.dataset.page === page),
       );
       history.replaceState(null, "", "#" + page);
-      if (data.length && !_rendered.has(page)) renderTab(page, data);
+      // Lookup doesn't need player data — always render it
+      if (page === "lookup") {
+        if (!_rendered.has(page)) renderTab(page, data);
+      } else if (data.length && !_rendered.has(page)) {
+        renderTab(page, data);
+      }
     });
   });
 }
@@ -1914,6 +1920,7 @@ function hideError() {
 // ---- Lazy tab rendering ----
 const _renderers = {
   overview: (r) => {
+    if (typeof renderMajorGoals === "function") renderMajorGoals(r);
     renderCards(r);
     renderH2H(r);
     renderJournal(r, "#journal-scores", null);
@@ -1951,6 +1958,9 @@ const _renderers = {
   },
   senntisten: (r) => {
     if (typeof renderSenntisten === "function") renderSenntisten(r);
+  },
+  prifddinas: (r) => {
+    if (typeof renderPrifddinas === "function") renderPrifddinas(r);
   },
 };
 const _rendered = new Set();
@@ -2175,8 +2185,10 @@ document.addEventListener("DOMContentLoaded", () => {
     for (const m of mutations) {
       for (const node of m.addedNodes) {
         if (node.nodeType !== 1) continue;
+        // Don't reveal-target items inside scroll containers (.act-item, .ql-row)
+        // — IntersectionObserver won't fire for offscreen items in overflow containers
         const revealTargets = node.querySelectorAll
-          ? node.querySelectorAll(".p-card, .skill-row, .j-row, .act-item, .money-card, .ns-item, .ql-row, .q-card, .j-score-card")
+          ? node.querySelectorAll(".p-card, .skill-row, .j-row, .money-card, .ns-item, .q-card, .j-score-card")
           : [];
         revealTargets.forEach((el) => {
           el.classList.add("reveal-target");

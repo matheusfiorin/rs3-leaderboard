@@ -44,6 +44,7 @@ const LANG = {
 
     // Senntisten
     navSenntisten: "Senntisten",
+    navPrifddinas: "Prifddinas",
     snTitle: "Rumo ao Soul Split",
     snSubtitle: "Rastreador da cadeia Temple at Senntisten",
     snSkills: "Habilidades Necessárias",
@@ -339,6 +340,7 @@ const LANG = {
 
     // Senntisten
     navSenntisten: "Senntisten",
+    navPrifddinas: "Prifddinas",
     snTitle: "Road to Soul Split",
     snSubtitle: "Temple at Senntisten quest chain tracker",
     snSkills: "Skill Requirements",

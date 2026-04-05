@@ -83,6 +83,7 @@
           <button class="tab active" data-tab="overview" id="tab-overview" role="tab" aria-selected="true">Visão Geral</button>
           <button class="tab" data-tab="skills" id="tab-skills" role="tab" aria-selected="false">Habilidades</button>
           <button class="tab" data-tab="senntisten" id="tab-senntisten" role="tab" aria-selected="false">&#x2694;&#xFE0F; Senntisten</button>
+          <button class="tab" data-tab="prifddinas" id="tab-prifddinas" role="tab" aria-selected="false">&#x1f3f0; Prifddinas</button>
           <button class="tab" data-tab="lookup" id="tab-lookup" role="tab" aria-selected="false">&#x1f50d; Consulta</button>
           <button class="tab" data-tab="quests" id="tab-quests" role="tab" aria-selected="false">Missões</button>
           <button class="tab" data-tab="activity" id="tab-activity" role="tab" aria-selected="false">Atividade</button>
@@ -117,6 +118,7 @@
       <main class="main" id="main-content">
         <!-- OVERVIEW (Landing) -->
         <section class="page active" data-page="overview" role="tabpanel">
+          <div id="major-goals"></div>
           <div class="player-cards" id="player-cards"></div>
           <div class="section-head">
             <h2 class="section-title" id="h2h-title">Frente a Frente</h2>
@@ -327,6 +329,11 @@
           <div id="senntisten-content"></div>
         </section>
 
+        <!-- PRIFDDINAS TRACKER -->
+        <section class="page" data-page="prifddinas" role="tabpanel">
+          <div id="prifddinas-content"></div>
+        </section>
+
         <!-- MEETUP / ENCONTROS -->
         <section class="page" data-page="meetup" role="tabpanel">
           <div id="meetup-content"></div>
@@ -349,7 +356,9 @@
     <script src="meetup.js?v=17"></script>
     <!-- chat.js removed -->
     <script src="lookup.js?v=17"></script>
-    <script src="senntisten.js?v=17"></script>
-    <script src="script.js?v=17"></script>
+    <script src="senntisten.js?v=18"></script>
+    <script src="prifddinas.js?v=18"></script>
+    <script src="major-goals.js?v=18"></script>
+    <script src="script.js?v=18"></script>
   </body>
 </html>
