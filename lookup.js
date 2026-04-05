@@ -1,7 +1,9 @@
 /**
  * lookup.js — RSN Lookup module for RS3 Leaderboard
  * Renders search UI, fetches RuneMetrics data, displays full player profile.
- * Depends on globals from script.js (fetchLive, parse, SKILLS, t, fmt, etc.)
+ * Depends on globals from script.js: fetchLive, SKILLS, t, tSkill, fmt, fmtShort,
+ * xpToNextLevel, esc, $, $$, currentLang, classifyActivity, localizeActivity,
+ * ACT_ICONS, fmtTime
  */
 
 /* ── Constants ─────────────────────────────────────────────────────── */
@@ -9,15 +11,6 @@
 const LK_HISTORY_KEY = "rs3lb-lookup-history";
 const LK_MAX_HISTORY = 5;
 const LK_MAX_ACTIVITIES = 20;
-
-/* Category colours for skill progress bars */
-const CAT_COLORS = {
-  combat:   "#e74c3c",
-  gather:   "#27ae60",
-  artisan:  "#f39c12",
-  support:  "#3498db",
-  elite:    "#9b59b6",
-};
 
 /* ── History helpers ───────────────────────────────────────────────── */
 
@@ -49,9 +42,8 @@ function renderLookupPage() {
     <div id="lk-status"></div>
     <div id="lk-results"></div>`;
 
-  /* Bind events */
   const input = $("#lk-input");
-  const btn   = $("#lk-btn");
+  const btn = $("#lk-btn");
   btn.addEventListener("click", () => lkTriggerSearch(input.value.trim()));
   input.addEventListener("keydown", e => {
     if (e.key === "Enter") lkTriggerSearch(input.value.trim());
@@ -69,33 +61,38 @@ function lkTriggerSearch(rsn) {
 }
 
 /* ── Fetch & render full profile ───────────────────────────────────── */
+// NOTE: fetchLive() returns a PARSED player object (via parse()), not raw API data.
+// Field names: name, rank, totalLevel, totalXp, combatLevel, questsDone,
+// questsStarted, questsNone, totalQuests, activities[], skills{id:{level,xp,rank}},
+// runeScore, clues{}, questList[], questPoints
 
 async function doLookup(rsn) {
-  const status  = $("#lk-status");
+  const status = $("#lk-status");
   const results = $("#lk-results");
   results.innerHTML = "";
-  status.innerHTML = `<div class="lk-spinner"></div>`;
+  status.innerHTML = `<div class="lk-spinner">${esc(t("lookupLoading"))}</div>`;
 
   try {
-    const data = await fetchLive(rsn);
-    if (!data || data.error) throw new Error(data?.error || t("lookupError"));
+    const player = await fetchLive(rsn);
+    if (!player || !player.name) throw new Error(t("lookupError"));
 
-    lkSaveToHistory(rsn);
+    lkSaveToHistory(player.name);
     lkRenderHistory();
     status.innerHTML = "";
-    results.innerHTML = lkBuildBackBtn() +
-      lkBuildProfileCard(data) +
-      lkBuildSkillsGrid(data) +
-      lkBuildActivities(data) +
-      lkBuildQuestSummary(data);
+    results.innerHTML =
+      lkBuildBackBtn() +
+      lkBuildProfileCard(player) +
+      lkBuildSkillsGrid(player) +
+      lkBuildActivities(player) +
+      lkBuildQuestSummary(player);
 
-    /* Back-to-search button */
     $("#lk-back-btn")?.addEventListener("click", () => {
       results.innerHTML = "";
       $("#lk-input").value = "";
+      $("#lk-input").focus();
     });
   } catch (err) {
-    status.innerHTML = `<p class="lk-error">${esc(err.message)}</p>`;
+    status.innerHTML = `<p class="lk-error">${esc(t("lookupError"))}</p>`;
   }
 }
 
@@ -106,9 +103,10 @@ function lkRenderHistory() {
   if (!wrap) return;
   const hist = lkGetHistory();
   if (!hist.length) { wrap.innerHTML = ""; return; }
-  wrap.innerHTML = hist.map(h =>
-    `<button class="pill lk-hist-pill" data-rsn="${esc(h)}">${esc(h)}</button>`
-  ).join("");
+  wrap.innerHTML = `<span style="font-size:0.65rem;color:var(--text-3);margin-right:4px">${esc(t("lookupRecent"))}:</span>` +
+    hist.map(h =>
+      `<button class="pill lk-hist-pill" data-rsn="${esc(h)}">${esc(h)}</button>`
+    ).join("");
   wrap.querySelectorAll(".lk-hist-pill").forEach(btn => {
     btn.addEventListener("click", () => lkTriggerSearch(btn.dataset.rsn));
   });
@@ -117,29 +115,32 @@ function lkRenderHistory() {
 /* ── Back button ───────────────────────────────────────────────────── */
 
 function lkBuildBackBtn() {
-  return `<button id="lk-back-btn" class="pill lk-back">&larr; ${esc(t("lookupBack"))}</button>`;
+  return `<button id="lk-back-btn" class="lk-back-btn">&larr; ${esc(t("lookupBack"))}</button>`;
 }
 
 /* ── Profile card ──────────────────────────────────────────────────── */
 
 function lkBuildProfileCard(p) {
+  const totalClues = p.clues ? Object.values(p.clues).reduce((a, b) => a + b, 0) : 0;
   const stats = [
-    { label: t("combatLevel"),  val: p.combatlevel ?? "—" },
-    { label: t("totalLevel"),   val: fmt(p.totalskill ?? 0) },
-    { label: t("totalXP"),      val: fmtShort(p.totalxp ?? 0) },
-    { label: t("rank"),         val: p.rank ? fmt(p.rank) : "—" },
-    { label: t("questsDone"),   val: `${p.questscomplete ?? 0}/${p.queststotal ?? 0}` },
-    { label: t("runeScore"),    val: fmt(p.runescore ?? 0) },
+    { label: t("combatLevel"), val: p.combatLevel || "—" },
+    { label: t("totalLevel"),  val: fmt(p.totalLevel || 0) },
+    { label: t("totalXp"),     val: fmtShort(p.totalXp || 0) },
+    { label: t("overallRank"), val: p.rank ? `#${p.rank}` : "—" },
+    { label: t("questsDone"),  val: `${p.questsDone || 0}/${p.totalQuests || 0}` },
+    { label: t("runeScore"),   val: fmt(p.runeScore || 0) },
   ];
 
   return `
-    <div class="p-card lk-profile">
-      <h2 class="lk-name">${esc(p.name)}</h2>
+    <div class="p-card p1 lk-profile fade-in">
+      <div class="p-card-name">${esc(p.name)}</div>
+      <div class="p-card-rank">${t("overallRank")} #${esc(String(p.rank || "—"))}</div>
+      <div class="p-card-combat">${SWORD || "⚔"} ${t("combat")} ${p.combatLevel}</div>
       <div class="p-stats">
         ${stats.map(s => `
           <div class="p-stat">
-            <span class="p-stat-val">${esc(String(s.val))}</span>
-            <span class="p-stat-label">${esc(s.label)}</span>
+            <div class="p-stat-val">${esc(String(s.val))}</div>
+            <div class="p-stat-label">${esc(s.label)}</div>
           </div>`).join("")}
       </div>
     </div>`;
@@ -148,34 +149,30 @@ function lkBuildProfileCard(p) {
 /* ── Skills grid ───────────────────────────────────────────────────── */
 
 function lkBuildSkillsGrid(p) {
-  const skills = p.skillvalues || [];
+  // p.skills is {id: {level, xp, rank}} from parse()
   const rows = SKILLS.map(sk => {
-    const sv  = skills.find(s => s.id === sk.id) || {};
-    const lvl = sv.level ?? 1;
-    const xp  = sv.xp != null ? sv.xp * 10 : 0; // RuneMetrics XP is /10
-    const prog = xpToNextLevel(xp, lvl, sk.max);
-    const color = CAT_COLORS[sk.cat] || "#888";
+    const s = p.skills[sk.id] || { level: 1, xp: 0 };
+    const prog = xpToNextLevel(s.xp, s.level, sk.max);
 
     return `
-      <div class="skill-row">
+      <div class="skill-row" data-cat="${sk.cat}">
         <div class="sk-name-col">
-          <span class="sk-icon" style="background-color:${color}"></span>
-          <span class="sk-name">${esc(tSkill(sk.id))}</span>
+          <div class="sk-icon ${sk.cat}">${sk.abbr}</div>
+          <div class="sk-name">${tSkill(sk.id)}</div>
         </div>
         <div class="sk-player-col">
-          <span class="sk-level">${lvl}</span>
-          <span class="sk-xp">${fmtShort(xp)}</span>
-          <div class="sk-bar">
-            <div class="sk-bar-fill" style="width:${prog.pct}%;background:${color}"></div>
-          </div>
+          <div class="sk-level">${s.level}</div>
+          <div class="sk-xp">${fmt(s.xp)} ${t("xp")}</div>
+          <div class="sk-to-next">${s.level >= sk.max ? t("maxed") : fmt(prog.needed) + " → " + (s.level + 1)}</div>
+          <div class="sk-bar"><div class="sk-bar-fill p1" style="width:${prog.pct}%"></div></div>
         </div>
       </div>`;
   });
 
   return `
-    <div class="lk-section">
-      <h3>${esc(t("skills"))}</h3>
-      <div class="lk-skills-grid">${rows.join("")}</div>
+    <div class="lk-result-section">
+      <h3>${t("skillsTitle")}</h3>
+      <div class="lk-skill-grid">${rows.join("")}</div>
     </div>`;
 }
 
@@ -187,58 +184,54 @@ function lkBuildActivities(p) {
 
   const items = acts.map(a => {
     const type = classifyActivity(a.text);
-    const icon = ACT_ICONS[type] || ACT_ICONS.default || "⬥";
-    const text = localizeActivity(a.text);
-    const time = fmtTime(a.date);
-
+    const icon = (typeof ACT_ICONS !== "undefined" && ACT_ICONS[type]) || "💬";
     return `
       <div class="act-item">
-        <span class="act-dot">${icon}</span>
+        <div class="act-dot">${icon}</div>
         <div class="act-body">
-          <span class="act-text">${esc(text)}</span>
-          <span class="act-time">${esc(time)}</span>
+          <div class="act-text">${esc(localizeActivity(a.text))}</div>
+          ${a.details ? `<div class="act-detail">${esc(localizeActivity(a.details))}</div>` : ""}
         </div>
+        <div class="act-time">${fmtTime(a.date)}</div>
       </div>`;
   });
 
   return `
-    <div class="lk-section">
-      <h3>${esc(t("recentActivity"))}</h3>
-      <div class="lk-activities">${items.join("")}</div>
+    <div class="lk-result-section">
+      <h3>${t("activityTitle")}</h3>
+      <div class="activity-feed" style="max-height:none">${items.join("")}</div>
     </div>`;
 }
 
 /* ── Quest summary ─────────────────────────────────────────────────── */
 
 function lkBuildQuestSummary(p) {
-  const done    = p.questscomplete  ?? 0;
-  const started = p.questsstarted   ?? 0;
-  const notDone = p.questsnotstarted ?? 0;
-  const total   = p.queststotal     ?? (done + started + notDone);
-  const pct     = total ? Math.round((done / total) * 100) : 0;
-
-  const segments = [
-    { label: t("questsCompleted"),  count: done,    cls: "lk-q-done" },
-    { label: t("questsStarted"),    count: started, cls: "lk-q-started" },
-    { label: t("questsNotStarted"), count: notDone, cls: "lk-q-not" },
-  ];
+  const done = p.questsDone || 0;
+  const started = p.questsStarted || 0;
+  const none = p.questsNone || 0;
+  const total = p.totalQuests || (done + started + none);
+  const pct = total ? Math.round((done / total) * 100) : 0;
 
   return `
-    <div class="lk-section">
-      <h3>${esc(t("quests"))}</h3>
-      <div class="lk-quest-bar-wrap">
-        <div class="lk-quest-bar">
-          <div class="lk-q-done"    style="width:${total ? (done/total)*100 : 0}%"></div>
-          <div class="lk-q-started" style="width:${total ? (started/total)*100 : 0}%"></div>
+    <div class="lk-result-section">
+      <h3>${t("questsTitle")}</h3>
+      <div class="q-card p1 fade-in">
+        <div class="q-header">
+          <div class="q-name">${esc(p.name)}</div>
+          <div class="q-pct">${pct}%</div>
         </div>
-        <span class="lk-quest-pct">${pct}%</span>
-      </div>
-      <div class="lk-quest-counts">
-        ${segments.map(s => `
-          <span class="lk-quest-stat">
-            <span class="${s.cls}-dot"></span>
-            ${esc(s.label)}: <strong>${s.count}</strong>
-          </span>`).join("")}
+        <div class="q-bar">
+          <div class="q-bar-fill done" style="width:${total ? (done/total)*100 : 0}%"></div>
+          <div class="q-bar-fill started" style="width:${total ? (started/total)*100 : 0}%"></div>
+        </div>
+        <div class="q-stats">
+          <div class="q-stat"><div class="q-stat-val done">${done}</div><div class="q-stat-lbl">${t("complete")}</div></div>
+          <div class="q-stat"><div class="q-stat-val started">${started}</div><div class="q-stat-lbl">${t("started")}</div></div>
+          <div class="q-stat"><div class="q-stat-val none">${none}</div><div class="q-stat-lbl">${t("remaining")}</div></div>
+        </div>
+        ${p.questPoints ? `<div style="margin-top:10px;text-align:center;font-size:0.72rem;color:var(--text-3)">
+          <span style="font-family:var(--font-mono);font-weight:700;color:var(--gold)">${p.questPoints}</span> ${t("questPoints")}
+        </div>` : ""}
       </div>
     </div>`;
 }
