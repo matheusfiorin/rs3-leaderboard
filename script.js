@@ -31,10 +31,9 @@ const SKILL_NAMES_EN = {
   18:'Slayer',19:'Farming',20:'Runecrafting',21:'Hunter',22:'Construction',
   23:'Summoning',24:'Dungeoneering',25:'Divination',26:'Invention',27:'Archaeology',28:'Necromancy'
 };
-function SKILL_ICON(id, size) {
+function SKILL_ICON(id) {
   const name = SKILL_NAMES_EN[id];
-  const px = size || 21;
-  return name ? `https://runescape.wiki/images/thumb/${name}-icon.png/${px}px-${name}-icon.png` : '';
+  return name ? `https://runescape.wiki/images/${name}-icon.png` : '';
 }
 function skillIconImg(id, size) {
   const s = size || 20;
