@@ -1138,7 +1138,7 @@ function updateUIText() {
   h("tab-lookup", "\uD83D\uDD0D " + t("navLookup"));
   h("tab-senntisten", "\u2694\uFE0F " + t("navSenntisten"));
 
-  // Chat i18n
+  // Chat i18n (tab removed but keys kept safe)
   s("chat-key-title", t("chatAssistant"));
   s("chat-key-desc", t("chatKeyDesc"));
   s("chat-key-hint", t("chatHint"));
@@ -1803,79 +1803,99 @@ function canDoMethod(player, method) {
   return true;
 }
 
+const MONEY_TOP_N = 10;
+let _moneyFilter = "all"; // all | available | upcoming
+
+function moneyCardHTML(m, players, lang) {
+  const info = m[lang] || m.en;
+  let desc = info.desc;
+  if (m.almostUnlocked) {
+    const parts = [];
+    for (const p of players) {
+      if (canDoMethod(p, m)) {
+        parts.push(`${p.name}: \u2713`);
+      } else {
+        for (const [sid, reqLvl] of Object.entries(m.reqs)) {
+          const sk = p.skills[Number(sid)];
+          const curLvl = sk ? sk.level : 1;
+          const gap = reqLvl - curLvl;
+          if (gap > 0) parts.push(`${p.name}: ${tSkill(Number(sid))} ${curLvl}\u2192${reqLvl} (${gap} ${t("levels")})`);
+        }
+      }
+    }
+    if (parts.length) desc = parts.join(" | ");
+  }
+  const profitStr = m.profit > 0 ? fmtShort(m.profit) + " gp/h" : "?";
+  const dailyGp = m.profit * 3;
+  const reqTags = Object.entries(m.reqs).map(([sid, lvl]) => {
+    const met = players.some(p => canDoMethod(p, { reqs: { [sid]: lvl } }));
+    return `<span class="money-req ${met ? "met" : "unmet"}">${tSkill(Number(sid))} ${lvl}</span>`;
+  }).join("") || `<span class="money-req met">${t("noReqs")}</span>`;
+  const p1can = canDoMethod(players[0], m);
+  const p2can = players[1] ? canDoMethod(players[1], m) : false;
+  const badges = [];
+  if (m.almostUnlocked) badges.push(`<span style="font-size:0.6rem;color:var(--orange);background:rgba(251,191,36,0.08);padding:2px 6px;border-radius:100px;font-weight:700">${t("soon")}</span>`);
+  if (m.daily) badges.push(`<span style="font-size:0.6rem;color:var(--purple);background:var(--purple-bg);padding:2px 6px;border-radius:100px;font-weight:700">${t("daily")}</span>`);
+
+  return `<div class="money-card"${m.almostUnlocked ? ' style="border-left:3px solid var(--orange);opacity:0.85"' : ""}>
+    <div class="money-card-header">
+      <div class="money-card-title">${info.name}${m.members ? " \u2B50" : ""}${badges.length ? " " + badges.join(" ") : ""}</div>
+      <div class="money-card-profit">${profitStr}</div>
+    </div>
+    <div class="money-card-desc">${desc}</div>
+    <div class="money-card-reqs">${reqTags}</div>
+    <div class="money-card-players">
+      <span class="money-player-tag ${p1can ? "can" : "cant"}">${esc(players[0].name)} ${p1can ? "\u2713" : "\u2717"}</span>
+      ${players[1] ? `<span class="money-player-tag ${p2can ? "can" : "cant"}">${esc(players[1].name)} ${p2can ? "\u2713" : "\u2717"}</span>` : ""}
+    </div>
+    ${!m.daily && dailyGp > 0 ? `<div class="money-card-daily">${t("perDay")}: <strong>${fmtShort(dailyGp)} gp</strong></div>` : ""}
+  </div>`;
+}
+
 function renderMoney(players) {
   const lang = currentLang;
-  const avgHoursPerDay = 3; // "medium gameplay day"
+  const all = MONEY_METHODS.map((m) => ({ ...m, profit: calcProfit(m) })).sort((a, b) => b.profit - a.profit);
 
-  const sorted = MONEY_METHODS.map((m) => ({
-    ...m,
-    profit: calcProfit(m),
-  })).sort((a, b) => b.profit - a.profit);
+  // Filter
+  let filtered = all;
+  if (_moneyFilter === "available") filtered = all.filter(m => players.some(p => canDoMethod(p, m)) && !m.almostUnlocked);
+  else if (_moneyFilter === "upcoming") filtered = all.filter(m => m.almostUnlocked || !players.some(p => canDoMethod(p, m)));
 
-  $("#money-grid").innerHTML = sorted
-    .map((m) => {
-      const info = m[lang] || m.en;
-      let desc = info.desc;
-      if (m.almostUnlocked) {
-        const parts = [];
-        for (const p of players) {
-          if (canDoMethod(p, m)) {
-            parts.push(`${p.name}: \u2713`);
-          } else {
-            for (const [sid, reqLvl] of Object.entries(m.reqs)) {
-              const sk = p.skills[Number(sid)];
-              const curLvl = sk ? sk.level : 1;
-              const gap = reqLvl - curLvl;
-              if (gap > 0)
-                parts.push(
-                  `${p.name}: ${tSkill(Number(sid))} ${curLvl}\u2192${reqLvl} (${gap} ${t("levels")})`,
-                );
-            }
-          }
-        }
-        if (parts.length) desc = parts.join(" | ");
-      }
-      const profitStr = m.profit > 0 ? fmtShort(m.profit) + " gp/h" : "?";
-      const dailyGp = m.profit * avgHoursPerDay;
+  const showAll = filtered.length <= MONEY_TOP_N;
+  const visible = showAll ? filtered : filtered.slice(0, MONEY_TOP_N);
+  const hidden = showAll ? [] : filtered.slice(MONEY_TOP_N);
 
-      // Requirement tags
-      const reqTags =
-        Object.entries(m.reqs)
-          .map(([sid, lvl]) => {
-            const sName = tSkill(Number(sid));
-            return `<span class="money-req">${sName} ${lvl}</span>`;
-          })
-          .join("") || `<span class="money-req met">${t("noReqs")}</span>`;
+  // Filter pills
+  const grid = $("#money-grid");
+  const filtersHTML = `<div class="pill-filters" style="margin-bottom:12px">
+    <button class="pill money-fpill ${_moneyFilter === "all" ? "active" : ""}" data-mf="all">${t("all")} (${all.length})</button>
+    <button class="pill money-fpill ${_moneyFilter === "available" ? "active" : ""}" data-mf="available">\u2713 ${lang === "pt" ? "Disponíveis" : "Available"} (${all.filter(m => players.some(p => canDoMethod(p, m)) && !m.almostUnlocked).length})</button>
+    <button class="pill money-fpill ${_moneyFilter === "upcoming" ? "active" : ""}" data-mf="upcoming">\u23F3 ${lang === "pt" ? "Em breve" : "Upcoming"} (${all.filter(m => m.almostUnlocked || !players.some(p => canDoMethod(p, m))).length})</button>
+  </div>`;
 
-      const p1can = canDoMethod(players[0], m);
-      const p2can = canDoMethod(players[1], m);
+  grid.innerHTML = filtersHTML +
+    visible.map(m => moneyCardHTML(m, players, lang)).join("") +
+    (hidden.length ? `<div id="money-hidden" style="display:none">${hidden.map(m => moneyCardHTML(m, players, lang)).join("")}</div>
+    <button id="money-show-more" class="pill" style="display:block;margin:12px auto;padding:8px 24px">
+      ${lang === "pt" ? "Mostrar mais" : "Show more"} (+${hidden.length})
+    </button>` : "");
 
-      const badges = [];
-      if (m.almostUnlocked)
-        badges.push(
-          `<span style="font-size:0.6rem;color:var(--orange);background:rgba(251,191,36,0.08);padding:2px 6px;border-radius:100px;font-weight:700">${t("soon")}</span>`,
-        );
-      if (m.daily)
-        badges.push(
-          `<span style="font-size:0.6rem;color:var(--purple);background:var(--purple-bg);padding:2px 6px;border-radius:100px;font-weight:700">${t("daily")}</span>`,
-        );
+  // Filter pill handlers
+  grid.querySelectorAll(".money-fpill").forEach(btn => {
+    btn.addEventListener("click", () => {
+      _moneyFilter = btn.dataset.mf;
+      renderMoney(players);
+    });
+  });
 
-      return `
-      <div class="money-card"${m.almostUnlocked ? ' style="border-left:3px solid var(--orange);opacity:0.85"' : ""}>
-        <div class="money-card-header">
-          <div class="money-card-title">${info.name}${m.members ? " \u2B50" : ""}${badges.length ? " " + badges.join(" ") : ""}</div>
-          <div class="money-card-profit">${profitStr}</div>
-        </div>
-        <div class="money-card-desc">${desc}</div>
-        <div class="money-card-reqs">${reqTags}</div>
-        <div class="money-card-players">
-          <span class="money-player-tag ${p1can ? "can" : "cant"}">${esc(players[0].name)} ${p1can ? "\u2713" : "\u2717"}</span>
-          <span class="money-player-tag ${p2can ? "can" : "cant"}">${esc(players[1].name)} ${p2can ? "\u2713" : "\u2717"}</span>
-        </div>
-        ${!m.daily && dailyGp > 0 ? `<div class="money-card-daily">${t("perDay")}: <strong>${fmtShort(dailyGp)} gp</strong></div>` : ""}
-      </div>`;
-    })
-    .join("");
+  // Show more handler
+  const moreBtn = document.getElementById("money-show-more");
+  if (moreBtn) {
+    moreBtn.addEventListener("click", () => {
+      document.getElementById("money-hidden").style.display = "block";
+      moreBtn.remove();
+    });
+  }
 }
 
 // ---- Status ----
@@ -2111,16 +2131,17 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   initFilters();
   if (typeof initChat === "function") initChat();
-  // Easter event delegation (one-time)
-  document
-    .getElementById("easter-checklist")
-    .addEventListener("change", (e) => {
+  // Easter event delegation (safe — element may not exist)
+  const easterEl = document.getElementById("easter-checklist");
+  if (easterEl) {
+    easterEl.addEventListener("change", (e) => {
       if (!e.target.classList.contains("easter-check")) return;
       const s = JSON.parse(localStorage.getItem("rs3lb-easter") || "{}");
       if (e.target.checked) s[e.target.dataset.key] = true;
       else delete s[e.target.dataset.key];
       localStorage.setItem("rs3lb-easter", JSON.stringify(s));
     });
+  }
   Promise.all([
     loadGEPrices(),
     typeof loadSessions === "function" ? loadSessions() : Promise.resolve(),

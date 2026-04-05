@@ -14,7 +14,7 @@
     <meta name="theme-color" content="#07070d" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://runescape.wiki data:; connect-src 'self' https://apps.runescape.com https://secure.runescape.com https://api.anthropic.com"
+      content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://runescape.wiki data:; connect-src 'self' https://apps.runescape.com https://secure.runescape.com"
     />
     <link rel="stylesheet" href="style.css?v=17" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -89,9 +89,7 @@
           <button class="tab" data-tab="combat" id="tab-combat" role="tab" aria-selected="false">&#x2694;&#xFE0F; Combate</button>
           <button class="tab" data-tab="journal" id="tab-journal" role="tab" aria-selected="false">Diário</button>
           <button class="tab" data-tab="money" id="tab-money" role="tab" aria-selected="false">&#x1f4b0; GP</button>
-          <button class="tab" data-tab="chat" id="tab-chat" role="tab" aria-selected="false">&#x1f916; Chat</button>
           <button class="tab meetup-tab" data-tab="meetup" id="tab-meetup" role="tab" aria-selected="false">&#x1f91d; Encontros</button>
-          <button class="tab easter-tab" data-tab="easter" id="tab-easter" role="tab" aria-selected="false">&#x1f95a; Páscoa</button>
         </nav>
       </header>
 
@@ -314,59 +312,7 @@
           </p>
         </section>
 
-        <!-- AI CHAT -->
-        <section class="page" data-page="chat" role="tabpanel">
-          <div class="chat-container" id="chat-container">
-            <div class="chat-key-prompt" id="chat-key-prompt">
-              <div class="chat-key-icon">&#x1f916;</div>
-              <h3 id="chat-key-title">Assistente RS3</h3>
-              <p id="chat-key-desc">
-                Cole sua API key da Anthropic para conversar. A key nao e salva
-                — usada apenas durante esta sessao.
-              </p>
-              <div class="chat-key-input-row">
-                <input
-                  type="password"
-                  id="chat-api-key"
-                  class="chat-key-input"
-                  placeholder="sk-ant-..."
-                  autocomplete="off"
-                />
-                <button id="chat-key-submit" class="chat-key-btn">
-                  Iniciar
-                </button>
-              </div>
-              <p class="chat-key-hint" id="chat-key-hint">
-                Usa Claude Haiku 4.5 para respostas rapidas.
-              </p>
-            </div>
-            <div class="chat-messages hidden" id="chat-messages">
-              <div class="chat-msg-list" id="chat-msg-list"></div>
-              <div class="chat-input-row">
-                <input
-                  type="text"
-                  id="chat-input"
-                  class="chat-input"
-                  placeholder="Pergunte sobre RS3..."
-                  autocomplete="off"
-                />
-                <button id="chat-send" class="chat-send-btn" disabled>
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5"
-                  >
-                    <line x1="22" y1="2" x2="11" y2="13" />
-                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
+        <!-- CHAT removed: required API key, too much friction -->
 
         <!-- LOOKUP -->
         <section class="page" data-page="lookup" role="tabpanel">
@@ -386,20 +332,7 @@
           <div id="meetup-content"></div>
         </section>
 
-        <!-- EASTER -->
-        <section class="page" data-page="easter" role="tabpanel">
-          <div class="easter-hero">
-            <div class="easter-hero-icon">&#x1f95a;</div>
-            <h2 class="easter-hero-title" id="easter-title">
-              Gielinor Egg Hunt 2026
-            </h2>
-            <p class="easter-hero-sub" id="easter-sub">
-              Blooming Burrow &middot; 30 Mar - 20 Abr
-            </p>
-          </div>
-          <div class="easter-checklist" id="easter-checklist"></div>
-          <div class="easter-info" id="easter-info"></div>
-        </section>
+        <!-- EASTER removed: seasonal event ended -->
       </main>
 
       <footer class="footer">
@@ -414,7 +347,7 @@
     <script src="i18n.js?v=17"></script>
     <script src="combat.js?v=17"></script>
     <script src="meetup.js?v=17"></script>
-    <script src="chat.js?v=17"></script>
+    <!-- chat.js removed -->
     <script src="lookup.js?v=17"></script>
     <script src="senntisten.js?v=17"></script>
     <script src="script.js?v=17"></script>
