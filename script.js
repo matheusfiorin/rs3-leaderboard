@@ -1204,31 +1204,92 @@ function updateUIText() {
   // Money
   h("money-title", "\uD83D\uDCB0 " + t("moneyTitle"));
   s("money-disclaimer", t("moneyDisclaimer"));
+
+  // Home grid card labels
+  s("hc-skills", t("navSkills"));
+  s("hc-senntisten", t("navSenntisten"));
+  s("hc-prifddinas", t("navPrifddinas"));
+  s("hc-lookup", t("navLookup"));
+  s("hc-quests", t("navQuests"));
+  s("hc-activity", t("navActivity"));
+  s("hc-combat", t("navCombat"));
+  s("hc-journal", t("navJournal"));
+  s("hc-money", t("navMoney"));
+  s("hc-meetup", t("navMeetup"));
+  s("home-grid-title", lang === "pt" ? "Explorar" : "Explore");
 }
 
-// ---- Tabs ----
-function initTabs() {
-  $$(".tab").forEach((tab) => {
-    tab.addEventListener("click", () => {
-      $$(".tab").forEach((t) => {
-        t.classList.remove("active");
-        t.setAttribute("aria-selected", "false");
-      });
-      tab.classList.add("active");
-      tab.setAttribute("aria-selected", "true");
-      const page = tab.dataset.tab;
-      $$(".page").forEach((p) =>
-        p.classList.toggle("active", p.dataset.page === page),
-      );
-      history.replaceState(null, "", "#" + page);
-      // Lookup doesn't need player data — always render it
-      if (page === "lookup") {
-        if (!_rendered.has(page)) renderTab(page, data);
-      } else if (data.length && !_rendered.has(page)) {
-        renderTab(page, data);
-      }
-    });
+// ---- Navigation: Home Grid + Floating Dock ----
+function launchSection(page) {
+  const dock = document.getElementById("dock");
+  if (page === "overview") {
+    // Return to home screen
+    $$(".page").forEach((p) => p.classList.remove("active"));
+    $('[data-page="overview"]').classList.add("active");
+    if (dock) dock.classList.remove("visible");
+    history.replaceState(null, "", "#overview");
+    return;
+  }
+  // Hide overview, show target
+  $$(".page").forEach((p) => p.classList.toggle("active", p.dataset.page === page));
+  // Inject back button if not already present
+  const activePage = $(`[data-page="${page}"]`);
+  if (activePage && !activePage.querySelector(".section-back")) {
+    const btn = document.createElement("button");
+    btn.className = "section-back";
+    btn.innerHTML = `\u2190 ${currentLang === "pt" ? "Início" : "Home"}`;
+    btn.addEventListener("click", () => launchSection("overview"));
+    activePage.prepend(btn);
+  }
+  if (dock) {
+    dock.classList.add("visible");
+    dock.querySelectorAll(".dock-btn").forEach((b) =>
+      b.classList.toggle("active", b.dataset.launch === page)
+    );
+  }
+  history.replaceState(null, "", "#" + page);
+  // Lazy render
+  if (page === "lookup") {
+    if (!_rendered.has(page)) renderTab(page, data);
+  } else if (data.length && !_rendered.has(page)) {
+    renderTab(page, data);
+  }
+}
+
+function initNavigation() {
+  // Home grid cards
+  $$("[data-launch]").forEach((el) => {
+    el.addEventListener("click", () => launchSection(el.dataset.launch));
   });
+  // Also support old .tab clicks for compatibility (e.g. from major-goals)
+  $$(".tab[data-tab]").forEach((tab) => {
+    tab.addEventListener("click", () => launchSection(tab.dataset.tab));
+  });
+}
+
+// Alias for backward compatibility (some modules call mgGoTab which clicks .tab)
+function initTabs() { initNavigation(); }
+
+// Update home card stats from live data
+function updateHomeStats() {
+  if (!data.length) return;
+  const p = data[0];
+  const s = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+  s("hcs-skills", `${t("totalLevel")}: ${fmt(p.totalLevel)}`);
+  s("hcs-quests", `${p.questsDone}/${p.totalQuests}`);
+  s("hcs-activity", `${p.activities.length} ${currentLang === "pt" ? "recentes" : "recent"}`);
+  s("hcs-combat", `${t("combat")} ${p.combatLevel}`);
+  s("hcs-journal", `${fmt(p.totalXp)} XP`);
+  s("hcs-money", `${Object.keys(gePrices).length} ${currentLang === "pt" ? "itens" : "items"}`);
+  // Tracker stats
+  if (typeof SN_TOTAL_ITEMS !== "undefined" && typeof snCountDone === "function") {
+    const sn = snCountDone(p);
+    s("hcs-senntisten", `${Math.round((sn.total / SN_TOTAL_ITEMS) * 100)}%`);
+  }
+  if (typeof PE_TOTAL_ITEMS !== "undefined" && typeof peCountDone === "function") {
+    const pe = peCountDone(p);
+    s("hcs-prifddinas", `${Math.round((pe.total / PE_TOTAL_ITEMS) * 100)}%`);
+  }
 }
 
 // ---- Filters ----
@@ -1966,8 +2027,8 @@ const _renderers = {
 const _rendered = new Set();
 
 function getActiveTab() {
-  const active = document.querySelector(".tab.active");
-  return active ? active.dataset.tab : "overview";
+  const active = document.querySelector(".page.active");
+  return active ? active.dataset.page : "overview";
 }
 
 function renderTab(tab, results) {
@@ -2034,6 +2095,7 @@ function renderAll(results) {
   data = results;
   _rendered.clear();
   renderTab(getActiveTab(), results);
+  updateHomeStats();
   $("#loading-overlay").classList.add("hidden");
   $("#main-content").classList.add("visible");
 }
@@ -2117,27 +2179,15 @@ async function scheduledLoad() {
 // ---- Init ----
 document.addEventListener("DOMContentLoaded", () => {
   updateUIText();
-  // URL deep linking: read hash
+  // URL deep linking via hash
   const hashTab = window.location.hash.replace("#", "");
-  if (hashTab) {
-    const tabEl = document.querySelector(`.tab[data-tab="${hashTab}"]`);
-    if (tabEl) {
-      $$(".tab").forEach((t) => {
-        t.classList.remove("active");
-        t.setAttribute("aria-selected", "false");
-      });
-      tabEl.classList.add("active");
-      tabEl.setAttribute("aria-selected", "true");
-      $$(".page").forEach((p) =>
-        p.classList.toggle("active", p.dataset.page === hashTab),
-      );
-    }
+  if (hashTab && hashTab !== "overview") {
+    launchSection(hashTab);
   }
-  initTabs();
+  initNavigation();
   window.addEventListener("hashchange", () => {
     const tab = window.location.hash.replace("#", "");
-    const tabEl = document.querySelector(`.tab[data-tab="${tab}"]`);
-    if (tabEl && !tabEl.classList.contains("active")) tabEl.click();
+    if (tab) launchSection(tab);
   });
   initFilters();
   if (typeof initChat === "function") initChat();
