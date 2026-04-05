@@ -60,11 +60,40 @@ function lkTriggerSearch(rsn) {
   doLookup(rsn);
 }
 
+/* ── CORS proxy for fetching arbitrary RSNs from browser ─────────── */
+// RuneMetrics/Hiscores APIs don't send CORS headers, so browser fetch
+// from github.io fails. We proxy through corsproxy.io for lookup only.
+const LK_CORS_PROXY = "https://corsproxy.io/?url=";
+
+async function lkFetchJSON(url) {
+  const proxied = LK_CORS_PROXY + encodeURIComponent(url);
+  const r = await fetch(proxied, { signal: AbortSignal.timeout(12000) });
+  if (!r.ok) throw new Error("fetch_fail");
+  return r.json();
+}
+
+async function lkFetchPlayer(rsn) {
+  const enc = encodeURIComponent(rsn);
+  const profileUrl = `https://apps.runescape.com/runemetrics/profile/profile?user=${enc}&activities=20`;
+  const questsUrl = `https://apps.runescape.com/runemetrics/quests?user=${enc}`;
+
+  // Fetch profile (required) and quests (optional) in parallel
+  const [profileRes, questsRes] = await Promise.allSettled([
+    lkFetchJSON(profileUrl),
+    lkFetchJSON(questsUrl),
+  ]);
+
+  if (profileRes.status === "rejected") throw new Error("fetch_fail");
+  const profile = profileRes.value;
+  if (profile.error) throw new Error(profile.error);
+
+  const quests = questsRes.status === "fulfilled" ? questsRes.value : null;
+
+  // Parse into the same format as script.js parse()
+  return parse(profile, null, quests);
+}
+
 /* ── Fetch & render full profile ───────────────────────────────────── */
-// NOTE: fetchLive() returns a PARSED player object (via parse()), not raw API data.
-// Field names: name, rank, totalLevel, totalXp, combatLevel, questsDone,
-// questsStarted, questsNone, totalQuests, activities[], skills{id:{level,xp,rank}},
-// runeScore, clues{}, questList[], questPoints
 
 async function doLookup(rsn) {
   const status = $("#lk-status");
@@ -73,7 +102,7 @@ async function doLookup(rsn) {
   status.innerHTML = `<div class="lk-spinner">${esc(t("lookupLoading"))}</div>`;
 
   try {
-    const player = await fetchLive(rsn);
+    const player = await lkFetchPlayer(rsn);
     if (!player || !player.name) throw new Error(t("lookupError"));
 
     lkSaveToHistory(player.name);
