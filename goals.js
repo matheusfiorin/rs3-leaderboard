@@ -106,7 +106,7 @@ const GOALS = [
   },
   {
     id: "invention",
-    icon: `<img src="https://runescape.wiki/images/Invention_icon.png" width="28" height="28" alt="Invention" loading="lazy" onerror="this.outerHTML='⚙️'">`,
+    icon: `<img src="https://runescape.wiki/images/thumb/Invention-icon.png/28px-Invention-icon.png" width="28" height="28" alt="Invention" loading="lazy" onerror="this.outerHTML='⚙️'">`,
     color: "purple",
     label_pt: "Desbloquear Invenção",
     label_en: "Unlock Invention",
