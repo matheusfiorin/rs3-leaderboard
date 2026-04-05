@@ -1279,7 +1279,12 @@ function launchSection(page) {
     $$(".page").forEach((p) => p.classList.remove("active"));
     const ov = $('[data-page="overview"]');
     if (ov) ov.classList.add("active");
-    if (dock) dock.classList.remove("visible");
+    if (dock) {
+      dock.classList.add("visible");
+      dock.querySelectorAll(".dock-btn").forEach((b) =>
+        b.classList.toggle("active", b.dataset.launch === "overview")
+      );
+    }
     if (!_navFromPop) history.pushState({ page: "overview" }, "", "#overview");
     return;
   }
@@ -1310,10 +1315,18 @@ function launchSection(page) {
 }
 
 function initNavigation() {
-  // Home grid cards
+  // Home grid cards + dock buttons
   $$("[data-launch]").forEach((el) => {
     el.addEventListener("click", () => launchSection(el.dataset.launch));
   });
+  // Show dock immediately (always visible like a game OS)
+  const dock = document.getElementById("dock");
+  if (dock) {
+    dock.classList.add("visible");
+    dock.querySelectorAll(".dock-btn").forEach((b) =>
+      b.classList.toggle("active", b.dataset.launch === "overview")
+    );
+  }
 }
 // Alias for backward compat
 function initTabs() { initNavigation(); }
@@ -2185,10 +2198,22 @@ function renderAll(results) {
       }
     }
   }
+  const prevData = data.length ? data : null;
   data = results;
   _rendered.clear();
   renderTab(getActiveTab(), results);
   updateHomeStats();
+
+  // Animate XP counters if data changed (Variable Reward Schedule)
+  if (prevData) {
+    setTimeout(() => {
+      $$("[data-counter]").forEach(el => {
+        const to = parseInt(el.dataset.counter, 10);
+        if (!isNaN(to)) animateCounter(el, 0, to, 1200);
+      });
+    }, 200);
+  }
+
   $("#loading-overlay").classList.add("hidden");
   $("#main-content").classList.add("visible");
 }
