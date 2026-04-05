@@ -365,7 +365,7 @@ function renderMeetup() {
   if (!meetup) {
     el.innerHTML =
       '<div class="chart-empty">' +
-      (lang === "pt" ? "Nenhum encontro planejado." : "No meetups planned.") +
+      t("meetupNoPlanned") +
       "</div>";
     return;
   }
@@ -378,7 +378,7 @@ function renderMeetup() {
       <div class="meetup-hero-emoji">\uD83E\uDD1D</div>
       <h2 class="meetup-hero-title">${m.title[lang] || m.title.en}</h2>
       <p class="meetup-hero-sub">${m.date} \u00b7 ${m.duration} \u00b7 ${m.subtitle[lang] || m.subtitle.en}</p>
-      ${m.status === "done" ? `<div style="margin-top:8px;display:inline-block;padding:3px 14px;border-radius:100px;background:var(--green-bg);color:var(--green);font-size:0.7rem;font-weight:700;border:1px solid rgba(52,211,153,0.15)">${lang === "pt" ? "\u2713 Concluido" : "\u2713 Completed"}</div>` : ""}
+      ${m.status === "done" ? `<div style="margin-top:8px;display:inline-block;padding:3px 14px;border-radius:100px;background:var(--green-bg);color:var(--green);font-size:0.7rem;font-weight:700;border:1px solid rgba(52,211,153,0.15)">\u2713 ${t("meetupCompleted")}</div>` : ""}
     </div>
 
     <div class="meetup-timeline">
@@ -401,7 +401,7 @@ function renderMeetup() {
               </div>
               <p class="meetup-block-desc">${b.desc[lang] || b.desc.en}</p>
               <div class="meetup-block-tips">
-                <div class="meetup-tips-title">${lang === "pt" ? "Resultado" : "Result"}:</div>
+                <div class="meetup-tips-title">${t("meetupResult")}:</div>
                 <ul>${(b.tips[lang] || b.tips.en).map((t) => `<li>${t}</li>`).join("")}</ul>
               </div>
               <div class="meetup-block-reward"><span class="meetup-reward-icon">\uD83C\uDF81</span>${b.rewards[lang] || b.rewards.en}</div>
@@ -412,10 +412,10 @@ function renderMeetup() {
     </div>
 
     <div class="meetup-summary">
-      <h3>${lang === "pt" ? "Resumo da Sessao" : "Session Summary"}</h3>
+      <h3>${t("meetupSessionSummary")}</h3>
       <div class="meetup-summary-grid">
         <div class="meetup-summary-item">
-          <div class="meetup-summary-label">\u2B50 ${lang === "pt" ? "XP Ganho" : "XP Gained"}</div>
+          <div class="meetup-summary-label">\u2B50 ${t("meetupXpGained")}</div>
           <div class="meetup-summary-value">${(m.summary[lang] || m.summary.en).xpExpected}</div>
         </div>
         <div class="meetup-summary-item">
@@ -423,7 +423,7 @@ function renderMeetup() {
           <div class="meetup-summary-value">${(m.summary[lang] || m.summary.en).gpExpected}</div>
         </div>
         <div class="meetup-summary-item" style="grid-column:span 2">
-          <div class="meetup-summary-label">\uD83C\uDF89 ${lang === "pt" ? "Destaques" : "Highlights"}</div>
+          <div class="meetup-summary-label">\uD83C\uDF89 ${t("meetupHighlights")}</div>
           <div class="meetup-summary-value">${(m.summary[lang] || m.summary.en).funFactor}</div>
         </div>
       </div>

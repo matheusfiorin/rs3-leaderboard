@@ -842,11 +842,11 @@ function renderCombat(players) {
   const lang = currentLang;
   const styles = ["melee", "ranged", "magic", "necro"];
   const L = {
-    single: lang === "pt" ? "Alvo \u00danico" : "Single Target",
-    aoe: "AoE" + (lang === "pt" ? " (\u00c1rea)" : ""),
-    gear: lang === "pt" ? "Equipamento" : "Gear",
-    weapon: lang === "pt" ? "Arma" : "Weapon",
-    armor: lang === "pt" ? "Armadura" : "Armor",
+    single: t("cbSingleTarget"),
+    aoe: t("cbAoe"),
+    gear: t("cbGear"),
+    weapon: t("cbWeapon"),
+    armor: t("cbArmor"),
   };
 
   el.innerHTML = players
@@ -892,28 +892,28 @@ function renderCombat(players) {
             </div>
             <div class="dps-stat">
               <div class="dps-stat-val">${hitRange.min}-${hitRange.max}</div>
-              <div class="dps-stat-label">${lang === "pt" ? "Dano Base" : "Base Hit"}</div>
+              <div class="dps-stat-label">${t("cbBaseHit")}</div>
             </div>
             <div class="dps-stat">
               <div class="dps-stat-val">${dps.armour}</div>
-              <div class="dps-stat-label">${lang === "pt" ? "Armadura" : "Armour"}</div>
+              <div class="dps-stat-label">${t("cbArmour")}</div>
             </div>
             <div class="dps-stat">
               <div class="dps-stat-val">${maxHp.toLocaleString()}</div>
-              <div class="dps-stat-label">${lang === "pt" ? "Vida M\u00e1x" : "Max HP"}</div>
+              <div class="dps-stat-label">${t("cbMaxHp")}</div>
             </div>
             <div class="dps-stat">
               <div class="dps-stat-val">${dps.avgPct}%</div>
-              <div class="dps-stat-label">${lang === "pt" ? "M\u00e9dia Hab." : "Avg Ability"}</div>
+              <div class="dps-stat-label">${t("cbAvgAbility")}</div>
             </div>
           </div>
 
-          <div style="font-size:0.48rem;color:var(--text-3);font-style:italic;text-align:center;margin-bottom:6px;opacity:0.7">${lang === "pt" ? "Estimativa base — sem orações, poções, perks ou auras" : "Baseline estimate — no prayers, potions, perks, or auras"}</div>
+          <div style="font-size:0.48rem;color:var(--text-3);font-style:italic;text-align:center;margin-bottom:6px;opacity:0.7">${t("cbEstimate")}</div>
           ${(() => {
             const prayerLvl = (p.skills[5] || {}).level || 1;
             const hasCurses = prayerLvl >= 92;
             return hasCurses
-              ? `<div style="font-size:0.52rem;color:var(--green);text-align:center;margin-bottom:4px">✦ ${lang === "pt" ? "Maldições disponíveis (Oração " + prayerLvl + ") — +10% DPS com Tormento/Angústia/Turbulência" : "Curses available (Prayer " + prayerLvl + ") — +10% DPS with Turmoil/Anguish/Torment"}</div>`
+              ? `<div style="font-size:0.52rem;color:var(--green);text-align:center;margin-bottom:4px">✦ ${t("cbCursesAvailable").replace("{n}", prayerLvl)}</div>`
               : "";
           })()}
 

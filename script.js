@@ -661,12 +661,12 @@ function renderH2H(players) {
       v2: b.melee + b.magic + b.ranged,
     },
     {
-      label: lang === "pt" ? "Pergaminhos" : "Clue Scrolls",
+      label: t("clueScrollsLabel"),
       v1: Object.values(a.clues).reduce((s, v) => s + v, 0),
       v2: Object.values(b.clues).reduce((s, v) => s + v, 0),
     },
     {
-      label: lang === "pt" ? "Hab. 50+" : "Skills 50+",
+      label: t("skills50plus"),
       v1: SKILLS.filter((sk) => ((a.skills[sk.id] || {}).level || 0) >= 50)
         .length,
       v2: SKILLS.filter((sk) => ((b.skills[sk.id] || {}).level || 0) >= 50)
@@ -699,7 +699,7 @@ function renderH2H(players) {
       })
       .join("")}
     <div style="text-align:center;margin-top:8px;font-size:0.72rem;color:var(--text-3)">
-      ${lang === "pt" ? "Veredito" : "Verdict"}: <strong style="color:${winsA > winsB ? "var(--gold)" : winsB > winsA ? "var(--teal)" : "var(--text-2)"}">${esc(verdict)}</strong>
+      ${t("verdict")}: <strong style="color:${winsA > winsB ? "var(--gold)" : winsB > winsA ? "var(--teal)" : "var(--text-2)"}">${esc(verdict)}</strong>
       (${winsA}-${winsB})
     </div>`;
 }
@@ -718,7 +718,7 @@ function renderSkills(players) {
     const prog2 = xpToNextLevel(s2.xp, s2.level, sk.max);
     const lang = currentLang;
     const toNextLabel = (p, lvl, max) => {
-      if (lvl >= max) return lang === "pt" ? "Máximo" : "Maxed";
+      if (lvl >= max) return t("maxed");
       return `${fmt(p.needed)} → ${lvl + 1}`;
     };
     return `
@@ -844,7 +844,7 @@ function renderQuests(players) {
         <div class="q-stat"><div class="q-stat-val none">${p.questsNone}</div><div class="q-stat-lbl">${t("remaining")}</div></div>
       </div>
       <div style="margin-top:10px;text-align:center;font-size:0.72rem;color:var(--text-3)">
-        <span style="font-family:var(--font-mono);font-weight:700;color:${i === 0 ? "var(--gold)" : "var(--teal)"}">${qp}</span> ${lang === "pt" ? "pontos de miss\u00e3o" : "quest points"}
+        <span style="font-family:var(--font-mono);font-weight:700;color:${i === 0 ? "var(--gold)" : "var(--teal)"}">${qp}</span> ${t("questPoints")}
       </div>
     </div>`;
     })
@@ -914,7 +914,7 @@ function renderQuests(players) {
 
   let recHtml = "";
   if (recA.length || recB.length) {
-    recHtml = `<div class="ql-recommend"><h3>${lang === "pt" ? "\uD83D\uDCDC Miss\u00f5es Recomendadas" : "\uD83D\uDCDC Recommended Quests"}</h3><div class="ql-recommend-list">`;
+    recHtml = `<div class="ql-recommend"><h3>\uD83D\uDCDC ${t("questsRecommended")}</h3><div class="ql-recommend-list">`;
     for (const q of recA)
       recHtml += `<div class="ql-rec-item"><span class="ql-rec-player p1">${esc(a.name)}</span>${esc(q.title)} <span class="ql-diff">${diffStars(q.difficulty)}</span></div>`;
     for (const q of recB)
@@ -1113,106 +1113,96 @@ function localizeActivity(text) {
 // ---- UI: update all i18n text ----
 function updateUIText() {
   const lang = currentLang;
+  const s = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+  const h = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+  const p = (id, text) => { const el = document.getElementById(id); if (el) el.placeholder = text; };
+
   // Header
-  $("#logo-text").innerHTML =
-    `RS3 <span class="accent">${lang === "pt" ? "Placar" : "Leaderboard"}</span>`;
-  $("#subtitle-text").textContent = t("subtitle");
-  $("#lang-label").textContent = lang === "pt" ? "EN" : "PT";
+  h("logo-text", `RS3 <span class="accent">${t("title").replace("RS3 ", "")}</span>`);
+  s("subtitle-text", t("subtitle"));
+  s("lang-label", lang === "pt" ? "EN" : "PT");
   document.documentElement.lang = lang === "pt" ? "pt-BR" : "en";
-  document.title =
-    lang === "pt"
-      ? "RS3 Placar \u2014 Fiorovizk & Decxus"
-      : "RS3 Leaderboard \u2014 Fiorovizk & Decxus";
+  document.title = t("title") + " \u2014 Fiorovizk & Decxus";
+
   // Tabs
-  $("#tab-overview").textContent = t("navOverview");
-  $("#tab-skills").textContent = t("navSkills");
-  $("#tab-journal").textContent = t("navJournal");
-  $("#tab-quests").textContent = t("navQuests");
-  $("#tab-activity").textContent = t("navActivity");
-  $("#tab-combat").innerHTML = "\u2694\uFE0F " + t("navCombat");
-  $("#tab-money").innerHTML = "\uD83D\uDCB0 " + t("navMoney");
-  $("#tab-chat").innerHTML = "\uD83E\uDD16 " + t("navChat");
-  $("#tab-meetup").innerHTML = "\uD83E\uDD1D " + t("navMeetup");
-  $("#tab-easter").innerHTML = "\uD83E\uDD5A " + t("navEaster");
+  s("tab-overview", t("navOverview"));
+  s("tab-skills", t("navSkills"));
+  s("tab-journal", t("navJournal"));
+  s("tab-quests", t("navQuests"));
+  s("tab-activity", t("navActivity"));
+  h("tab-combat", "\u2694\uFE0F " + t("navCombat"));
+  h("tab-money", "\uD83D\uDCB0 " + t("navMoney"));
+  h("tab-chat", "\uD83E\uDD16 " + t("navChat"));
+  h("tab-meetup", "\uD83E\uDD1D " + t("navMeetup"));
+  h("tab-easter", "\uD83E\uDD5A " + t("navEaster"));
+  h("tab-lookup", "\uD83D\uDD0D " + t("navLookup"));
+  h("tab-senntisten", "\u2694\uFE0F " + t("navSenntisten"));
+
   // Chat i18n
-  const chatTitle = document.getElementById("chat-key-title");
-  if (chatTitle) {
-    chatTitle.textContent = lang === "pt" ? "Assistente RS3" : "RS3 Assistant";
-    document.getElementById("chat-key-desc").textContent =
-      lang === "pt"
-        ? "Cole sua API key da Anthropic para conversar. A key nao e salva no servidor — usada apenas nesta aba do navegador. Aviso: a key sera enviada diretamente ao API da Anthropic."
-        : "Paste your Anthropic API key to chat. The key is not stored on any server — only used in this browser tab. Warning: the key will be sent directly to the Anthropic API.";
-    document.getElementById("chat-key-hint").textContent =
-      lang === "pt"
-        ? "Usa Claude Haiku 4.5 para respostas rapidas."
-        : "Uses Claude Haiku 4.5 for fast responses.";
-    document.getElementById("chat-key-submit").textContent =
-      lang === "pt" ? "Iniciar" : "Start";
-    document.getElementById("chat-input").placeholder =
-      lang === "pt" ? "Pergunte sobre RS3..." : "Ask about RS3...";
-  }
+  s("chat-key-title", t("chatAssistant"));
+  s("chat-key-desc", t("chatKeyDesc"));
+  s("chat-key-hint", t("chatHint"));
+  s("chat-key-submit", t("chatStart"));
+  p("chat-input", t("chatPlaceholder"));
+
   // Combat section
-  $("#combat-title").innerHTML =
-    "\u2694\uFE0F " +
-    (lang === "pt" ? "Combate & Revolution" : "Combat & Revolution");
-  $("#combat-notice").textContent =
-    lang === "pt"
-      ? "Barras baseadas na Moderniza\u00e7\u00e3o de Estilos de Combate (Mar\u00e7o 2026). Arraste habilidades no jogo para ajustar."
-      : "Bars based on Combat Style Modernisation (March 2026). Drag abilities in-game to adjust.";
-  $("#combat-wiki-link").textContent =
-    lang === "pt"
-      ? "Wiki Barras de Revolu\u00e7\u00e3o \u2192"
-      : "Wiki Revolution Bars \u2192";
+  h("combat-title", "\u2694\uFE0F " + t("navCombat") + " & Revolution");
+  s("combat-notice", t("combatNotice"));
+  s("combat-wiki-link", t("combatWikiLink") + " \u2192");
+
   // Section titles
-  $("#h2h-title").textContent = t("h2hTitle");
-  $("#journal-score-title").textContent = t("journalTitle");
-  $("#skills-title").textContent = t("skillsTitle");
-  $("#journal-title").textContent = t("journalTitle");
-  $("#quests-title").textContent = t("questsTitle");
-  $("#activity-title").textContent = t("activityTitle");
-  $("#legend-ahead").textContent = t("ahead");
-  // Filters
-  $("#filter-all").textContent = t("all");
-  $("#filter-combat").textContent = t("catCombat");
-  $("#filter-gathering").textContent = t("catGathering");
-  $("#filter-artisan").textContent = t("catArtisan");
-  $("#filter-support").textContent = t("catSupport");
-  $("#jfilter-all").textContent = t("all");
-  $("#jfilter-combat").textContent = tJournalCat("combat");
-  $("#jfilter-skills").textContent = tJournalCat("skills");
-  $("#jfilter-quests").textContent = tJournalCat("quests");
+  s("h2h-title", t("h2hTitle"));
+  s("journal-score-title", t("journalTitle"));
+  s("skills-title", t("skillsTitle"));
+  s("journal-title", t("journalTitle"));
+  s("quests-title", t("questsTitle"));
+  s("activity-title", t("activityTitle"));
+  s("legend-ahead", t("ahead"));
+  s("lookup-title", "\uD83D\uDD0D " + t("navLookup"));
+
+  // Skill filters
+  s("filter-all", t("all"));
+  s("filter-combat", t("catCombat"));
+  s("filter-gathering", t("catGathering"));
+  s("filter-artisan", t("catArtisan"));
+  s("filter-support", t("catSupport"));
+
+  // Journal filters
+  s("jfilter-all", t("all"));
+  s("jfilter-combat", tJournalCat("combat"));
+  s("jfilter-skills", tJournalCat("skills"));
+  s("jfilter-quests", tJournalCat("quests"));
+
+  // Quest filters
+  s("qfilter-all", t("all"));
+  s("qf-both-done", t("qfBothDone"));
+  s("qf-one-done", t("qfOneDone"));
+  s("qf-do-next", t("qfDoNext"));
+  s("qf-in-progress", t("qfInProgress"));
+
+  // Activity filters
+  s("af-all", t("all"));
+  s("af-levelup", "\u2B06\uFE0F " + t("afLevelups"));
+  s("af-quest", "\uD83D\uDCDC " + t("afQuests"));
+  s("af-boss", "\u2694\uFE0F " + t("afBosses"));
+  s("af-other", "\uD83D\uDCAC " + t("afOther"));
+
   // Footer
-  $("#footer-api").textContent = t("footerApi");
-  $("#footer-refresh").textContent = t("footerRefresh");
-  // Loader
-  $("#loader-text").textContent = t("loading");
+  s("footer-api", t("footerApi"));
+  s("footer-refresh", t("footerRefresh"));
+  s("loader-text", t("loading"));
+
   // Easter
-  const eLang = EASTER_I18N[lang] || EASTER_I18N.en;
-  $("#easter-title").textContent =
-    lang === "pt"
-      ? "Ca\u00e7a aos Ovos de Gielinor 2026"
-      : "Gielinor Egg Hunt 2026";
-  $("#easter-sub").textContent =
-    "Blooming Burrow \u00b7 30 Mar - 20 " + (lang === "pt" ? "Abr" : "Apr");
-  // Gains chart
-  const gainsEl = $("#gains-title");
-  if (gainsEl)
-    gainsEl.textContent =
-      lang === "pt"
-        ? "Ganhos desde o ultimo snapshot"
-        : "Gains since last snapshot";
-  // Next Steps
-  const nsTitle = $("#nextsteps-title");
-  if (nsTitle)
-    nsTitle.textContent =
-      lang === "pt" ? "🎯 Próximos Passos" : "🎯 Next Steps";
+  s("easter-title", t("easterTitle"));
+  s("easter-sub", "Blooming Burrow \u00b7 30 Mar - 20 " + (lang === "pt" ? "Abr" : "Apr"));
+
+  // Gains & Next Steps
+  s("gains-title", t("gainsTitle"));
+  h("nextsteps-title", "\uD83C\uDFAF " + t("nextStepsTitle"));
+
   // Money
-  $("#money-title").innerHTML =
-    "\uD83D\uDCB0 " + (lang === "pt" ? "Formas de Ganhar GP" : "Money Making");
-  $("#money-disclaimer").textContent =
-    lang === "pt"
-      ? "Pre\u00e7os do Grand Exchange atualizados via GitHub Actions. Lucro real pode variar."
-      : "Grand Exchange prices updated via GitHub Actions. Actual profit may vary.";
+  h("money-title", "\uD83D\uDCB0 " + t("moneyTitle"));
+  s("money-disclaimer", t("moneyDisclaimer"));
 }
 
 // ---- Tabs ----
@@ -1727,7 +1717,7 @@ function renderMoney(players) {
               const gap = reqLvl - curLvl;
               if (gap > 0)
                 parts.push(
-                  `${p.name}: ${tSkill(Number(sid))} ${curLvl}\u2192${reqLvl} (${gap} ${lang === "pt" ? "n\u00edveis" : "levels"})`,
+                  `${p.name}: ${tSkill(Number(sid))} ${curLvl}\u2192${reqLvl} (${gap} ${t("levels")})`,
                 );
             }
           }
@@ -1771,7 +1761,7 @@ function renderMoney(players) {
           <span class="money-player-tag ${p1can ? "can" : "cant"}">${esc(players[0].name)} ${p1can ? "\u2713" : "\u2717"}</span>
           <span class="money-player-tag ${p2can ? "can" : "cant"}">${esc(players[1].name)} ${p2can ? "\u2713" : "\u2717"}</span>
         </div>
-        ${!m.daily && dailyGp > 0 ? `<div class="money-card-daily">${lang === "pt" ? "~3h/dia" : "~3h/day"}: <strong>${fmtShort(dailyGp)} gp</strong></div>` : ""}
+        ${!m.daily && dailyGp > 0 ? `<div class="money-card-daily">${t("perDay")}: <strong>${fmtShort(dailyGp)} gp</strong></div>` : ""}
       </div>`;
     })
     .join("");
@@ -1825,6 +1815,12 @@ const _renderers = {
     renderEaster(r);
   },
   chat: () => {},
+  lookup: () => {
+    if (typeof renderLookupPage === "function") renderLookupPage();
+  },
+  senntisten: (r) => {
+    if (typeof renderSenntisten === "function") renderSenntisten(r);
+  },
 };
 const _rendered = new Set();
 
@@ -1880,7 +1876,7 @@ function renderAll(results) {
         const newLvl = (nw.skills[sk.id] || {}).level || 0;
         if (newLvl > oldLvl && oldLvl > 0) {
           showToast(
-            `🎉 ${nw.name} ${currentLang === "pt" ? "alcançou" : "reached"} ${tSkill(sk.id)} ${newLvl}!`,
+            `🎉 ${nw.name} ${t("toastReached")} ${tSkill(sk.id)} ${newLvl}!`,
             "level",
           );
         }
@@ -1888,7 +1884,7 @@ function renderAll(results) {
       // Quest completions
       if (nw.questsDone > (old.questsDone || 0) && old.questsDone > 0) {
         showToast(
-          `📜 ${nw.name}: +${nw.questsDone - old.questsDone} ${currentLang === "pt" ? "missões completas" : "quests completed"}!`,
+          `📜 ${nw.name}: +${nw.questsDone - old.questsDone} ${t("toastQuestsCompleted")}!`,
           "quest",
         );
       }
@@ -1923,11 +1919,7 @@ async function load() {
       );
       if (ago > 120) {
         // more than 2 hours
-        showError(
-          currentLang === "pt"
-            ? `⚠️ Dados podem estar desatualizados — última atualização há ${ago} minutos`
-            : `⚠️ Data may be outdated — last updated ${ago} minutes ago`,
-        );
+        showError(`⚠️ ${t("errOutdated").replace("{n}", ago)}`);
       }
     } catch (_) {
       setSource("loading", `${t("cached")} \u2014 ${t("updatingLive")}`);
@@ -1960,11 +1952,7 @@ async function load() {
   }
 
   setSource("error", t("offline"));
-  showError(
-    currentLang === "pt"
-      ? "Falha ao carregar. Tentando novamente em 30s..."
-      : "Failed to load. Retrying in 30s...",
-  );
+  showError(t("errFailed"));
   $("#loading-overlay").classList.add("hidden");
   $("#main-content").classList.add("visible");
   btn.classList.remove("spinning");
@@ -2036,4 +2024,59 @@ document.addEventListener("DOMContentLoaded", () => {
     updateUIText();
     if (data.length) renderAll(data);
   });
+
+  // ---- Scroll-triggered reveals (IntersectionObserver) ----
+  const revealObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("revealed");
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.06, rootMargin: "0px 0px -30px 0px" }
+  );
+
+  // Observe all cards and rows as they're added via MutationObserver
+  const mutObs = new MutationObserver((mutations) => {
+    for (const m of mutations) {
+      for (const node of m.addedNodes) {
+        if (node.nodeType !== 1) continue;
+        const revealTargets = node.querySelectorAll
+          ? node.querySelectorAll(".p-card, .skill-row, .j-row, .act-item, .money-card, .ns-item, .ql-row, .q-card, .j-score-card")
+          : [];
+        revealTargets.forEach((el) => {
+          el.classList.add("reveal-target");
+          revealObserver.observe(el);
+        });
+        if (node.classList && (node.classList.contains("p-card") || node.classList.contains("skill-row"))) {
+          node.classList.add("reveal-target");
+          revealObserver.observe(node);
+        }
+      }
+    }
+  });
+  mutObs.observe(document.getElementById("main-content"), { childList: true, subtree: true });
+
+  // ---- Chart.js RS3 theming ----
+  if (typeof Chart !== "undefined") {
+    Chart.defaults.color = "#9a9488";
+    Chart.defaults.borderColor = "rgba(212,168,67,0.06)";
+    Chart.defaults.font.family = "'Sora', 'DM Sans', system-ui, sans-serif";
+    Chart.defaults.font.size = 11;
+    Chart.defaults.plugins.legend.labels.boxWidth = 10;
+    Chart.defaults.plugins.legend.labels.padding = 16;
+    Chart.defaults.plugins.tooltip.backgroundColor = "#09091a";
+    Chart.defaults.plugins.tooltip.borderColor = "rgba(212,168,67,0.15)";
+    Chart.defaults.plugins.tooltip.borderWidth = 1;
+    Chart.defaults.plugins.tooltip.titleFont = { weight: "bold", size: 12 };
+    Chart.defaults.plugins.tooltip.cornerRadius = 6;
+    Chart.defaults.plugins.tooltip.padding = 10;
+    Chart.defaults.elements.bar.borderRadius = 3;
+    Chart.defaults.elements.line.borderWidth = 2;
+    Chart.defaults.elements.point.radius = 3;
+    Chart.defaults.elements.point.hoverRadius = 5;
+    Chart.defaults.scale.grid = { color: "rgba(212,168,67,0.04)", lineWidth: 1 };
+  }
 });

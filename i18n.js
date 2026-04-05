@@ -33,6 +33,117 @@ const LANG = {
     soon: "QUASE",
     sessionSummary: "Resumo da Sessão",
 
+    // Lookup
+    navLookup: "Consulta",
+    lookupPlaceholder: "Digite um nome de jogador...",
+    lookupSearch: "Buscar",
+    lookupLoading: "Buscando dados...",
+    lookupError: "Jogador não encontrado ou perfil privado",
+    lookupRecent: "Buscas recentes",
+    lookupBack: "Nova busca",
+
+    // Senntisten
+    navSenntisten: "Senntisten",
+    snTitle: "Rumo ao Soul Split",
+    snSubtitle: "Rastreador da cadeia Temple at Senntisten",
+    snSkills: "Habilidades Necessárias",
+    snQuests: "Missões Necessárias",
+    snManual: "Itens Manuais",
+    snPhase: "Fase",
+    snCurrentLvl: "Atual",
+    snRequired: "Necessário",
+    snGap: "Falta",
+    snComplete: "Completo",
+    snSoulSplit: "Soul Split Desbloqueado!",
+    snProgress: "Progresso Geral",
+
+    // Quest filters
+    qfBothDone: "Ambos",
+    qfOneDone: "Um Feito",
+    qfDoNext: "Fazer a Seguir",
+    qfInProgress: "Em Progresso",
+
+    // Activity filters
+    afLevelups: "Subiu Nível",
+    afQuests: "Missões",
+    afBosses: "Chefes",
+    afOther: "Outros",
+
+    // Skill sort
+    sortId: "ID",
+    sortGap: "Gap",
+    sortAlpha: "A-Z",
+    sortXp: "XP",
+
+    // Toasts & errors
+    toastReached: "alcançou",
+    toastQuestsCompleted: "missões completas",
+    errOutdated: "Dados podem estar desatualizados — última atualização há {n} minutos",
+    errFailed: "Falha ao carregar. Tentando novamente em 30s...",
+
+    // Misc labels (script.js inline ternaries)
+    clueScrollsLabel: "Pergaminhos",
+    skills50plus: "Hab. 50+",
+    verdict: "Veredito",
+    maxed: "Máximo",
+    levels: "níveis",
+    perDay: "~3h/dia",
+
+    // Combat labels (combat.js)
+    cbSingleTarget: "Alvo Único",
+    cbAoe: "AoE (Área)",
+    cbGear: "Equipamento",
+    cbWeapon: "Arma",
+    cbArmor: "Armadura",
+    cbBaseHit: "Dano Base",
+    cbArmour: "Armadura",
+    cbMaxHp: "Vida Máx",
+    cbAvgAbility: "Média Hab.",
+    cbEstimate: "Estimativa base — sem orações, poções, perks ou auras",
+    cbCursesAvailable: "Maldições disponíveis (Oração {n}) — +10% DPS com Tormento/Angústia/Turbulência",
+
+    // Meetup labels (meetup.js)
+    meetupCompleted: "Concluído",
+    meetupNoPlanned: "Nenhum encontro planejado.",
+
+    // Money
+    moneyTitle: "Formas de Ganhar GP",
+    moneyDisclaimer: "Preços do Grand Exchange atualizados a cada 15 min via GitHub Actions. Lucro real pode variar.",
+
+    // Combat
+    combatNotice: "Barras baseadas no Combat Style Modernisation (Março 2026). Arraste habilidades no jogo para ajustar.",
+    combatWikiLink: "Wiki Revolution Bars",
+
+    // Chat
+    chatAssistant: "Assistente RS3",
+    chatKeyDesc: "Cole sua API key da Anthropic para conversar. A key não é salva — usada apenas durante esta sessão.",
+    chatStart: "Iniciar",
+    chatHint: "Usa Claude Haiku 4.5 para respostas rápidas.",
+    chatPlaceholder: "Pergunte sobre RS3...",
+
+    // Meetup
+    meetupXpPerSkill: "XP Ganho por Habilidade",
+    meetupTotalXp: "XP Total Ganho",
+    meetupTotalLevels: "Níveis Totais Ganhos",
+    meetupResult: "Resultado",
+    meetupSessionSummary: "Resumo da Sessão",
+    meetupXpGained: "XP Ganho",
+    meetupHighlights: "Destaques",
+    meetupEmpty: "Nenhum encontro planejado.",
+    meetupChartsEmpty: "Gráficos disponíveis após o primeiro encontro registrado.",
+    meetupLevelsGained: "Níveis Ganhos",
+
+    // Easter
+    easterTitle: "Caça aos Ovos de Gielinor 2026",
+
+    // Quest points
+    questPoints: "pontos de missão",
+    questsRecommended: "Missões Recomendadas",
+
+    // Gains
+    gainsTitle: "Ganhos desde o último snapshot",
+    nextStepsTitle: "Próximos Passos",
+
     // Overview
     h2hTitle: "Comparativo",
     totalLevel: "Nível Total",
@@ -216,6 +327,117 @@ const LANG = {
     daily: "DAILY",
     soon: "SOON",
     sessionSummary: "Session Summary",
+
+    // Lookup
+    navLookup: "Lookup",
+    lookupPlaceholder: "Enter a player name...",
+    lookupSearch: "Search",
+    lookupLoading: "Fetching data...",
+    lookupError: "Player not found or profile is private",
+    lookupRecent: "Recent searches",
+    lookupBack: "New search",
+
+    // Senntisten
+    navSenntisten: "Senntisten",
+    snTitle: "Road to Soul Split",
+    snSubtitle: "Temple at Senntisten quest chain tracker",
+    snSkills: "Skill Requirements",
+    snQuests: "Quest Requirements",
+    snManual: "Manual Items",
+    snPhase: "Phase",
+    snCurrentLvl: "Current",
+    snRequired: "Required",
+    snGap: "Gap",
+    snComplete: "Complete",
+    snSoulSplit: "Soul Split Unlocked!",
+    snProgress: "Overall Progress",
+
+    // Quest filters
+    qfBothDone: "Both Done",
+    qfOneDone: "One Done",
+    qfDoNext: "Do Next",
+    qfInProgress: "In Progress",
+
+    // Activity filters
+    afLevelups: "Level-ups",
+    afQuests: "Quests",
+    afBosses: "Bosses",
+    afOther: "Other",
+
+    // Skill sort
+    sortId: "ID",
+    sortGap: "Gap",
+    sortAlpha: "A-Z",
+    sortXp: "XP",
+
+    // Toasts & errors
+    toastReached: "reached",
+    toastQuestsCompleted: "quests completed",
+    errOutdated: "Data may be outdated — last updated {n} minutes ago",
+    errFailed: "Failed to load. Retrying in 30s...",
+
+    // Misc labels
+    clueScrollsLabel: "Clue Scrolls",
+    skills50plus: "Skills 50+",
+    verdict: "Verdict",
+    maxed: "Maxed",
+    levels: "levels",
+    perDay: "~3h/day",
+
+    // Combat labels
+    cbSingleTarget: "Single Target",
+    cbAoe: "AoE",
+    cbGear: "Gear",
+    cbWeapon: "Weapon",
+    cbArmor: "Armor",
+    cbBaseHit: "Base Hit",
+    cbArmour: "Armour",
+    cbMaxHp: "Max HP",
+    cbAvgAbility: "Avg Ability",
+    cbEstimate: "Baseline estimate — no prayers, potions, perks, or auras",
+    cbCursesAvailable: "Curses available (Prayer {n}) — +10% DPS with Turmoil/Anguish/Torment",
+
+    // Meetup labels
+    meetupCompleted: "Completed",
+    meetupNoPlanned: "No meetups planned.",
+
+    // Money
+    moneyTitle: "Money Making",
+    moneyDisclaimer: "Grand Exchange prices updated every 15 min via GitHub Actions. Actual profit may vary.",
+
+    // Combat
+    combatNotice: "Bars based on Combat Style Modernisation (March 2026). Drag abilities in-game to adjust.",
+    combatWikiLink: "Wiki Revolution Bars",
+
+    // Chat
+    chatAssistant: "RS3 Assistant",
+    chatKeyDesc: "Paste your Anthropic API key to chat. The key is not saved — used only during this session.",
+    chatStart: "Start",
+    chatHint: "Uses Claude Haiku 4.5 for quick responses.",
+    chatPlaceholder: "Ask about RS3...",
+
+    // Meetup
+    meetupXpPerSkill: "XP Gained per Skill",
+    meetupTotalXp: "Total XP Gained",
+    meetupTotalLevels: "Total Levels Gained",
+    meetupResult: "Result",
+    meetupSessionSummary: "Session Summary",
+    meetupXpGained: "XP Gained",
+    meetupHighlights: "Highlights",
+    meetupEmpty: "No meetups planned.",
+    meetupChartsEmpty: "Charts available after the first recorded meetup.",
+    meetupLevelsGained: "Levels Gained",
+
+    // Easter
+    easterTitle: "Gielinor Egg Hunt 2026",
+
+    // Quest points
+    questPoints: "quest points",
+    questsRecommended: "Recommended Quests",
+
+    // Gains
+    gainsTitle: "Gains since last snapshot",
+    nextStepsTitle: "Next Steps",
 
     h2hTitle: "Side by Side",
     totalLevel: "Total Level",
