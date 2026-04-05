@@ -209,7 +209,7 @@ function lkBuildSkillsGrid(p) {
     return `
       <div class="skill-row" data-cat="${sk.cat}">
         <div class="sk-name-col">
-          <div class="sk-icon ${sk.cat}">${sk.abbr}</div>
+          <div class="sk-icon ${sk.cat}">${skillIconImg(sk.id, 22)}</div>
           <div class="sk-name">${tSkill(sk.id)}</div>
         </div>
         <div class="sk-player-col">

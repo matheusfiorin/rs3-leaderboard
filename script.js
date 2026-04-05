@@ -23,6 +23,37 @@ function enc(s) {
   return encodeURIComponent(s);
 }
 
+// ---- RS3 Skill Icons from Wiki ----
+const SKILL_NAMES_EN = {
+  0:'Attack',1:'Defence',2:'Strength',3:'Constitution',4:'Ranged',5:'Prayer',
+  6:'Magic',7:'Cooking',8:'Woodcutting',9:'Fletching',10:'Fishing',11:'Firemaking',
+  12:'Crafting',13:'Smithing',14:'Mining',15:'Herblore',16:'Agility',17:'Thieving',
+  18:'Slayer',19:'Farming',20:'Runecrafting',21:'Hunter',22:'Construction',
+  23:'Summoning',24:'Dungeoneering',25:'Divination',26:'Invention',27:'Archaeology',28:'Necromancy'
+};
+function SKILL_ICON(id) {
+  const name = SKILL_NAMES_EN[id];
+  return name ? `https://runescape.wiki/images/${name}_icon.png` : '';
+}
+function skillIconImg(id, size) {
+  const s = size || 20;
+  return `<img src="${SKILL_ICON(id)}" width="${s}" height="${s}" alt="" loading="lazy" style="vertical-align:middle" onerror="this.style.display='none'">`;
+}
+
+// ---- Animated Counter ----
+function animateCounter(el, from, to, duration) {
+  if (!el || from === to) return;
+  const start = performance.now();
+  const step = (now) => {
+    const pct = Math.min((now - start) / (duration || 800), 1);
+    const eased = 1 - Math.pow(1 - pct, 3); // ease-out cubic
+    const val = Math.round(from + (to - from) * eased);
+    el.textContent = val.toLocaleString();
+    if (pct < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
 // ---- Skills ----
 const SKILLS = [
   { id: 0, abbr: "ATK", cat: "combat", max: 99 },
@@ -723,7 +754,7 @@ function renderSkills(players) {
     };
     return `
       <div class="skill-row" data-cat="${sk.cat}">
-        <div class="sk-name-col"><div class="sk-icon ${sk.cat}">${sk.abbr}</div><div class="sk-name">${tSkill(sk.id)}</div></div>
+        <div class="sk-name-col"><div class="sk-icon ${sk.cat}">${skillIconImg(sk.id, 22)}</div><div class="sk-name">${tSkill(sk.id)}</div></div>
         <div class="sk-player-col">
           <div class="sk-level ${a1}">${s1.level}</div>
           <div class="sk-xp">${fmt(s1.xp)} ${t("xp")}</div>

@@ -9,7 +9,7 @@
 const GOALS = [
   {
     id: "senntisten",
-    icon: "⚔️",
+    icon: `<img src="https://runescape.wiki/images/Soul_Split.png" width="28" height="28" alt="Soul Split" loading="lazy" onerror="this.outerHTML='⚔️'">`,
     color: "gold",
     label_pt: "Rumo ao Soul Split",
     label_en: "Road to Soul Split",
@@ -47,7 +47,7 @@ const GOALS = [
   },
   {
     id: "prifddinas",
-    icon: "🏰",
+    icon: `<img src="https://runescape.wiki/images/Prifddinas_lodestone_icon.png" width="28" height="28" alt="Prifddinas" loading="lazy" onerror="this.outerHTML='🏰'">`,
     color: "teal",
     label_pt: "Rumo a Prifddinas",
     label_en: "Road to Prifddinas",
@@ -82,7 +82,7 @@ const GOALS = [
   },
   {
     id: "worldwakes",
-    icon: "☀️",
+    icon: `<img src="https://runescape.wiki/images/Sunshine.png" width="28" height="28" alt="Sunshine" loading="lazy" onerror="this.outerHTML='☀️'">`,
     color: "orange",
     label_pt: "The World Wakes",
     label_en: "The World Wakes",
@@ -106,7 +106,7 @@ const GOALS = [
   },
   {
     id: "invention",
-    icon: "⚙️",
+    icon: `<img src="https://runescape.wiki/images/Invention_icon.png" width="28" height="28" alt="Invention" loading="lazy" onerror="this.outerHTML='⚙️'">`,
     color: "purple",
     label_pt: "Desbloquear Invenção",
     label_en: "Unlock Invention",
@@ -176,7 +176,7 @@ function goalSkillRow(player, sk) {
   const met = cur >= sk.required;
   const pct = met ? 100 : Math.round((cur / sk.required) * 100);
   return `<div class="gl-skill ${met ? "gl-met" : ""}">
-    <span class="gl-skill-icon">${met ? "✅" : "🔴"}</span>
+    <span class="gl-skill-icon">${typeof skillIconImg === "function" ? skillIconImg(sk.id, 18) : (met ? "✅" : "🔴")}</span>
     <span class="gl-skill-name">${typeof tSkill === "function" ? tSkill(sk.id) : sk.id}</span>
     <span class="gl-skill-lvl">${cur}</span>
     <span class="gl-skill-sep">/</span>
