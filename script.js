@@ -643,7 +643,7 @@ function esc(s) {
 const SWORD =
   '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m14.5 17.5 3 3 4-4-3-3"/><path d="m3 3 7.5 7.5"/><path d="m14.5 6.5 4-4"/><path d="M18.5 2.5 22 6"/><path d="m2 22 5.5-5.5"/><path d="m6.5 17.5-3-3"/></svg>';
 
-// ---- Render: Player Cards ----
+// ---- Render: Player Cards (Character Sheet style) ----
 function renderCards(players) {
   $("#player-cards").innerHTML = players
     .map((p, i) => {
@@ -651,20 +651,37 @@ function renderCards(players) {
       const other = players[1 - i];
       let ahead = 0;
       SKILLS.forEach((sk) => {
-        if (
-          ((p.skills[sk.id] || {}).xp || 0) >
-          ((other.skills[sk.id] || {}).xp || 0)
-        )
-          ahead++;
+        if (((p.skills[sk.id] || {}).xp || 0) > ((other.skills[sk.id] || {}).xp || 0)) ahead++;
       });
       const totalClues = Object.values(p.clues).reduce((a, b) => a + b, 0);
+      // Top 3 skills for mini-preview
+      const topSkills = SKILLS
+        .map(sk => ({ sk, lvl: (p.skills[sk.id] || {}).level || 1 }))
+        .sort((a, b) => b.lvl - a.lvl)
+        .slice(0, 3);
+      // Lowest skill (loss aversion)
+      const lowest = SKILLS
+        .map(sk => ({ sk, lvl: (p.skills[sk.id] || {}).level || 1 }))
+        .sort((a, b) => a.lvl - b.lvl)[0];
+
       return `
       <div class="p-card ${c} fade-in" style="animation-delay:${i * 0.08}s">
-        <div class="p-card-name">${esc(p.name)}</div>
-        <div class="p-card-rank">${t("overallRank")} #${esc(p.rank)}</div>
-        <div class="p-card-combat">${SWORD} ${t("combat")} ${p.combatLevel}</div>
+        <div class="p-card-top">
+          <div>
+            <div class="p-card-name">${esc(p.name)}</div>
+            <div class="p-card-rank">${t("overallRank")} #${esc(p.rank)}</div>
+          </div>
+          <div class="p-card-combat-shield">
+            <span class="p-shield-num">${p.combatLevel}</span>
+            <span class="p-shield-label">${t("combat")}</span>
+          </div>
+        </div>
+        <div class="p-card-skills-preview">
+          ${topSkills.map(s => `<span class="p-top-skill">${skillIconImg(s.sk.id, 16)}<span>${s.lvl}</span></span>`).join("")}
+          <span class="p-top-skill p-lowest" title="${tSkill(lowest.sk.id)}: ${lowest.lvl}">${skillIconImg(lowest.sk.id, 16)}<span style="color:var(--red)">${lowest.lvl}</span></span>
+        </div>
         <div class="p-stats">
-          <div class="p-stat"><div class="p-stat-val">${fmt(p.totalLevel)}</div><div class="p-stat-label">${t("totalLevel")}</div></div>
+          <div class="p-stat"><div class="p-stat-val" data-counter="${p.totalLevel}">${fmt(p.totalLevel)}</div><div class="p-stat-label">${t("totalLevel")}</div></div>
           <div class="p-stat"><div class="p-stat-val">${fmtShort(p.totalXp)}</div><div class="p-stat-label">${t("totalXp")}</div></div>
           <div class="p-stat"><div class="p-stat-val">${fmt(p.runeScore)}</div><div class="p-stat-label">${t("runeScore")}</div></div>
           <div class="p-stat"><div class="p-stat-val">${p.questsDone}<small style="font-size:0.6em;color:var(--text-3)">/${p.totalQuests}</small></div><div class="p-stat-label">${t("questsDone")}</div></div>
