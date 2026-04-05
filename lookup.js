@@ -67,22 +67,28 @@ function lkTriggerSearch(rsn) {
 // from github.io fails. We proxy through allorigins for lookup only.
 const LK_CORS_PROXY = "https://api.allorigins.win/get?url=";
 
-async function lkFetchJSON(url) {
-  const proxied = LK_CORS_PROXY + encodeURIComponent(url);
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 15000);
-  try {
-    const r = await fetch(proxied, { signal: ctrl.signal });
-    clearTimeout(timer);
-    if (!r.ok) throw new Error("fetch_fail: " + r.status);
-    const wrapper = await r.json();
-    // allorigins wraps response in {"contents": "...", "status": {...}}
-    if (!wrapper.contents) throw new Error("empty_response");
-    return JSON.parse(wrapper.contents);
-  } catch (err) {
-    clearTimeout(timer);
-    throw err;
+async function lkFetchJSON(url, retries) {
+  const maxRetries = retries || 2;
+  let lastErr;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const proxied = LK_CORS_PROXY + encodeURIComponent(url);
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 12000);
+      const r = await fetch(proxied, { signal: ctrl.signal });
+      clearTimeout(timer);
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const text = await r.text();
+      if (!text) throw new Error("empty");
+      const wrapper = JSON.parse(text);
+      if (!wrapper.contents) throw new Error("no contents");
+      return JSON.parse(wrapper.contents);
+    } catch (err) {
+      lastErr = err;
+      if (attempt < maxRetries - 1) await new Promise(r => setTimeout(r, 1000));
+    }
   }
+  throw lastErr;
 }
 
 async function lkFetchPlayer(rsn) {

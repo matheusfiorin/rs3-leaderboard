@@ -1222,17 +1222,19 @@ function updateUIText() {
 }
 
 // ---- Navigation: Home Grid + Floating Dock ----
+let _navFromPop = false; // flag to prevent pushState during popstate
+
 function launchSection(page) {
   const dock = document.getElementById("dock");
   if (page === "overview") {
-    // Return to home screen
     $$(".page").forEach((p) => p.classList.remove("active"));
-    $('[data-page="overview"]').classList.add("active");
+    const ov = $('[data-page="overview"]');
+    if (ov) ov.classList.add("active");
     if (dock) dock.classList.remove("visible");
-    history.replaceState(null, "", "#overview");
+    if (!_navFromPop) history.pushState({ page: "overview" }, "", "#overview");
     return;
   }
-  // Hide overview, show target
+  // Show target section
   $$(".page").forEach((p) => p.classList.toggle("active", p.dataset.page === page));
   // Inject back button if not already present
   const activePage = $(`[data-page="${page}"]`);
@@ -1249,7 +1251,7 @@ function launchSection(page) {
       b.classList.toggle("active", b.dataset.launch === page)
     );
   }
-  history.replaceState(null, "", "#" + page);
+  if (!_navFromPop) history.pushState({ page }, "", "#" + page);
   // Lazy render
   if (page === "lookup") {
     if (!_rendered.has(page)) renderTab(page, data);
@@ -2219,12 +2221,19 @@ document.addEventListener("DOMContentLoaded", () => {
   // URL deep linking via hash
   const hashTab = window.location.hash.replace("#", "");
   if (hashTab && hashTab !== "overview") {
+    _navFromPop = true;
     launchSection(hashTab);
+    _navFromPop = false;
   }
+  // Set initial history state
+  history.replaceState({ page: hashTab || "overview" }, "", window.location.hash || "#overview");
   initNavigation();
-  window.addEventListener("hashchange", () => {
-    const tab = window.location.hash.replace("#", "");
-    if (tab) launchSection(tab);
+  // Handle browser back/forward (Android back button)
+  window.addEventListener("popstate", (e) => {
+    const page = (e.state && e.state.page) || window.location.hash.replace("#", "") || "overview";
+    _navFromPop = true;
+    launchSection(page);
+    _navFromPop = false;
   });
   initFilters();
   if (typeof initChat === "function") initChat();
