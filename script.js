@@ -1208,6 +1208,7 @@ function updateUIText() {
   s("money-disclaimer", t("moneyDisclaimer"));
 
   // Home grid card labels
+  s("hc-goals", lang === "pt" ? "Objetivos" : "Goals");
   s("hc-skills", t("navSkills"));
   s("hc-senntisten", t("navSenntisten"));
   s("hc-prifddinas", t("navPrifddinas"));
@@ -1280,14 +1281,16 @@ function updateHomeStats() {
   s("hcs-combat", `${t("combat")} ${p.combatLevel}`);
   s("hcs-journal", `${fmt(p.totalXp)} XP`);
   s("hcs-money", `${Object.keys(gePrices).length} ${currentLang === "pt" ? "itens" : "items"}`);
-  // Tracker stats
-  if (typeof SN_TOTAL_ITEMS !== "undefined" && typeof snCountDone === "function") {
-    const sn = snCountDone(p);
-    s("hcs-senntisten", `${Math.round((sn.total / SN_TOTAL_ITEMS) * 100)}%`);
-  }
-  if (typeof PE_TOTAL_ITEMS !== "undefined" && typeof peCountDone === "function") {
-    const pe = peCountDone(p);
-    s("hcs-prifddinas", `${Math.round((pe.total / PE_TOTAL_ITEMS) * 100)}%`);
+  // Goals summary stat
+  if (typeof GOALS !== "undefined" && typeof goalProgress === "function") {
+    let totalDone = 0, totalItems = 0;
+    for (const g of GOALS) {
+      const prog = goalProgress(g, p);
+      totalDone += prog.done;
+      totalItems += prog.total;
+    }
+    const pct = totalItems ? Math.round((totalDone / totalItems) * 100) : 0;
+    s("hcs-goals", `${pct}% (${totalDone}/${totalItems})`);
   }
 }
 
@@ -2020,7 +2023,7 @@ async function loadVisitorStats() {
 // ---- Lazy tab rendering ----
 const _renderers = {
   overview: (r) => {
-    if (typeof renderMajorGoals === "function") renderMajorGoals(r);
+    if (typeof renderGoalsSummary === "function") renderGoalsSummary(r);
     renderCards(r);
     renderH2H(r);
     renderJournal(r, "#journal-scores", null);
@@ -2061,6 +2064,9 @@ const _renderers = {
   },
   prifddinas: (r) => {
     if (typeof renderPrifddinas === "function") renderPrifddinas(r);
+  },
+  goals: (r) => {
+    if (typeof renderGoalsPage === "function") renderGoalsPage(r);
   },
 };
 const _rendered = new Set();

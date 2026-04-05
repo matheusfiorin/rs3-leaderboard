@@ -122,9 +122,8 @@
             <h2 class="section-title" id="home-grid-title">Explorar</h2>
           </div>
           <div class="home-grid" id="home-grid">
+            <button class="home-card" data-launch="goals"><span class="home-card-icon">🎯</span><span class="home-card-label" id="hc-goals">Objetivos</span><span class="home-card-stat" id="hcs-goals"></span></button>
             <button class="home-card" data-launch="skills"><span class="home-card-icon">📊</span><span class="home-card-label" id="hc-skills">Habilidades</span><span class="home-card-stat" id="hcs-skills"></span></button>
-            <button class="home-card" data-launch="senntisten"><span class="home-card-icon">⚔️</span><span class="home-card-label" id="hc-senntisten">Senntisten</span><span class="home-card-stat" id="hcs-senntisten"></span></button>
-            <button class="home-card" data-launch="prifddinas"><span class="home-card-icon">🏰</span><span class="home-card-label" id="hc-prifddinas">Prifddinas</span><span class="home-card-stat" id="hcs-prifddinas"></span></button>
             <button class="home-card" data-launch="lookup"><span class="home-card-icon">🔍</span><span class="home-card-label" id="hc-lookup">Consulta</span><span class="home-card-stat" id="hcs-lookup"></span></button>
             <button class="home-card" data-launch="quests"><span class="home-card-icon">📜</span><span class="home-card-label" id="hc-quests">Missões</span><span class="home-card-stat" id="hcs-quests"></span></button>
             <button class="home-card" data-launch="activity"><span class="home-card-icon">⚡</span><span class="home-card-label" id="hc-activity">Atividade</span><span class="home-card-stat" id="hcs-activity"></span></button>
@@ -337,12 +336,13 @@
           <div id="lookup-content"></div>
         </section>
 
-        <!-- SENNTISTEN TRACKER -->
+        <!-- UNIFIED GOALS PAGE -->
+        <section class="page" data-page="goals" role="tabpanel"></section>
+
+        <!-- Legacy tracker sections (kept for hash compat) -->
         <section class="page" data-page="senntisten" role="tabpanel">
           <div id="senntisten-content"></div>
         </section>
-
-        <!-- PRIFDDINAS TRACKER -->
         <section class="page" data-page="prifddinas" role="tabpanel">
           <div id="prifddinas-content"></div>
         </section>
@@ -370,8 +370,8 @@
     <!-- FLOATING DOCK -->
     <nav class="dock" id="dock">
       <button class="dock-btn" data-launch="overview" title="Home">🏠</button>
+      <button class="dock-btn" data-launch="goals" title="Goals">🎯</button>
       <button class="dock-btn" data-launch="skills" title="Skills">📊</button>
-      <button class="dock-btn" data-launch="senntisten" title="Senntisten">⚔️</button>
       <button class="dock-btn" data-launch="lookup" title="Lookup">🔍</button>
     </nav>
 
@@ -382,8 +382,9 @@
     <script src="lookup.js?v=17"></script>
     <script src="senntisten.js?v=18"></script>
     <script src="prifddinas.js?v=18"></script>
-    <script src="major-goals.js?v=18"></script>
-    <script src="script.js?v=18"></script>
+    <script src="major-goals.js?v=19"></script>
+    <script src="goals.js?v=19"></script>
+    <script src="script.js?v=19"></script>
     <!-- GoatCounter analytics (privacy-friendly, no cookies) -->
     <!-- TODO: Replace SITE_CODE with your goatcounter.com site code -->
     <script data-goatcounter="https://rs3placar.goatcounter.com/count"
