@@ -981,6 +981,8 @@ function renderEaster(players) {
     if (tabEl) tabEl.style.display = "none";
     return;
   }
+  // Guard: Easter HTML sections may have been removed
+  if (!$("#easter-checklist") || !$("#easter-info")) return;
   const easterLang = EASTER_I18N[currentLang] || EASTER_I18N.en;
   const saved = JSON.parse(localStorage.getItem("rs3lb-easter") || "{}");
 
@@ -1261,13 +1263,8 @@ function initNavigation() {
   $$("[data-launch]").forEach((el) => {
     el.addEventListener("click", () => launchSection(el.dataset.launch));
   });
-  // Also support old .tab clicks for compatibility (e.g. from major-goals)
-  $$(".tab[data-tab]").forEach((tab) => {
-    tab.addEventListener("click", () => launchSection(tab.dataset.tab));
-  });
 }
-
-// Alias for backward compatibility (some modules call mgGoTab which clicks .tab)
+// Alias for backward compat
 function initTabs() { initNavigation(); }
 
 // Update home card stats from live data
@@ -1862,6 +1859,31 @@ function calcProfit(method) {
   return profitPerAction * method.actionsPerHour;
 }
 
+// ---- Next Steps: auto-generated suggestions per player ----
+function renderNextSteps(players) {
+  const el = $("#next-steps");
+  if (!el) return;
+  const lang = currentLang;
+  const items = [];
+  for (const p of players) {
+    const pi = players.indexOf(p);
+    const c = pi === 0 ? "p1" : "p2";
+    // Suggest lowest skills to train
+    const lowSkills = SKILLS
+      .map(sk => ({ sk, lvl: (p.skills[sk.id] || {}).level || 1 }))
+      .sort((a, b) => a.lvl - b.lvl)
+      .slice(0, 2);
+    for (const ls of lowSkills) {
+      items.push(`<div class="ns-item"><span class="ns-icon">📈</span><span class="ns-tag ${c}">${esc(p.name)}</span><span class="ns-text">${tSkill(ls.sk.id)}: ${lang === "pt" ? "treinar de" : "train from"} ${ls.lvl}</span><span class="ns-detail">${lang === "pt" ? "menor hab." : "lowest skill"}</span></div>`);
+    }
+    // Suggest quests if few done
+    if (p.questsDone < 50) {
+      items.push(`<div class="ns-item"><span class="ns-icon">📜</span><span class="ns-tag ${c}">${esc(p.name)}</span><span class="ns-text">${lang === "pt" ? "Fazer mais missões" : "Do more quests"} (${p.questsDone}/${p.totalQuests})</span><span class="ns-detail">${lang === "pt" ? "progresso" : "progress"}</span></div>`);
+    }
+  }
+  el.innerHTML = items.join("") || `<div style="color:var(--text-3);font-size:0.78rem;text-align:center;padding:16px">${lang === "pt" ? "Nenhuma sugestão" : "No suggestions"}</div>`;
+}
+
 function canDoMethod(player, method) {
   for (const [skillId, reqLevel] of Object.entries(method.reqs)) {
     const sk = player.skills[Number(skillId)];
@@ -2002,7 +2024,7 @@ const _renderers = {
     renderJournal(r, "#journal-scores", null);
     if (typeof renderOverviewGainsChart === "function")
       renderOverviewGainsChart();
-    renderNextSteps(r);
+    if (typeof renderNextSteps === "function") renderNextSteps(r);
   },
   skills: (r) => {
     renderSkills(r);
@@ -2017,7 +2039,7 @@ const _renderers = {
     renderActivity(r);
   },
   combat: (r) => {
-    renderCombat(r);
+    if (typeof renderCombat === "function") renderCombat(r);
   },
   money: (r) => {
     renderMoney(r);

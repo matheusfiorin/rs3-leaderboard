@@ -227,58 +227,6 @@ a:hover { color: var(--gold-bright); text-decoration: underline; }
 }
 .lang-toggle:hover { color: var(--gold); border-color: var(--gold-dim); }
 
-/* ===== TABS — Ember Underline ===== */
-.tabs {
-  max-width: var(--max-w); margin: 0 auto;
-  padding: 0 16px; display: flex; gap: 0;
-  overflow-x: auto; scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-}
-.tabs::-webkit-scrollbar { display: none; }
-
-.tab {
-  appearance: none; background: none; border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--text-3);
-  font-family: var(--font); font-size: 0.58rem; font-weight: 600;
-  padding: 11px 14px; cursor: pointer; white-space: nowrap;
-  letter-spacing: 1.8px; text-transform: uppercase;
-  transition: color 0.3s, border-color 0.4s, background 0.3s, text-shadow 0.4s;
-  min-height: 44px; position: relative;
-}
-.tab:hover {
-  color: var(--text-2);
-  background: rgba(212, 168, 67, 0.02);
-}
-.tab:active { background: rgba(212, 168, 67, 0.04); }
-
-/* Active tab — glowing ember bar */
-.tab.active {
-  color: var(--gold-bright);
-  border-bottom-color: var(--gold);
-  text-shadow: 0 0 18px rgba(212,168,67,0.4);
-  background: linear-gradient(180deg, transparent 40%, rgba(212,168,67,0.04) 100%);
-}
-.tab.active::after {
-  content: "";
-  position: absolute; bottom: -1px; left: 20%; right: 20%;
-  height: 4px; border-radius: 4px;
-  background: var(--gold);
-  filter: blur(6px);
-  animation: ember-glow 3s ease-in-out infinite alternate;
-}
-@keyframes ember-glow {
-  0%   { opacity: 0.5; left: 25%; right: 25%; }
-  100% { opacity: 0.9; left: 15%; right: 15%; }
-}
-
-.tab.easter-tab { color: var(--purple); }
-.tab.easter-tab.active {
-  color: var(--purple); border-bottom-color: var(--purple);
-  text-shadow: 0 0 18px rgba(167,139,250,0.4);
-}
-.tab.easter-tab.active::after { background: var(--purple); }
-
 /* ===== PAGE TRANSITIONS ===== */
 .page { display: none; opacity: 0; }
 .page.active { display: block; animation: pageReveal 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
@@ -1026,7 +974,7 @@ a:hover { color: var(--gold-bright); text-decoration: underline; }
   .p-stat-label { font-size: 0.54rem; }
   .quest-cards { grid-template-columns: 1fr; }
   .journal-scores { grid-template-columns: 1fr; gap: 10px; }
-  .tab { padding: 8px 10px; font-size: 0.6rem; }
+  /* .tab removed — using home-grid nav now */
   .h2h-row { height: 32px; }
   .h2h-row, .h2h-header { grid-template-columns: 1fr 64px 1fr; }
   .h2h-val { font-size: 0.63rem; }
@@ -1060,6 +1008,12 @@ a:hover { color: var(--gold-bright); text-decoration: underline; }
 
 /* Very small mobile */
 @media (max-width: 380px) {
+  .home-grid { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 6px; }
+  .home-card { padding: 14px 8px 12px; }
+  .home-card-icon { font-size: 1.4rem; }
+  .home-card-label { font-size: 0.6rem; }
+  .dock { padding: 4px 8px; }
+  .dock-btn { font-size: 1rem; padding: 6px 10px; }
   html { font-size: 13px; }
   .p-stats { grid-template-columns: repeat(2, 1fr); }
   .skill-row { grid-template-columns: 80px 1fr 1fr; }
@@ -1078,7 +1032,7 @@ a:hover { color: var(--gold-bright); text-decoration: underline; }
 ::selection { background: var(--gold-bg); color: var(--gold-bright); }
 
 /* Focus-visible */
-.tab:focus-visible, .pill:focus-visible, .btn-refresh:focus-visible, .lang-toggle:focus-visible {
+.pill:focus-visible, .btn-refresh:focus-visible, .lang-toggle:focus-visible, .home-card:focus-visible, .dock-btn:focus-visible {
   outline: 2px solid var(--gold); outline-offset: 2px;
 }
 .easter-check:focus-visible, .meetup-check:focus-visible {
@@ -1270,12 +1224,6 @@ a:hover { color: var(--gold-bright); text-decoration: underline; }
   50% { box-shadow: 0 0 8px rgba(52,211,153,0.3); }
 }
 
-/* ---- Active tab: Brighter, wider ember ---- */
-.tab.active::after {
-  height: 6px;
-  filter: blur(8px);
-}
-
 /* ---- Activity feed: Staggered entry ---- */
 .act-item {
   animation: feedSlideIn 0.3s ease both;
@@ -1375,7 +1323,7 @@ a:hover { color: var(--gold-bright); text-decoration: underline; }
   background: var(--bg-card-alt);
 }
 .home-card:hover::before { opacity: 1; }
-.home-card:active { transform: scale(0.96); }
+.home-card:active { transform: translateY(-1px) scale(0.97); }
 .home-card-icon { font-size: 1.8rem; line-height: 1; }
 .home-card-label {
   font-family: var(--font-display);

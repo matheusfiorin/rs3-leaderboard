@@ -83,10 +83,17 @@ function mgPeCount(player) {
   return { done, total };
 }
 
-// ---- Navigate to tab ----
+// ---- Navigate to section ----
 function mgGoTab(tabName) {
-  const tabEl = document.querySelector(`.tab[data-tab="${tabName}"]`);
-  if (tabEl) tabEl.click();
+  // Use the new launchSection() from the home-grid nav system
+  if (typeof launchSection === "function") {
+    launchSection(tabName);
+  } else {
+    // Fallback: click a data-launch button or set hash
+    const btn = document.querySelector(`[data-launch="${tabName}"]`);
+    if (btn) btn.click();
+    else window.location.hash = tabName;
+  }
 }
 
 // ---- Player badge (small avatar chip) ----
