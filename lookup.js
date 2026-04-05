@@ -62,14 +62,17 @@ function lkTriggerSearch(rsn) {
 
 /* ── CORS proxy for fetching arbitrary RSNs from browser ─────────── */
 // RuneMetrics/Hiscores APIs don't send CORS headers, so browser fetch
-// from github.io fails. We proxy through corsproxy.io for lookup only.
-const LK_CORS_PROXY = "https://corsproxy.io/?url=";
+// from github.io fails. We proxy through allorigins for lookup only.
+const LK_CORS_PROXY = "https://api.allorigins.win/get?url=";
 
 async function lkFetchJSON(url) {
   const proxied = LK_CORS_PROXY + encodeURIComponent(url);
-  const r = await fetch(proxied, { signal: AbortSignal.timeout(12000) });
+  const r = await fetch(proxied, { signal: AbortSignal.timeout(15000) });
   if (!r.ok) throw new Error("fetch_fail");
-  return r.json();
+  const wrapper = await r.json();
+  // allorigins wraps response in {"contents": "...", "status": {...}}
+  if (!wrapper.contents) throw new Error("empty_response");
+  return JSON.parse(wrapper.contents);
 }
 
 async function lkFetchPlayer(rsn) {
