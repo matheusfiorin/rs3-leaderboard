@@ -30,7 +30,9 @@ function lkSaveToHistory(rsn) {
 
 function renderLookupPage() {
   const root = $("#lookup-content");
-  if (!root) return;
+  if (!root) { console.error("Lookup: #lookup-content not found"); return; }
+  // Don't re-render if already has content (preserves search results)
+  if (root.querySelector("#lk-input")) return;
   root.innerHTML = `
     <div class="lk-search-box">
       <input id="lk-input" class="chat-key-input" type="text"
@@ -67,12 +69,20 @@ const LK_CORS_PROXY = "https://api.allorigins.win/get?url=";
 
 async function lkFetchJSON(url) {
   const proxied = LK_CORS_PROXY + encodeURIComponent(url);
-  const r = await fetch(proxied, { signal: AbortSignal.timeout(15000) });
-  if (!r.ok) throw new Error("fetch_fail");
-  const wrapper = await r.json();
-  // allorigins wraps response in {"contents": "...", "status": {...}}
-  if (!wrapper.contents) throw new Error("empty_response");
-  return JSON.parse(wrapper.contents);
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15000);
+  try {
+    const r = await fetch(proxied, { signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!r.ok) throw new Error("fetch_fail: " + r.status);
+    const wrapper = await r.json();
+    // allorigins wraps response in {"contents": "...", "status": {...}}
+    if (!wrapper.contents) throw new Error("empty_response");
+    return JSON.parse(wrapper.contents);
+  } catch (err) {
+    clearTimeout(timer);
+    throw err;
+  }
 }
 
 async function lkFetchPlayer(rsn) {
@@ -124,7 +134,11 @@ async function doLookup(rsn) {
       $("#lk-input").focus();
     });
   } catch (err) {
-    status.innerHTML = `<p class="lk-error">${esc(t("lookupError"))}</p>`;
+    console.error("Lookup failed:", err);
+    const msg = err.message === "NOT_A_MEMBER" || err.message === "PROFILE_PRIVATE"
+      ? t("lookupError")
+      : t("lookupError") + ` (${err.message})`;
+    status.innerHTML = `<p class="lk-error">${esc(msg)}</p>`;
   }
 }
 
