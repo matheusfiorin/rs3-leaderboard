@@ -535,25 +535,31 @@ const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
 
 // ---- Fetch ----
-function timeoutSignal(ms) {
-  const c = new AbortController();
-  setTimeout(() => c.abort(), ms);
-  return c.signal;
+// ---- Fetch helpers with proper timeout cleanup ----
+function fetchWithTimeout(url, opts, ms) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms || 10000);
+  return fetch(url, { ...opts, signal: ctrl.signal })
+    .then(r => { clearTimeout(timer); return r; })
+    .catch(e => { clearTimeout(timer); throw e; });
 }
 
 async function directFetch(url) {
-  const r = await fetch(url, { signal: timeoutSignal(8000) });
+  const r = await fetchWithTimeout(url, {}, 10000);
   if (!r.ok) throw new Error("fetch_fail");
-  return await r.json();
+  return r.json();
 }
+
 async function cacheFetch(path) {
-  const r = await fetch(path, {
-    signal: timeoutSignal(5000),
-    cache: "no-cache",
-  });
+  // Use browser default caching for static data/ files (they're committed to the repo)
+  const r = await fetchWithTimeout(path, {}, 6000);
   if (!r.ok) throw new Error("cache_miss");
-  return await r.json();
+  return r.json();
 }
+
+// ---- In-memory data cache ----
+let _memCache = {}; // keyed by player name
+let _memCacheTime = 0;
 
 function parse(profile, hiscores, quests) {
   if (profile.error) throw new Error(profile.error);
@@ -2218,67 +2224,69 @@ function renderAll(results) {
   $("#main-content").classList.add("visible");
 }
 
-// ---- Main: cache-first ----
+// ---- Main: cache-first with memory cache ----
 async function load() {
   const btn = $("#btn-refresh");
   btn.classList.add("spinning");
   setSource("loading", t("refreshing"));
   hideError();
 
-  let hasCached = false;
+  let results = null;
+  let src = "";
+  let cacheAge = null;
+
+  // Step 1: Try static cache files (from GitHub Actions, always available)
   try {
-    const cached = await Promise.all(PLAYERS.map(fetchCached));
-    renderAll(cached);
-    source = "cached";
-    hasCached = true;
+    results = await Promise.all(PLAYERS.map(fetchCached));
+    src = "cached";
     try {
       const meta = await cacheFetch(CACHE.meta);
-      const ago = Math.round((Date.now() - new Date(meta.timestamp)) / 60000);
-      setSource(
-        "loading",
-        `${t("cached")} (${ago}${t("agoMin")}) \u2014 ${t("updatingLive")}`,
-      );
-      if (ago > 120) {
-        // more than 2 hours
-        showError(`⚠️ ${t("errOutdated").replace("{n}", ago)}`);
-      }
-    } catch (_) {
-      setSource("loading", `${t("cached")} \u2014 ${t("updatingLive")}`);
-    }
+      cacheAge = Math.round((Date.now() - new Date(meta.timestamp)) / 60000);
+    } catch (_) {}
   } catch (_) {}
 
+  // Show cached data immediately while trying live
+  if (results) {
+    renderAll(results);
+    _memCache = Object.fromEntries(PLAYERS.map((n, i) => [n, results[i]]));
+    _memCacheTime = Date.now();
+    const ageStr = cacheAge != null ? ` (${cacheAge}${t("agoMin")})` : "";
+    setSource("loading", `${t("cached")}${ageStr} \u2014 ${t("updatingLive")}`);
+    if (cacheAge > 120) showError(`\u26A0\uFE0F ${t("errOutdated").replace("{n}", cacheAge)}`);
+  }
+
+  // Step 2: Try live API (will fail on GitHub Pages due to CORS, but works locally)
   try {
     const live = await Promise.all(PLAYERS.map(fetchLive));
     renderAll(live);
-    source = "live";
+    _memCache = Object.fromEntries(PLAYERS.map((n, i) => [n, live[i]]));
+    _memCacheTime = Date.now();
+    src = "live";
     setSource("", t("live"));
-    $("#last-updated").textContent =
-      `${t("updated")} ${new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`;
+    hideError();
+    const now = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    $("#last-updated").textContent = `${t("updated")} ${now}`;
     btn.classList.remove("spinning");
     return;
   } catch (_) {}
 
-  if (hasCached) {
-    try {
-      const meta = await cacheFetch(CACHE.meta);
-      const ago = Math.round((Date.now() - new Date(meta.timestamp)) / 60000);
-      setSource("", `${t("cached")} (${ago}${t("agoMin")})`);
-      $("#last-updated").textContent = `${t("cached")} ${ago}${t("agoMin")}`;
-    } catch (_) {
-      setSource("", t("cached"));
-      $("#last-updated").textContent = t("cachedData");
-    }
-    btn.classList.remove("spinning");
-    return;
+  // Step 3: Finalize with whatever we have
+  if (results) {
+    const ageStr = cacheAge != null ? ` (${cacheAge}${t("agoMin")})` : "";
+    setSource("", `${t("cached")}${ageStr}`);
+    $("#last-updated").textContent = cacheAge != null
+      ? `${t("cached")} ${cacheAge}${t("agoMin")}`
+      : t("cachedData");
+  } else {
+    // No cache, no live — offline
+    setSource("error", t("offline"));
+    showError(t("errFailed"));
+    $("#loading-overlay").classList.add("hidden");
+    $("#main-content").classList.add("visible");
+    clearTimeout(timer);
+    timer = setTimeout(scheduledLoad, 30000);
   }
-
-  setSource("error", t("offline"));
-  showError(t("errFailed"));
-  $("#loading-overlay").classList.add("hidden");
-  $("#main-content").classList.add("visible");
   btn.classList.remove("spinning");
-  clearTimeout(timer);
-  timer = setTimeout(scheduledLoad, 30000);
 }
 
 // ---- Scheduled load with guard ----
