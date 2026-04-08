@@ -1277,38 +1277,26 @@ function updateUIText() {
 let _navFromPop = false; // flag to prevent pushState during popstate
 
 function launchSection(page) {
+  // Alias: overview → dashboard
+  if (page === "overview") page = "dashboard";
   const dock = document.getElementById("dock");
-  if (page === "overview") {
-    $$(".page").forEach((p) => p.classList.remove("active"));
-    const ov = $('[data-page="overview"]');
-    if (ov) ov.classList.add("active");
-    if (dock) {
-      dock.classList.add("visible");
-      dock.querySelectorAll(".dock-btn").forEach((b) =>
-        b.classList.toggle("active", b.dataset.launch === "overview")
-      );
-    }
-    if (!_navFromPop) history.pushState({ page: "overview" }, "", "#overview");
-    return;
-  }
-  // Show target section
-  $$(".page").forEach((p) => p.classList.toggle("active", p.dataset.page === page));
-  // Inject back button if not already present
-  const activePage = $(`[data-page="${page}"]`);
-  if (activePage && !activePage.querySelector(".section-back")) {
-    const btn = document.createElement("button");
-    btn.className = "section-back";
-    btn.innerHTML = `\u2190 ${currentLang === "pt" ? "Início" : "Home"}`;
-    btn.addEventListener("click", () => launchSection("overview"));
-    activePage.prepend(btn);
-  }
+
+  // Show target page
+  $$(".page").forEach((p) => {
+    const match = p.dataset.page === page;
+    p.classList.toggle("active", match);
+  });
+
+  // Update dock active states
   if (dock) {
     dock.classList.add("visible");
     dock.querySelectorAll(".dock-btn").forEach((b) =>
       b.classList.toggle("active", b.dataset.launch === page)
     );
   }
+
   if (!_navFromPop) history.pushState({ page }, "", "#" + page);
+
   // Lazy render
   if (page === "lookup") {
     if (!_rendered.has(page)) renderTab(page, data);
@@ -1318,16 +1306,14 @@ function launchSection(page) {
 }
 
 function initNavigation() {
-  // Home grid cards + dock buttons
   $$("[data-launch]").forEach((el) => {
     el.addEventListener("click", () => launchSection(el.dataset.launch));
   });
-  // Show dock immediately (always visible like a game OS)
   const dock = document.getElementById("dock");
   if (dock) {
     dock.classList.add("visible");
     dock.querySelectorAll(".dock-btn").forEach((b) =>
-      b.classList.toggle("active", b.dataset.launch === "overview")
+      b.classList.toggle("active", b.dataset.launch === "dashboard")
     );
   }
 }
@@ -2322,17 +2308,16 @@ document.addEventListener("DOMContentLoaded", () => {
   updateUIText();
   // URL deep linking via hash
   const hashTab = window.location.hash.replace("#", "");
-  if (hashTab && hashTab !== "overview") {
+  if (hashTab && hashTab !== "dashboard" && hashTab !== "overview") {
     _navFromPop = true;
     launchSection(hashTab);
     _navFromPop = false;
   }
-  // Set initial history state
-  history.replaceState({ page: hashTab || "overview" }, "", window.location.hash || "#overview");
+  history.replaceState({ page: hashTab || "dashboard" }, "", window.location.hash || "#dashboard");
   initNavigation();
   // Handle browser back/forward (Android back button)
   window.addEventListener("popstate", (e) => {
-    const page = (e.state && e.state.page) || window.location.hash.replace("#", "") || "overview";
+    const page = (e.state && e.state.page) || window.location.hash.replace("#", "") || "dashboard";
     _navFromPop = true;
     launchSection(page);
     _navFromPop = false;
