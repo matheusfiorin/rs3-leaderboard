@@ -690,3 +690,348 @@ function renderSenntisten(players) {
   // Note: we use { once: true } and re-attach on each render to avoid
   // stacking listeners, since renderSenntisten replaces innerHTML.
 }
+
+// ============================================================
+// Agility Grind Tracker — live XP chart + rate/ETA
+// ============================================================
+
+const SN_GRIND_KEY = "rs3lb-sn-grind";
+const SN_GRIND_SKILL_ID = 16; // Agility
+const SN_GRIND_TARGET_XP = 302288; // Level 61
+const SN_GRIND_TARGET_LVL = 61;
+const SN_GRIND_MAX_SNAPSHOTS = 500;
+
+function snLoadSnapshots() {
+  try { return JSON.parse(localStorage.getItem(SN_GRIND_KEY) || "[]"); }
+  catch { return []; }
+}
+
+function snSaveSnapshots(arr) {
+  localStorage.setItem(SN_GRIND_KEY, JSON.stringify(arr));
+}
+
+function snRecordSnapshot(player) {
+  const sk = player.skills[SN_GRIND_SKILL_ID] || {};
+  const xp = (sk.xp || 0);
+  const lvl = sk.level || 1;
+  const snaps = snLoadSnapshots();
+  // Deduplicate: skip if XP unchanged
+  if (snaps.length > 0 && snaps[snaps.length - 1].xp === xp) return snaps;
+  snaps.push({ t: Date.now(), xp, lvl });
+  // Cap length
+  if (snaps.length > SN_GRIND_MAX_SNAPSHOTS) snaps.splice(0, snaps.length - SN_GRIND_MAX_SNAPSHOTS);
+  snSaveSnapshots(snaps);
+  return snaps;
+}
+
+function snCalcStats(snaps) {
+  if (snaps.length < 1) return null;
+  const first = snaps[0];
+  const last = snaps[snaps.length - 1];
+  const sessionGain = last.xp - first.xp;
+  const sessionMs = last.t - first.t;
+  const sessionHrs = sessionMs / 3600000;
+
+  // Rate from recent snapshots (last 30 min or all)
+  const thirtyAgo = last.t - 30 * 60 * 1000;
+  const recent = snaps.filter(s => s.t >= thirtyAgo);
+  let ratePerHr = 0;
+  if (recent.length >= 2) {
+    const rFirst = recent[0];
+    const rLast = recent[recent.length - 1];
+    const dt = (rLast.t - rFirst.t) / 3600000;
+    if (dt > 0) ratePerHr = (rLast.xp - rFirst.xp) / dt;
+  } else if (sessionHrs > 0) {
+    ratePerHr = sessionGain / sessionHrs;
+  }
+
+  const remaining = Math.max(0, SN_GRIND_TARGET_XP - last.xp);
+  const etaHrs = ratePerHr > 0 ? remaining / ratePerHr : null;
+
+  return {
+    sessionGain, ratePerHr: Math.round(ratePerHr),
+    remaining, etaHrs, currentXp: last.xp, currentLvl: last.lvl,
+    elapsed: sessionMs, snapCount: snaps.length,
+    done: last.xp >= SN_GRIND_TARGET_XP,
+  };
+}
+
+function snFormatEta(hrs) {
+  if (hrs == null || hrs <= 0) return "--";
+  const h = Math.floor(hrs);
+  const m = Math.round((hrs - h) * 60);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+function snFormatElapsed(ms) {
+  const mins = Math.round(ms / 60000);
+  if (mins < 60) return `${mins}m`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${h}h ${m}m`;
+}
+
+function snRenderGrindStats(stats) {
+  if (!stats) return `<div class="sn-grind-stats"><p class="sn-empty">Waiting for data...</p></div>`;
+  const lang = typeof currentLang !== "undefined" ? currentLang : "en";
+  const pct = Math.min(100, Math.round((stats.currentXp / SN_GRIND_TARGET_XP) * 100));
+  const labels = lang === "pt"
+    ? { rate: "XP/hora", eta: "ETA p/ 61", gained: "Ganho", elapsed: "Tempo", remaining: "Restante" }
+    : { rate: "XP/hour", eta: "ETA to 61", gained: "Gained", elapsed: "Elapsed", remaining: "Remaining" };
+
+  return `<div class="sn-grind-stats">
+    <div class="sn-grind-stat">
+      <span class="sn-grind-val ${stats.ratePerHr > 0 ? "sn-grind-live" : ""}">${stats.ratePerHr > 0 ? stats.ratePerHr.toLocaleString() : "--"}</span>
+      <span class="sn-grind-label">${labels.rate}</span>
+    </div>
+    <div class="sn-grind-stat">
+      <span class="sn-grind-val">${snFormatEta(stats.etaHrs)}</span>
+      <span class="sn-grind-label">${labels.eta}</span>
+    </div>
+    <div class="sn-grind-stat">
+      <span class="sn-grind-val">${stats.sessionGain > 0 ? "+" + stats.sessionGain.toLocaleString() : "0"}</span>
+      <span class="sn-grind-label">${labels.gained}</span>
+    </div>
+    <div class="sn-grind-stat">
+      <span class="sn-grind-val">${stats.remaining.toLocaleString()}</span>
+      <span class="sn-grind-label">${labels.remaining}</span>
+    </div>
+    <div class="sn-grind-stat">
+      <span class="sn-grind-val">${snFormatElapsed(stats.elapsed)}</span>
+      <span class="sn-grind-label">${labels.elapsed}</span>
+    </div>
+  </div>
+  ${snProgressBar(pct, "sn-bar-hero")}
+  <div style="text-align:center;margin-top:4px;">
+    <span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-3);">
+      Lvl ${stats.currentLvl} — ${stats.currentXp.toLocaleString()} / ${SN_GRIND_TARGET_XP.toLocaleString()} XP (${pct}%)
+    </span>
+  </div>`;
+}
+
+function snRenderGrindChart(snaps) {
+  if (typeof Chart === "undefined" || snaps.length < 1) return "";
+  const canvasId = "sn-grind-chart";
+  return `<div class="sn-grind-chart-wrap">
+    <canvas id="${canvasId}" height="200"></canvas>
+  </div>`;
+}
+
+function snBuildGrindChart(snaps, stats) {
+  if (typeof Chart === "undefined" || typeof makeChart !== "function" || snaps.length < 1) return;
+  const canvasId = "sn-grind-chart";
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+
+  const t0 = snaps[0].t;
+  const dataPoints = snaps.map(s => ({ x: (s.t - t0) / 60000, y: s.xp }));
+
+  const datasets = [
+    {
+      label: "Agility XP",
+      data: dataPoints,
+      borderColor: "rgba(212,168,67,1)",
+      backgroundColor: "rgba(212,168,67,0.1)",
+      borderWidth: 2,
+      pointRadius: snaps.length > 50 ? 0 : 3,
+      pointBackgroundColor: "rgba(212,168,67,1)",
+      fill: true,
+      tension: 0.3,
+    },
+    {
+      label: `Target (Lvl ${SN_GRIND_TARGET_LVL})`,
+      data: [{ x: 0, y: SN_GRIND_TARGET_XP }, { x: Math.max(dataPoints[dataPoints.length - 1].x, 60), y: SN_GRIND_TARGET_XP }],
+      borderColor: "rgba(52,211,153,0.6)",
+      borderWidth: 2,
+      borderDash: [8, 4],
+      pointRadius: 0,
+      fill: false,
+    },
+  ];
+
+  // Projected line if we have a rate
+  if (stats && stats.ratePerHr > 0 && !stats.done) {
+    const lastPt = dataPoints[dataPoints.length - 1];
+    const minsToTarget = ((SN_GRIND_TARGET_XP - lastPt.y) / stats.ratePerHr) * 60;
+    datasets.push({
+      label: "Projected",
+      data: [{ x: lastPt.x, y: lastPt.y }, { x: lastPt.x + minsToTarget, y: SN_GRIND_TARGET_XP }],
+      borderColor: "rgba(212,168,67,0.35)",
+      borderWidth: 2,
+      borderDash: [4, 4],
+      pointRadius: 0,
+      fill: false,
+    });
+  }
+
+  makeChart(canvasId, {
+    type: "line",
+    data: { datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: "nearest", intersect: false },
+      scales: {
+        x: {
+          type: "linear",
+          title: { display: true, text: "Minutes", color: "#9a9488", font: { size: 10 } },
+          ticks: { callback: (v) => Math.round(v) + "m" },
+        },
+        y: {
+          title: { display: true, text: "XP", color: "#9a9488", font: { size: 10 } },
+          ticks: { callback: (v) => (v / 1000).toFixed(0) + "k" },
+          suggestedMin: snaps[0].xp * 0.98,
+          suggestedMax: SN_GRIND_TARGET_XP * 1.02,
+        },
+      },
+      plugins: {
+        legend: { display: true, position: "top" },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: ${Math.round(ctx.parsed.y).toLocaleString()} XP`,
+            title: (items) => {
+              if (!items.length) return "";
+              const mins = Math.round(items[0].parsed.x);
+              const h = Math.floor(mins / 60);
+              const m = mins % 60;
+              return h > 0 ? `+${h}h ${m}m` : `+${m}m`;
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+// ---- Inject grind tracker styles ----
+function snInjectGrindStyles() {
+  if (document.getElementById("sn-grind-styles")) return;
+  const style = document.createElement("style");
+  style.id = "sn-grind-styles";
+  style.textContent = `
+.sn-grind-section {
+  margin: var(--sp-5) 0 var(--sp-3);
+  padding: var(--sp-4);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.sn-grind-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-3);
+}
+.sn-grind-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gold-bright);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.sn-grind-reset {
+  font-size: 0.65rem;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  background: var(--bg-raised);
+  color: var(--text-3);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.sn-grind-reset:hover { border-color: var(--orange); color: var(--orange); }
+.sn-grind-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+.sn-grind-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--sp-2);
+  background: var(--bg-raised);
+  border-radius: var(--radius-xs);
+}
+.sn-grind-val {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text);
+}
+.sn-grind-val.sn-grind-live { color: var(--gold-bright); }
+.sn-grind-label {
+  font-size: 0.62rem;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 2px;
+}
+.sn-grind-chart-wrap {
+  position: relative;
+  height: 220px;
+  margin-top: var(--sp-3);
+}
+@media (max-width: 640px) {
+  .sn-grind-stats { grid-template-columns: repeat(3, 1fr); }
+  .sn-grind-chart-wrap { height: 180px; }
+  .sn-grind-val { font-size: 0.78rem; }
+}
+`;
+  document.head.appendChild(style);
+}
+
+// ---- Hook into renderSenntisten ----
+const _origRenderSenntisten = renderSenntisten;
+renderSenntisten = function(players) {
+  _origRenderSenntisten(players);
+  snInjectGrindStyles();
+
+  const section = document.querySelector('[data-page="senntisten"]');
+  if (!section || !players || !players.length) return;
+
+  // Use the currently active player (same logic as main render)
+  const activeIdx = parseInt(section.dataset.snActive || "0", 10);
+  const player = players[Math.min(activeIdx, players.length - 1)];
+
+  // Record snapshot
+  const snaps = snRecordSnapshot(player);
+  const stats = snCalcStats(snaps);
+
+  // Build grind tracker HTML
+  const lang = typeof currentLang !== "undefined" ? currentLang : "en";
+  const title = lang === "pt" ? "Grind de Agility" : "Agility Grind Tracker";
+  const resetLabel = lang === "pt" ? "Resetar" : "Reset";
+
+  let grindHtml = `<div class="sn-grind-section">
+    <div class="sn-grind-header">
+      <div class="sn-grind-title">
+        ${skillIconImg(SN_GRIND_SKILL_ID, 22)}
+        ${title}
+      </div>
+      <button class="sn-grind-reset" id="sn-grind-reset">${resetLabel}</button>
+    </div>
+    ${snRenderGrindStats(stats)}
+    ${snRenderGrindChart(snaps)}
+  </div>`;
+
+  // Insert after existing content
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = grindHtml;
+  section.appendChild(wrapper.firstElementChild);
+
+  // Build chart after DOM insertion
+  snBuildGrindChart(snaps, stats);
+
+  // Reset button
+  const resetBtn = document.getElementById("sn-grind-reset");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      snSaveSnapshots([]);
+      renderSenntisten(players);
+    });
+  }
+};
