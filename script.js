@@ -685,39 +685,29 @@ function renderCards(players) {
         if (((p.skills[sk.id] || {}).xp || 0) > ((other.skills[sk.id] || {}).xp || 0)) ahead++;
       });
       const totalClues = Object.values(p.clues).reduce((a, b) => a + b, 0);
-      // Top 3 skills for mini-preview
       const topSkills = SKILLS
         .map(sk => ({ sk, lvl: (p.skills[sk.id] || {}).level || 1 }))
         .sort((a, b) => b.lvl - a.lvl)
         .slice(0, 3);
-      // Lowest skill (loss aversion)
       const lowest = SKILLS
         .map(sk => ({ sk, lvl: (p.skills[sk.id] || {}).level || 1 }))
         .sort((a, b) => a.lvl - b.lvl)[0];
 
       return `
-      <div class="p-card ${c} fade-in" style="animation-delay:${i * 0.08}s">
-        <div class="p-card-top">
-          <div>
-            <div class="p-card-name">${esc(p.name)}</div>
-            <div class="p-card-rank">${t("overallRank")} #${esc(p.rank)}</div>
-          </div>
-          <div class="p-card-combat-shield">
-            <span class="p-shield-num">${p.combatLevel}</span>
-            <span class="p-shield-label">${t("combat")}</span>
-          </div>
-        </div>
+      <div class="p-card ${c}">
+        <div class="p-card-name">${esc(p.name)}</div>
+        <div class="p-card-combat-shield">${t("combat")} ${p.combatLevel} &middot; ${t("overallRank")} #${esc(p.rank)}</div>
         <div class="p-card-skills-preview">
-          ${topSkills.map(s => `<span class="p-top-skill">${skillIconImg(s.sk.id, 16)}<span>${s.lvl}</span></span>`).join("")}
-          <span class="p-top-skill p-lowest" title="${tSkill(lowest.sk.id)}: ${lowest.lvl}">${skillIconImg(lowest.sk.id, 16)}<span style="color:var(--red)">${lowest.lvl}</span></span>
+          ${topSkills.map(s => `<span class="skill-preview-item">${skillIconImg(s.sk.id, 16)}<span class="sp-level">${s.lvl}</span><span class="sp-name">${tSkill(s.sk.id)}</span></span>`).join("")}
+          <span class="skill-preview-item"><span class="sp-level sp-low">${lowest.lvl}</span><span class="sp-name">${tSkill(lowest.sk.id)}</span></span>
         </div>
         <div class="p-stats">
-          <div class="p-stat"><div class="p-stat-val" data-counter="${p.totalLevel}">${fmt(p.totalLevel)}</div><div class="p-stat-label">${t("totalLevel")}</div></div>
-          <div class="p-stat"><div class="p-stat-val">${fmtShort(p.totalXp)}</div><div class="p-stat-label">${t("totalXp")}</div></div>
-          <div class="p-stat"><div class="p-stat-val">${fmt(p.runeScore)}</div><div class="p-stat-label">${t("runeScore")}</div></div>
-          <div class="p-stat"><div class="p-stat-val">${p.questsDone}<small style="font-size:0.6em;color:var(--text-3)">/${p.totalQuests}</small></div><div class="p-stat-label">${t("questsDone")}</div></div>
-          <div class="p-stat"><div class="p-stat-val">${totalClues}</div><div class="p-stat-label">${t("clueScrolls")}</div></div>
-          <div class="p-stat"><div class="p-stat-val">${ahead}<small style="font-size:0.6em;color:var(--text-3)">/${SKILLS.length}</small></div><div class="p-stat-label">${t("skillsAhead")}</div></div>
+          <div class="stat-item"><span class="stat-val" data-counter="${p.totalLevel}">${fmt(p.totalLevel)}</span><span class="stat-label">${t("totalLevel")}</span></div>
+          <div class="stat-item"><span class="stat-val">${fmtShort(p.totalXp)}</span><span class="stat-label">${t("totalXp")}</span></div>
+          <div class="stat-item"><span class="stat-val">${fmt(p.runeScore)}</span><span class="stat-label">${t("runeScore")}</span></div>
+          <div class="stat-item"><span class="stat-val">${p.questsDone}/${p.totalQuests}</span><span class="stat-label">${t("questsDone")}</span></div>
+          <div class="stat-item"><span class="stat-val">${totalClues}</span><span class="stat-label">${t("clueScrolls")}</span></div>
+          <div class="stat-item"><span class="stat-val">${ahead}/${SKILLS.length}</span><span class="stat-label">${t("skillsAhead")}</span></div>
         </div>
       </div>`;
     })
@@ -853,24 +843,6 @@ function renderActivity(players) {
   all.sort((a, b) => b.ts - a.ts);
   $("#activity-count").textContent = all.length;
 
-  // Summary stats per player
-  const stats = players.map((p, i) => {
-    const acts = all.filter((a) => a.pi === i);
-    return {
-      levelups: acts.filter((a) => a.type === "levelup").length,
-      quests: acts.filter((a) => a.type === "quest").length,
-      bosses: acts.filter((a) => a.type === "boss").length,
-    };
-  });
-  const lang = currentLang;
-  $("#activity-summary").innerHTML = players
-    .map((p, i) => {
-      const s = stats[i];
-      const c = i === 0 ? "p1" : "p2";
-      return `<span style="font-size:0.72rem;color:var(--${c === "p1" ? "gold" : "teal"});font-weight:600">${esc(p.name)}</span>: ${s.levelups}⬆️ ${s.quests}📜 ${s.bosses}⚔️`;
-    })
-    .join(" &nbsp;·&nbsp; ");
-
   if (!all.length) {
     $("#activity-feed").innerHTML =
       `<div style="text-align:center;color:var(--text-3);padding:24px">${t("noActivity")}</div>`;
@@ -879,13 +851,13 @@ function renderActivity(players) {
   $("#activity-feed").innerHTML = all
     .map((a) => {
       const c = a.pi === 0 ? "p1" : "p2";
-      return `<div class="act-item" data-atype="${a.type}">
-      <div class="act-dot ${c}" title="${ACT_ICONS[a.type] || ""}">${ACT_ICONS[a.type] || ""}</div>
-      <div class="act-body">
-        <div class="act-text"><span class="act-player ${c}">${esc(a.player)}</span> — ${esc(localizeActivity(a.text))}</div>
-        ${a.details ? `<div class="act-detail">${esc(localizeActivity(a.details))}</div>` : ""}
+      return `<div class="feed-item" data-atype="${a.type}">
+      <div class="feed-icon">${ACT_ICONS[a.type] || ""}</div>
+      <div class="feed-body">
+        <span class="feed-player ${c}">${esc(a.player)}</span> <span class="feed-text">${esc(localizeActivity(a.text))}</span>
+        ${a.details ? `<div class="feed-details">${esc(localizeActivity(a.details))}</div>` : ""}
       </div>
-      <div class="act-time">${fmtTime(a.date)}</div>
+      <div class="feed-time">${fmtTime(a.date)}</div>
     </div>`;
     })
     .join("");
