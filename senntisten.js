@@ -222,14 +222,17 @@ function snSkillRow(player, sk) {
   const met = current >= sk.required;
   const gap = met ? 0 : sk.required - current;
   const pct = met ? 100 : Math.round((current / sk.required) * 100);
-  const icon = met ? "&#x2705;" : "&#x1f534;";
+  const iconHtml = typeof skillIconImg === "function" ? skillIconImg(sk.id, 18) : "";
+  const statusDot = met
+    ? `<span class="sn-dot sn-dot-met"></span>`
+    : `<span class="sn-dot sn-dot-unmet"></span>`;
 
   return `<tr class="sn-skill-row ${met ? "sn-met" : "sn-unmet"}">
-    <td class="sn-skill-icon">${icon}</td>
-    <td class="sn-skill-name">${tSkill(sk.id)}</td>
+    <td class="sn-skill-icon">${statusDot}</td>
+    <td class="sn-skill-name">${iconHtml} ${tSkill(sk.id)}</td>
     <td class="sn-skill-cur">${current}</td>
     <td class="sn-skill-req">${sk.required}</td>
-    <td class="sn-skill-gap">${met ? snT("snComplete") : gap}</td>
+    <td class="sn-skill-gap">${met ? `<span class="sn-gap-met">${snT("snComplete")}</span>` : `<span class="sn-gap-num">-${gap}</span>`}</td>
     <td class="sn-skill-bar-cell">${snProgressBar(pct)}</td>
     <td class="sn-skill-reason">${esc(sk.reason)}</td>
   </tr>`;
@@ -238,11 +241,13 @@ function snSkillRow(player, sk) {
 // ---- Build quest item HTML ----
 function snQuestItem(player, questName) {
   const done = hasQuest(player, questName);
-  const icon = done ? "&#x2705;" : "&#x2B1C;";
+  const dot = done
+    ? `<span class="sn-dot sn-dot-met"></span>`
+    : `<span class="sn-dot sn-dot-unmet"></span>`;
   const cls = done ? "sn-quest-done" : "sn-quest-todo";
   const wikiUrl = SN_WIKI(questName);
   return `<div class="sn-quest-item ${cls}">
-    <span class="sn-quest-icon">${icon}</span>
+    ${dot}
     <span class="sn-quest-name">${esc(questName)}</span>
     <a class="sn-quest-wiki" href="${esc(wikiUrl)}" target="_blank" rel="noopener">${snT("snWikiLink")}</a>
   </div>`;
@@ -347,6 +352,15 @@ function snPhaseSection(player, phase, manual) {
 function snCelebration() {
   return `<div class="sn-celebration">
     <div class="sn-celebration-glow"></div>
+    <div class="sn-celebration-rays">
+      <div class="sn-ray sn-ray-1"></div>
+      <div class="sn-ray sn-ray-2"></div>
+      <div class="sn-ray sn-ray-3"></div>
+      <div class="sn-ray sn-ray-4"></div>
+    </div>
+    <div class="sn-celebration-icon">
+      <img src="https://runescape.wiki/images/Soul_Split.png" width="48" height="48" alt="Soul Split" onerror="this.style.display='none'">
+    </div>
     <div class="sn-celebration-text">${snT("snSoulSplit")}</div>
     <div class="sn-celebration-sub">Ancient Curses</div>
   </div>`;
@@ -358,232 +372,285 @@ function snInjectStyles() {
   const style = document.createElement("style");
   style.id = "sn-styles";
   style.textContent = `
-/* ---- Senntisten Tracker ---- */
+/* ======== Senntisten Tracker — Zarosian Descent ======== */
+
+/* --- Status Dots --- */
+.sn-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.sn-dot-met { background: #34d399; box-shadow: 0 0 6px rgba(52,211,153,0.5); }
+.sn-dot-unmet { background: rgba(167,139,250,0.35); border: 1px solid rgba(167,139,250,0.3); }
+
+/* --- Hero Section --- */
 .sn-hero {
+  position: relative;
   text-align: center;
-  padding: var(--sp-6) var(--sp-4);
-  margin-bottom: var(--sp-4);
+  padding: var(--sp-8) var(--sp-4) var(--sp-5);
+  margin-bottom: var(--sp-5);
+  overflow: hidden;
 }
-.sn-hero-title {
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--gold-bright);
-  margin: 0 0 var(--sp-1);
+.sn-hero-ambient {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 30%, rgba(124,58,237,0.1) 0%, transparent 60%);
+  animation: sn-ambient 8s ease-in-out infinite alternate;
 }
-.sn-hero-sub {
-  font-size: 0.78rem;
-  color: var(--text-3);
-  margin: 0 0 var(--sp-4);
+@keyframes sn-ambient {
+  0% { opacity: 0.5; transform: scale(1); }
+  100% { opacity: 1; transform: scale(1.1); }
+}
+.sn-hero-ring-wrap {
+  position: relative; display: inline-block;
+  width: 140px; height: 140px; margin-bottom: var(--sp-4);
+}
+.sn-hero-ring { width: 100%; height: 100%; }
+.sn-hero-ring-inner {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
 }
 .sn-hero-pct {
   font-family: var(--font-mono);
-  font-size: 2rem;
-  font-weight: 800;
-  color: var(--gold);
+  font-size: 1.8rem; font-weight: 800;
+  color: #a78bfa;
+  line-height: 1;
 }
-.sn-hero-pct.sn-done { color: var(--green); }
+.sn-hero-pct.sn-done { color: #34d399; }
+.sn-hero-stat {
+  font-family: var(--font-mono);
+  font-size: 0.68rem; color: var(--text-3);
+  margin-top: 2px;
+}
+.sn-hero-title {
+  font-family: var(--font-display);
+  font-size: 1.4rem; font-weight: 700;
+  color: #c4b5fd;
+  margin: 0 0 var(--sp-1);
+  text-shadow: 0 0 20px rgba(124,58,237,0.3);
+  position: relative;
+}
+.sn-hero-sub {
+  font-size: 0.72rem; color: var(--text-3);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  margin: 0; position: relative;
+}
 
-/* Progress bars */
+/* --- Progress Bars (Zarosian purple gradient) --- */
 .sn-bar {
-  height: 6px;
-  background: var(--bg-raised);
-  border-radius: 3px;
-  overflow: hidden;
-  min-width: 60px;
+  height: 5px; background: rgba(124,58,237,0.08);
+  border-radius: 3px; overflow: hidden; min-width: 60px;
 }
 .sn-bar-fill {
-  height: 100%;
-  background: var(--gold-dim);
-  border-radius: 3px;
-  transition: width 0.4s ease;
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, #7c3aed, #a78bfa);
+  transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: 0 0 8px rgba(124,58,237,0.3);
 }
-.sn-bar-fill.sn-bar-done { background: var(--green); }
-.sn-bar-mini { height: 4px; min-width: 40px; flex: 1; margin-left: var(--sp-2); }
-.sn-bar-hero { height: 8px; max-width: 320px; margin: var(--sp-3) auto 0; }
+.sn-bar-fill.sn-bar-done {
+  background: linear-gradient(90deg, #059669, #34d399);
+  box-shadow: 0 0 8px rgba(52,211,153,0.3);
+}
+.sn-bar-mini { height: 3px; min-width: 40px; flex: 1; margin-left: var(--sp-2); }
+.sn-bar-hero { height: 6px; max-width: 320px; margin: var(--sp-3) auto 0; }
 
-/* Player selector */
+/* --- Player Selector --- */
 .sn-player-tabs {
-  display: flex;
-  justify-content: center;
-  gap: var(--sp-3);
-  margin-bottom: var(--sp-5);
+  display: flex; justify-content: center;
+  gap: var(--sp-2); margin-bottom: var(--sp-5);
 }
 .sn-player-tab {
-  padding: var(--sp-2) var(--sp-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  padding: var(--sp-2) var(--sp-5);
+  border: 1px solid rgba(124,58,237,0.15);
+  border-radius: 20px;
   background: var(--bg-card);
-  color: var(--text-2);
-  cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 600;
-  transition: all 0.2s;
+  color: var(--text-2); cursor: pointer;
+  font-size: 0.78rem; font-weight: 600;
+  transition: all 0.25s;
 }
-.sn-player-tab:hover { border-color: var(--border-glow); background: var(--bg-hover); }
-.sn-player-tab.active { border-color: var(--gold-dim); color: var(--gold); background: var(--gold-bg); }
-.sn-player-tab.p2.active { border-color: var(--teal-dim); color: var(--teal); background: var(--teal-bg); }
+.sn-player-tab:hover { border-color: rgba(124,58,237,0.3); background: rgba(124,58,237,0.06); }
+.sn-player-tab.active {
+  border-color: rgba(124,58,237,0.5); color: #c4b5fd;
+  background: rgba(124,58,237,0.1);
+  box-shadow: 0 0 16px rgba(124,58,237,0.15);
+}
+.sn-player-tab.p2.active {
+  border-color: var(--teal-dim); color: var(--teal);
+  background: var(--teal-bg);
+  box-shadow: 0 0 16px rgba(34,211,187,0.15);
+}
 
-/* Phase accordion */
+/* --- Phase Accordions (depth-themed) --- */
 .sn-phase {
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: 1px solid rgba(124,58,237,0.06);
   border-radius: var(--radius-sm);
   margin-bottom: var(--sp-2);
   overflow: hidden;
+  border-left: 3px solid rgba(124,58,237,0.15);
+  transition: border-color 0.3s;
 }
-.sn-phase-done { border-color: rgba(52,211,153,0.2); }
+.sn-phase:hover { border-left-color: rgba(124,58,237,0.35); }
+.sn-phase-done {
+  border-left-color: rgba(52,211,153,0.4) !important;
+  border-color: rgba(52,211,153,0.1);
+}
 .sn-phase-header {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
+  display: flex; align-items: center; gap: var(--sp-3);
   padding: var(--sp-3) var(--sp-4);
-  cursor: pointer;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--text);
+  cursor: pointer; font-size: 0.8rem;
+  font-weight: 600; color: var(--text);
   list-style: none;
+  transition: background 0.2s;
 }
+.sn-phase-header:hover { background: rgba(124,58,237,0.03); }
 .sn-phase-header::-webkit-details-marker { display: none; }
 .sn-phase-header::before {
-  content: "\\25B6";
-  font-size: 0.6rem;
-  color: var(--text-3);
-  transition: transform 0.2s;
+  content: "\\25B6"; font-size: 0.55rem;
+  color: #7c3aed; opacity: 0.5;
+  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.2s;
 }
-details.sn-phase[open] > .sn-phase-header::before { transform: rotate(90deg); }
+details.sn-phase[open] > .sn-phase-header::before { transform: rotate(90deg); opacity: 0.8; }
 .sn-phase-title { flex: 0 0 auto; }
 .sn-phase-badge {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: var(--text-3);
-  background: var(--bg-raised);
-  padding: 2px 6px;
-  border-radius: var(--radius-xs);
+  font-family: var(--font-mono); font-size: 0.68rem;
+  color: var(--text-3); background: rgba(124,58,237,0.06);
+  padding: 2px 8px; border-radius: 10px;
 }
-.sn-phase-done .sn-phase-badge { color: var(--green); background: var(--green-bg); }
-.sn-phase-body { padding: 0 var(--sp-4) var(--sp-4); }
+.sn-phase-done .sn-phase-badge {
+  color: #34d399; background: rgba(52,211,153,0.08);
+}
+.sn-phase-body {
+  padding: 0 var(--sp-4) var(--sp-4);
+  border-top: 1px solid rgba(124,58,237,0.04);
+}
 
-/* Section labels inside phases */
+/* --- Section Labels --- */
 .sn-section-label {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--text-3);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 0.66rem; font-weight: 700;
+  color: #7c3aed; opacity: 0.6;
+  text-transform: uppercase; letter-spacing: 0.1em;
   margin: var(--sp-3) 0 var(--sp-2);
 }
 
-/* Skill table */
-.sn-skill-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.75rem;
-}
+/* --- Skill Table --- */
+.sn-skill-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
 .sn-skill-table th {
-  text-align: left;
-  padding: var(--sp-1) var(--sp-2);
-  color: var(--text-3);
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  border-bottom: 1px solid var(--border);
+  text-align: left; padding: var(--sp-1) var(--sp-2);
+  color: var(--text-3); font-size: 0.64rem;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  border-bottom: 1px solid rgba(124,58,237,0.06);
 }
 .sn-skill-row td {
-  padding: var(--sp-1) var(--sp-2);
-  border-bottom: 1px solid var(--border);
+  padding: 6px var(--sp-2);
+  border-bottom: 1px solid rgba(124,58,237,0.04);
+  vertical-align: middle;
 }
-.sn-skill-row.sn-met { color: var(--green); }
-.sn-skill-row.sn-unmet .sn-skill-gap { color: var(--orange); font-weight: 600; }
-.sn-skill-cur { font-family: var(--font-mono); font-weight: 700; }
-.sn-skill-req { font-family: var(--font-mono); color: var(--text-3); }
-.sn-skill-reason { color: var(--text-3); font-size: 0.68rem; }
+.sn-skill-row.sn-met { color: #34d399; }
+.sn-skill-row.sn-met td { opacity: 0.75; }
+.sn-skill-name { display: flex; align-items: center; gap: 6px; }
+.sn-skill-name img { border-radius: 2px; }
+.sn-skill-cur { font-family: var(--font-mono); font-weight: 800; }
+.sn-skill-req { font-family: var(--font-mono); color: var(--text-3); font-weight: 500; }
+.sn-gap-met { font-size: 0.65rem; color: #34d399; }
+.sn-gap-num {
+  font-family: var(--font-mono); font-weight: 700;
+  color: #f59e0b; background: rgba(245,158,11,0.08);
+  padding: 1px 6px; border-radius: 8px; font-size: 0.7rem;
+}
 .sn-skill-bar-cell { min-width: 60px; }
+.sn-skill-reason { color: var(--text-3); font-size: 0.65rem; opacity: 0.7; }
 
-/* Quest list */
-.sn-quest-list { display: flex; flex-direction: column; gap: var(--sp-1); }
+/* --- Quest List --- */
+.sn-quest-list { display: flex; flex-direction: column; gap: 1px; }
 .sn-quest-item {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-1) 0;
-  font-size: 0.78rem;
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: 6px var(--sp-2); font-size: 0.76rem;
+  border-radius: var(--radius-xs);
+  transition: background 0.15s;
 }
-.sn-quest-done .sn-quest-name { color: var(--green); text-decoration: line-through; text-decoration-color: rgba(52,211,153,0.3); }
+.sn-quest-item:hover { background: rgba(124,58,237,0.04); }
+.sn-quest-done .sn-quest-name {
+  color: #34d399; opacity: 0.7;
+  text-decoration: line-through;
+  text-decoration-color: rgba(52,211,153,0.25);
+}
 .sn-quest-todo .sn-quest-name { color: var(--text); }
 .sn-quest-wiki {
-  font-size: 0.65rem;
-  color: var(--text-3);
-  text-decoration: none;
-  margin-left: auto;
-  padding: 1px 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xs);
-  transition: color 0.2s, border-color 0.2s;
+  font-size: 0.6rem; color: var(--text-3);
+  text-decoration: none; margin-left: auto;
+  padding: 2px 8px; border: 1px solid rgba(124,58,237,0.1);
+  border-radius: 10px; transition: all 0.2s;
+  opacity: 0;
 }
-.sn-quest-wiki:hover { color: var(--gold); border-color: var(--gold-dim); }
+.sn-quest-item:hover .sn-quest-wiki { opacity: 1; }
+.sn-quest-wiki:hover { color: #a78bfa; border-color: rgba(124,58,237,0.3); }
 
-/* Manual items */
+/* --- Manual Items --- */
 .sn-manual-item {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-1) 0;
-  font-size: 0.78rem;
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: 6px 0; font-size: 0.76rem;
 }
 .sn-check {
-  accent-color: var(--gold);
-  cursor: pointer;
-  width: 16px;
-  height: 16px;
+  accent-color: #7c3aed; cursor: pointer;
+  width: 16px; height: 16px;
 }
 .sn-manual-label { color: var(--text-2); }
-.sn-empty { color: var(--text-3); font-size: 0.75rem; font-style: italic; margin: var(--sp-2) 0; }
+.sn-empty { color: var(--text-3); font-size: 0.72rem; font-style: italic; margin: var(--sp-2) 0; }
 
-/* Soul Split celebration */
+/* --- Soul Split Celebration --- */
 .sn-celebration {
-  position: relative;
-  text-align: center;
+  position: relative; text-align: center;
   padding: var(--sp-8) var(--sp-4);
-  margin: var(--sp-4) 0;
+  margin: var(--sp-5) 0;
   border-radius: var(--radius);
-  background: var(--bg-card);
-  border: 1px solid rgba(212,168,67,0.3);
+  background: linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(6,6,14,1) 50%, rgba(52,211,153,0.06) 100%);
+  border: 1px solid rgba(124,58,237,0.2);
   overflow: hidden;
 }
 .sn-celebration-glow {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at center, rgba(212,168,67,0.15) 0%, transparent 70%);
-  animation: sn-pulse 2.5s ease-in-out infinite;
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, rgba(124,58,237,0.2) 0%, transparent 65%);
+  animation: sn-pulse 3s ease-in-out infinite;
   pointer-events: none;
 }
+.sn-celebration-rays { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.sn-ray {
+  position: absolute; top: 50%; left: 50%;
+  width: 2px; height: 120%;
+  background: linear-gradient(to bottom, rgba(124,58,237,0.3), transparent);
+  transform-origin: center top;
+  animation: sn-ray-spin 12s linear infinite;
+}
+.sn-ray-1 { transform: rotate(0deg); animation-delay: 0s; }
+.sn-ray-2 { transform: rotate(90deg); animation-delay: -3s; }
+.sn-ray-3 { transform: rotate(45deg); animation-delay: -6s; opacity: 0.5; }
+.sn-ray-4 { transform: rotate(135deg); animation-delay: -9s; opacity: 0.5; }
+@keyframes sn-ray-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.sn-celebration-icon { position: relative; margin-bottom: var(--sp-3); filter: drop-shadow(0 0 16px rgba(124,58,237,0.6)); }
 .sn-celebration-text {
   font-family: var(--font-display);
-  font-size: 1.6rem;
-  font-weight: 800;
-  color: var(--gold-bright);
-  text-shadow: 0 0 20px rgba(212,168,67,0.5), 0 0 40px rgba(212,168,67,0.2);
+  font-size: 1.5rem; font-weight: 800;
+  background: linear-gradient(135deg, #c4b5fd, #34d399);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
   position: relative;
 }
 .sn-celebration-sub {
-  font-size: 0.82rem;
-  color: var(--text-3);
-  margin-top: var(--sp-2);
-  position: relative;
+  font-size: 0.78rem; color: #7c3aed;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  margin-top: var(--sp-2); position: relative;
 }
 @keyframes sn-pulse {
-  0%, 100% { opacity: 0.5; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.05); }
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.08); }
 }
 
-/* Responsive */
+/* --- Responsive --- */
 @media (max-width: 640px) {
   .sn-skill-table { font-size: 0.68rem; }
   .sn-skill-reason { display: none; }
-  .sn-hero-title { font-size: 1.2rem; }
-  .sn-hero-pct { font-size: 1.5rem; }
-  .sn-celebration-text { font-size: 1.2rem; }
+  .sn-hero-title { font-size: 1.1rem; }
+  .sn-hero-pct { font-size: 1.4rem; }
+  .sn-hero-ring-wrap { width: 120px; height: 120px; }
+  .sn-celebration-text { font-size: 1.1rem; }
+  .sn-quest-wiki { opacity: 1; }
 }
 `;
   document.head.appendChild(style);
@@ -628,13 +695,38 @@ function renderSenntisten(players) {
   // ---- Build HTML ----
   let html = "";
 
-  // Hero section
+  // Hero section with SVG progress ring
+  const ringR = 58, ringC = 2 * Math.PI * ringR;
+  const ringOffset = ringC - (pct / 100) * ringC;
   html += `<div class="sn-hero">
+    <div class="sn-hero-ambient"></div>
+    <div class="sn-hero-ring-wrap">
+      <svg class="sn-hero-ring" viewBox="0 0 140 140">
+        <circle cx="70" cy="70" r="${ringR}" fill="none" stroke="rgba(124,58,237,0.1)" stroke-width="6"/>
+        <circle cx="70" cy="70" r="${ringR}" fill="none"
+          stroke="${allDone ? 'url(#sn-ring-done)' : 'url(#sn-ring-grad)'}"
+          stroke-width="6" stroke-linecap="round"
+          stroke-dasharray="${ringC}" stroke-dashoffset="${ringOffset}"
+          transform="rotate(-90 70 70)"
+          style="transition: stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1);filter:drop-shadow(0 0 6px rgba(124,58,237,0.4))"/>
+        <defs>
+          <linearGradient id="sn-ring-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#a78bfa"/>
+            <stop offset="100%" stop-color="#7c3aed"/>
+          </linearGradient>
+          <linearGradient id="sn-ring-done" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#34d399"/>
+            <stop offset="100%" stop-color="#059669"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <div class="sn-hero-ring-inner">
+        <div class="sn-hero-pct ${allDone ? 'sn-done' : ''}">${pct}%</div>
+        <div class="sn-hero-stat">${counts.total}/${SN_TOTAL_ITEMS}</div>
+      </div>
+    </div>
     <h2 class="sn-hero-title">${snT("snTitle")}</h2>
     <p class="sn-hero-sub">${snT("snSubtitle")}</p>
-    <div class="sn-hero-pct ${allDone ? "sn-done" : ""}">${pct}%</div>
-    <div class="sn-hero-stat">${counts.total} / ${SN_TOTAL_ITEMS}</div>
-    ${snProgressBar(pct, "sn-bar-hero")}
   </div>`;
 
   // Player selector tabs (if more than one player)
@@ -914,74 +1006,79 @@ function snInjectGrindStyles() {
   style.textContent = `
 .sn-grind-section {
   margin: var(--sp-5) 0 var(--sp-3);
-  padding: var(--sp-4);
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  padding: var(--sp-5);
+  background: linear-gradient(135deg, var(--bg-card) 0%, rgba(124,58,237,0.03) 100%);
+  border: 1px solid rgba(124,58,237,0.1);
+  border-radius: var(--radius);
+  position: relative; overflow: hidden;
+}
+.sn-grind-section::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(124,58,237,0.3), transparent);
 }
 .sn-grind-header {
-  display: flex;
-  align-items: center;
+  display: flex; align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--sp-3);
+  margin-bottom: var(--sp-4);
 }
 .sn-grind-title {
   font-family: var(--font-display);
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--gold-bright);
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
+  font-size: 1.05rem; font-weight: 700;
+  color: #c4b5fd;
+  display: flex; align-items: center; gap: var(--sp-2);
+  text-shadow: 0 0 12px rgba(124,58,237,0.2);
 }
 .sn-grind-reset {
-  font-size: 0.65rem;
-  padding: 3px 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xs);
-  background: var(--bg-raised);
-  color: var(--text-3);
-  cursor: pointer;
-  transition: all 0.2s;
+  font-size: 0.62rem; padding: 4px 10px;
+  border: 1px solid rgba(124,58,237,0.15);
+  border-radius: 12px; background: transparent;
+  color: var(--text-3); cursor: pointer;
+  transition: all 0.2s; text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
-.sn-grind-reset:hover { border-color: var(--orange); color: var(--orange); }
+.sn-grind-reset:hover { border-color: rgba(248,113,113,0.4); color: #f87171; }
 .sn-grind-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  grid-template-columns: repeat(5, 1fr);
   gap: var(--sp-2);
-  margin-bottom: var(--sp-3);
+  margin-bottom: var(--sp-4);
 }
 .sn-grind-stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: var(--sp-2);
-  background: var(--bg-raised);
-  border-radius: var(--radius-xs);
+  display: flex; flex-direction: column;
+  align-items: center; padding: var(--sp-3) var(--sp-2);
+  background: rgba(124,58,237,0.04);
+  border: 1px solid rgba(124,58,237,0.06);
+  border-radius: var(--radius-sm);
+  transition: border-color 0.2s;
 }
+.sn-grind-stat:hover { border-color: rgba(124,58,237,0.15); }
 .sn-grind-val {
   font-family: var(--font-mono);
-  font-size: 0.9rem;
-  font-weight: 800;
+  font-size: 0.88rem; font-weight: 800;
   color: var(--text);
 }
-.sn-grind-val.sn-grind-live { color: var(--gold-bright); }
+.sn-grind-val.sn-grind-live {
+  color: #a78bfa;
+  text-shadow: 0 0 8px rgba(167,139,250,0.3);
+}
 .sn-grind-label {
-  font-size: 0.62rem;
-  color: var(--text-3);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-top: 2px;
+  font-size: 0.58rem; color: var(--text-3);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  margin-top: 3px;
 }
 .sn-grind-chart-wrap {
-  position: relative;
-  height: 220px;
+  position: relative; height: 220px;
   margin-top: var(--sp-3);
+  padding: var(--sp-2);
+  background: rgba(0,0,0,0.2);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(124,58,237,0.05);
 }
 @media (max-width: 640px) {
   .sn-grind-stats { grid-template-columns: repeat(3, 1fr); }
   .sn-grind-chart-wrap { height: 180px; }
-  .sn-grind-val { font-size: 0.78rem; }
+  .sn-grind-val { font-size: 0.76rem; }
+  .sn-grind-section { padding: var(--sp-3); }
 }
 `;
   document.head.appendChild(style);
