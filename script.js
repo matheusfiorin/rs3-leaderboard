@@ -2138,24 +2138,8 @@ const _renderers = {
   combat: (r) => {
     if (typeof renderCombat === "function") renderCombat(r);
   },
-  money: (r) => {
-    renderMoney(r);
-  },
-  meetup: () => {
-    if (typeof renderMeetup === "function") renderMeetup();
-  },
-  easter: (r) => {
-    renderEaster(r);
-  },
-  chat: () => {},
   lookup: () => {
     if (typeof renderLookupPage === "function") renderLookupPage();
-  },
-  senntisten: (r) => {
-    if (typeof renderSenntisten === "function") renderSenntisten(r);
-  },
-  prifddinas: (r) => {
-    if (typeof renderPrifddinas === "function") renderPrifddinas(r);
   },
   goals: (r) => {
     if (typeof renderGoalsPage === "function") renderGoalsPage(r);

@@ -1,1126 +1,205 @@
 /* =============================================
-   RS3 Leaderboard — Temple at Senntisten Tracker
-   Road to Soul Split quest chain tracker
-   Auto-checks skills/quests from live data,
-   manual checkboxes persisted in localStorage.
+   RS3 Leaderboard — Grind Tracker Module
+   Live XP chart + rate/ETA for active skill grinds.
+   Standalone module — called from dashboard renderer.
    ============================================= */
 
-// ---- Skill requirements (RS3 RuneMetrics API IDs) ----
-const SN_SKILLS = [
-  { id: 21, abbr: "HUN", required: 51, reason: "Defender of Varrock" },
-  { id: 16, abbr: "AGI", required: 61, reason: "The Curse of Arrav" },
-  { id: 2,  abbr: "STR", required: 64, reason: "The Curse of Arrav" },
-  { id: 17, abbr: "THI", required: 66, reason: "The Curse of Arrav" },
-  { id: 22, abbr: "CON", required: 35, reason: "Missing My Mummy" },
-  { id: 4,  abbr: "RNG", required: 64, reason: "The Curse of Arrav" },
-  { id: 7,  abbr: "COK", required: 35, reason: "Missing My Mummy" },
-  { id: 23, abbr: "SUM", required: 41, reason: "The Curse of Arrav" },
-  { id: 11, abbr: "FM",  required: 50, reason: "Desert Treasure" },
-  { id: 12, abbr: "CRA", required: 45, reason: "Missing My Mummy 100%" },
-];
+// ---- Config ----
+const GRIND_KEY = "rs3lb-grind";
+const GRIND_SKILL_ID = 16; // Agility (configurable later)
+const GRIND_TARGET_XP = 302288; // Level 61
+const GRIND_TARGET_LVL = 61;
+const GRIND_MAX_SNAPSHOTS = 500;
 
-// ---- Quest chain grouped by phase ----
-const SN_PHASES = [
-  {
-    id: 1,
-    label_pt: "Fase 1 — Treino Inicial",
-    label_en: "Phase 1 — Buyable Skills",
-    quests: [],
-    // Phase 1 is skill training only — no quests
-  },
-  {
-    id: 2,
-    label_pt: "Fase 2 — Missoes Faceis",
-    label_en: "Phase 2 — Easy Quests",
-    quests: [
-      "Priest in Peril",
-      "Death Plateau",
-      "Goblin Diplomacy",
-      "The Lost Tribe",
-      "Stolen Hearts",
-      "Diamond in the Rough",
-      "Gertrude's Cat",
-      "The Dig Site",
-      "The Tourist Trap",
-      "Temple of Ikov",
-      "The Tale of the Muspah",
-      "The Golem",
-      "Nature Spirit",
-      "Creature of Fenkenstrain",
-      "Shades of Mort'ton",
-      "Garden of Tranquillity",
-      "Family Crest",
-      "What Lies Below",
-      "Troll Stronghold",
-    ],
-  },
-  {
-    id: 3,
-    label_pt: "Fase 3 — Cadeia de Icthlarin",
-    label_en: "Phase 3 — Icthlarin Chain",
-    quests: [
-      "Icthlarin's Little Helper",
-      "Missing My Mummy",
-      "Wanted!",
-      "Troll Romance",
-      "Devious Minds",
-    ],
-  },
-  {
-    id: 4,
-    label_pt: "Fase 4 — Desert Treasure",
-    label_en: "Phase 4 — Desert Treasure",
-    quests: ["Desert Treasure"],
-  },
-  {
-    id: 5,
-    label_pt: "Fase 5 — Grinds Longos",
-    label_en: "Phase 5 — Long Grinds",
-    quests: [],
-    // Phase 5 is skill grinding only
-  },
-  {
-    id: 6,
-    label_pt: "Fase 6 — Missoes Finais",
-    label_en: "Phase 6 — Final Quests",
-    quests: ["Defender of Varrock", "The Curse of Arrav"],
-  },
-  {
-    id: 7,
-    label_pt: "Fase 7 — Conclusao",
-    label_en: "Phase 7 — Finish",
-    quests: ["The Temple at Senntisten"],
-  },
-];
-
-// ---- Manual checklist items (not detectable from API) ----
-const SN_MANUAL = [
-  {
-    id: "cat_grown",
-    phase: 3,
-    label_pt: "Gato crescido (de Gertrude's Cat)",
-    label_en: "Cat grown (from Gertrude's Cat)",
-  },
-  {
-    id: "senliten_100",
-    phase: 3,
-    label_pt: "Senliten restaurada 100%",
-    label_en: "Senliten restored 100%",
-  },
-  {
-    id: "ice_gloves",
-    phase: 4,
-    label_pt: "Ice Gloves obtidas",
-    label_en: "Ice Gloves obtained",
-  },
-  {
-    id: "dt_supplies",
-    phase: 4,
-    label_pt: "Suprimentos para Desert Treasure",
-    label_en: "Desert Treasure supplies ready",
-  },
-  {
-    id: "kudos_125",
-    phase: 7,
-    label_pt: "125 Kudos no Museu de Varrock",
-    label_en: "125 Varrock Museum Kudos",
-  },
-];
-
-// Wiki link builder for quest names
-const SN_WIKI = (quest) =>
-  `https://runescape.wiki/w/${quest.replace(/ /g, "_")}`;
-
-// Total items across all trackable categories
-const SN_ALL_QUESTS = SN_PHASES.flatMap((p) => p.quests);
-const SN_TOTAL_ITEMS =
-  SN_SKILLS.length + SN_ALL_QUESTS.length + SN_MANUAL.length;
-
-// localStorage key for manual checkboxes
-const SN_STORAGE_KEY = "rs3lb-senntisten";
-
-// ---- i18n helper (bilingual fallback) ----
-function snT(key) {
-  const map = {
-    snTitle:      { pt: "Rumo ao Soul Split",           en: "Road to Soul Split" },
-    snSubtitle:   { pt: "The Temple at Senntisten",      en: "The Temple at Senntisten" },
-    snSkills:     { pt: "Requisitos de Habilidade",      en: "Skill Requirements" },
-    snQuests:     { pt: "Missoes Necessarias",           en: "Required Quests" },
-    snManual:     { pt: "Itens Manuais",                 en: "Manual Items" },
-    snPhase:      { pt: "Fase",                          en: "Phase" },
-    snCurrentLvl: { pt: "Atual",                         en: "Current" },
-    snRequired:   { pt: "Necessario",                    en: "Required" },
-    snGap:        { pt: "Falta",                         en: "Gap" },
-    snComplete:   { pt: "Completo",                      en: "Complete" },
-    snSoulSplit:  { pt: "Soul Split Desbloqueado!",      en: "Soul Split Unlocked!" },
-    snProgress:   { pt: "Progresso Geral",               en: "Overall Progress" },
-    snWikiLink:   { pt: "Wiki",                          en: "Wiki" },
-    snSkillMet:   { pt: "Requisito atingido",            en: "Requirement met" },
-    snSkillGap:   { pt: "niveis restantes",              en: "levels remaining" },
-    snNoQuests:   { pt: "Nenhuma missao nesta fase",     en: "No quests in this phase" },
-    snSkillOnly:  { pt: "Apenas treino de habilidades",  en: "Skill training only" },
-    snUnlocked:   { pt: "Desbloqueado",                  en: "Unlocked" },
-  };
-  // Use global t() first (if the key is registered in LANG), then local fallback
-  const global = typeof t === "function" ? t(key) : key;
-  if (global !== key) return global;
-  const entry = map[key];
-  if (!entry) return key;
-  const lang = typeof currentLang !== "undefined" ? currentLang : "en";
-  return entry[lang] || entry.en || key;
+// ---- Progress bar helper ----
+function grindProgressBar(pct, cls) {
+  const c = Math.max(0, Math.min(100, pct));
+  const done = c >= 100 ? "grind-bar-done" : "";
+  return `<div class="grind-bar ${cls || ""}"><div class="grind-bar-fill ${done}" style="width:${c}%"></div></div>`;
 }
 
-// ---- Load manual checkbox state ----
-function snLoadManual() {
-  try {
-    return JSON.parse(localStorage.getItem(SN_STORAGE_KEY) || "{}");
-  } catch {
-    return {};
-  }
-}
-
-// ---- Save manual checkbox state ----
-function snSaveManual(state) {
-  localStorage.setItem(SN_STORAGE_KEY, JSON.stringify(state));
-}
-
-// ---- Get player skill level safely ----
-function snSkillLevel(player, skillId) {
-  return (player.skills[skillId] || {}).level || 1;
-}
-
-// ---- Count completed items for a player ----
-function snCountDone(player) {
-  const manual = snLoadManual();
-  let skills = 0, quests = 0, manualDone = 0;
-
-  for (const sk of SN_SKILLS) {
-    if (snSkillLevel(player, sk.id) >= sk.required) skills++;
-  }
-  for (const q of SN_ALL_QUESTS) {
-    if (hasQuest(player, q)) quests++;
-  }
-  for (const m of SN_MANUAL) {
-    const key = `${m.id}_${player.name}`;
-    if (manual[key]) manualDone++;
-  }
-  return { skills, quests, manualDone, total: skills + quests + manualDone };
-}
-
-// ---- Build progress bar HTML ----
-function snProgressBar(pct, cls) {
-  const clamped = Math.max(0, Math.min(100, pct));
-  const colorCls = clamped >= 100 ? "sn-bar-done" : "";
-  return `<div class="sn-bar ${cls || ""}">
-    <div class="sn-bar-fill ${colorCls}" style="width:${clamped}%"></div>
-  </div>`;
-}
-
-// ---- Build skill row HTML for one player ----
-function snSkillRow(player, sk) {
-  const current = snSkillLevel(player, sk.id);
-  const met = current >= sk.required;
-  const gap = met ? 0 : sk.required - current;
-  const pct = met ? 100 : Math.round((current / sk.required) * 100);
-  const iconHtml = typeof skillIconImg === "function" ? skillIconImg(sk.id, 18) : "";
-  const statusDot = met
-    ? `<span class="sn-dot sn-dot-met"></span>`
-    : `<span class="sn-dot sn-dot-unmet"></span>`;
-
-  return `<tr class="sn-skill-row ${met ? "sn-met" : "sn-unmet"}">
-    <td class="sn-skill-icon">${statusDot}</td>
-    <td class="sn-skill-name">${iconHtml} ${tSkill(sk.id)}</td>
-    <td class="sn-skill-cur">${current}</td>
-    <td class="sn-skill-req">${sk.required}</td>
-    <td class="sn-skill-gap">${met ? `<span class="sn-gap-met">${snT("snComplete")}</span>` : `<span class="sn-gap-num">-${gap}</span>`}</td>
-    <td class="sn-skill-bar-cell">${snProgressBar(pct)}</td>
-    <td class="sn-skill-reason">${esc(sk.reason)}</td>
-  </tr>`;
-}
-
-// ---- Build quest item HTML ----
-function snQuestItem(player, questName) {
-  const done = hasQuest(player, questName);
-  const dot = done
-    ? `<span class="sn-dot sn-dot-met"></span>`
-    : `<span class="sn-dot sn-dot-unmet"></span>`;
-  const cls = done ? "sn-quest-done" : "sn-quest-todo";
-  const wikiUrl = SN_WIKI(questName);
-  return `<div class="sn-quest-item ${cls}">
-    ${dot}
-    <span class="sn-quest-name">${esc(questName)}</span>
-    <a class="sn-quest-wiki" href="${esc(wikiUrl)}" target="_blank" rel="noopener">${snT("snWikiLink")}</a>
-  </div>`;
-}
-
-// ---- Build manual checkbox HTML ----
-function snManualItem(player, item, manual) {
-  const key = `${item.id}_${player.name}`;
-  const checked = manual[key] ? "checked" : "";
-  const lang = typeof currentLang !== "undefined" ? currentLang : "en";
-  const label = lang === "pt" ? item.label_pt : item.label_en;
-  return `<div class="sn-manual-item">
-    <input type="checkbox" class="sn-check" data-key="${esc(key)}" ${checked}>
-    <span class="sn-manual-label">${esc(label)}</span>
-  </div>`;
-}
-
-// ---- Build phase accordion section ----
-function snPhaseSection(player, phase, manual) {
-  const lang = typeof currentLang !== "undefined" ? currentLang : "en";
-  const phaseLabel = lang === "pt" ? phase.label_pt : phase.label_en;
-
-  // Count done quests in this phase
-  const phaseQuestsDone = phase.quests.filter((q) => hasQuest(player, q)).length;
-  // Manual items in this phase
-  const phaseManuals = SN_MANUAL.filter((m) => m.phase === phase.id);
-  const phaseManualDone = phaseManuals.filter(
-    (m) => manual[`${m.id}_${player.name}`]
-  ).length;
-  // Skills relevant to this phase (phases 1 and 5 are skill-training)
-  const isSkillPhase = phase.id === 1 || phase.id === 5;
-
-  const totalInPhase =
-    phase.quests.length + phaseManuals.length + (isSkillPhase ? SN_SKILLS.length : 0);
-  const doneInPhase =
-    phaseQuestsDone + phaseManualDone +
-    (isSkillPhase
-      ? SN_SKILLS.filter((sk) => snSkillLevel(player, sk.id) >= sk.required).length
-      : 0);
-  const phasePct = totalInPhase > 0 ? Math.round((doneInPhase / totalInPhase) * 100) : 100;
-  const phaseComplete = phasePct >= 100;
-
-  let body = "";
-
-  // Skill table for skill-training phases
-  if (isSkillPhase) {
-    body += `<div class="sn-skill-section">
-      <h4 class="sn-section-label">${snT("snSkills")}</h4>
-      <table class="sn-skill-table">
-        <thead>
-          <tr>
-            <th></th>
-            <th>${snT("snSkills")}</th>
-            <th>${snT("snCurrentLvl")}</th>
-            <th>${snT("snRequired")}</th>
-            <th>${snT("snGap")}</th>
-            <th></th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          ${SN_SKILLS.map((sk) => snSkillRow(player, sk)).join("")}
-        </tbody>
-      </table>
-    </div>`;
-  }
-
-  // Quest list
-  if (phase.quests.length > 0) {
-    body += `<div class="sn-quest-section">
-      <h4 class="sn-section-label">${snT("snQuests")}</h4>
-      <div class="sn-quest-list">
-        ${phase.quests.map((q) => snQuestItem(player, q)).join("")}
-      </div>
-    </div>`;
-  }
-
-  // Manual items for this phase
-  if (phaseManuals.length > 0) {
-    body += `<div class="sn-manual-section">
-      <h4 class="sn-section-label">${snT("snManual")}</h4>
-      ${phaseManuals.map((m) => snManualItem(player, m, manual)).join("")}
-    </div>`;
-  }
-
-  // Empty phase message
-  if (phase.quests.length === 0 && phaseManuals.length === 0 && !isSkillPhase) {
-    body += `<p class="sn-empty">${snT("snComplete")}</p>`;
-  }
-
-  return `<details class="sn-phase ${phaseComplete ? "sn-phase-done" : ""}" ${phase.id <= 2 ? "open" : ""}>
-    <summary class="sn-phase-header">
-      <span class="sn-phase-title">${esc(phaseLabel)}</span>
-      <span class="sn-phase-badge">${doneInPhase}/${totalInPhase}</span>
-      ${snProgressBar(phasePct, "sn-bar-mini")}
-    </summary>
-    <div class="sn-phase-body">${body}</div>
-  </details>`;
-}
-
-// ---- Soul Split celebration banner ----
-function snCelebration() {
-  return `<div class="sn-celebration">
-    <div class="sn-celebration-glow"></div>
-    <div class="sn-celebration-rays">
-      <div class="sn-ray sn-ray-1"></div>
-      <div class="sn-ray sn-ray-2"></div>
-      <div class="sn-ray sn-ray-3"></div>
-      <div class="sn-ray sn-ray-4"></div>
-    </div>
-    <div class="sn-celebration-icon">
-      <img src="https://runescape.wiki/images/Soul_Split.png" width="48" height="48" alt="Soul Split" onerror="this.style.display='none'">
-    </div>
-    <div class="sn-celebration-text">${snT("snSoulSplit")}</div>
-    <div class="sn-celebration-sub">Ancient Curses</div>
-  </div>`;
-}
-
-// ---- Inject scoped CSS (idempotent) ----
-function snInjectStyles() {
-  if (document.getElementById("sn-styles")) return;
-  const style = document.createElement("style");
-  style.id = "sn-styles";
-  style.textContent = `
-/* ======== Senntisten Tracker — Zarosian Descent ======== */
-
-/* --- Status Dots --- */
-.sn-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.sn-dot-met { background: #34d399; box-shadow: 0 0 6px rgba(52,211,153,0.5); }
-.sn-dot-unmet { background: rgba(167,139,250,0.35); border: 1px solid rgba(167,139,250,0.3); }
-
-/* --- Hero Section --- */
-.sn-hero {
-  position: relative;
-  text-align: center;
-  padding: var(--sp-8) var(--sp-4) var(--sp-5);
-  margin-bottom: var(--sp-5);
-  overflow: hidden;
-}
-.sn-hero-ambient {
-  position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(ellipse at 50% 30%, rgba(124,58,237,0.1) 0%, transparent 60%);
-  animation: sn-ambient 8s ease-in-out infinite alternate;
-}
-@keyframes sn-ambient {
-  0% { opacity: 0.5; transform: scale(1); }
-  100% { opacity: 1; transform: scale(1.1); }
-}
-.sn-hero-ring-wrap {
-  position: relative; display: inline-block;
-  width: 140px; height: 140px; margin-bottom: var(--sp-4);
-}
-.sn-hero-ring { width: 100%; height: 100%; }
-.sn-hero-ring-inner {
-  position: absolute; inset: 0;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-}
-.sn-hero-pct {
-  font-family: var(--font-mono);
-  font-size: 1.8rem; font-weight: 800;
-  color: #a78bfa;
-  line-height: 1;
-}
-.sn-hero-pct.sn-done { color: #34d399; }
-.sn-hero-stat {
-  font-family: var(--font-mono);
-  font-size: 0.68rem; color: var(--text-3);
-  margin-top: 2px;
-}
-.sn-hero-title {
-  font-family: var(--font-display);
-  font-size: 1.4rem; font-weight: 700;
-  color: #c4b5fd;
-  margin: 0 0 var(--sp-1);
-  text-shadow: 0 0 20px rgba(124,58,237,0.3);
-  position: relative;
-}
-.sn-hero-sub {
-  font-size: 0.72rem; color: var(--text-3);
-  letter-spacing: 0.12em; text-transform: uppercase;
-  margin: 0; position: relative;
-}
-
-/* --- Progress Bars (Zarosian purple gradient) --- */
-.sn-bar {
-  height: 5px; background: rgba(124,58,237,0.08);
-  border-radius: 3px; overflow: hidden; min-width: 60px;
-}
-.sn-bar-fill {
-  height: 100%; border-radius: 3px;
-  background: linear-gradient(90deg, #7c3aed, #a78bfa);
-  transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
-  box-shadow: 0 0 8px rgba(124,58,237,0.3);
-}
-.sn-bar-fill.sn-bar-done {
-  background: linear-gradient(90deg, #059669, #34d399);
-  box-shadow: 0 0 8px rgba(52,211,153,0.3);
-}
-.sn-bar-mini { height: 3px; min-width: 40px; flex: 1; margin-left: var(--sp-2); }
-.sn-bar-hero { height: 6px; max-width: 320px; margin: var(--sp-3) auto 0; }
-
-/* --- Player Selector --- */
-.sn-player-tabs {
-  display: flex; justify-content: center;
-  gap: var(--sp-2); margin-bottom: var(--sp-5);
-}
-.sn-player-tab {
-  padding: var(--sp-2) var(--sp-5);
-  border: 1px solid rgba(124,58,237,0.15);
-  border-radius: 20px;
-  background: var(--bg-card);
-  color: var(--text-2); cursor: pointer;
-  font-size: 0.78rem; font-weight: 600;
-  transition: all 0.25s;
-}
-.sn-player-tab:hover { border-color: rgba(124,58,237,0.3); background: rgba(124,58,237,0.06); }
-.sn-player-tab.active {
-  border-color: rgba(124,58,237,0.5); color: #c4b5fd;
-  background: rgba(124,58,237,0.1);
-  box-shadow: 0 0 16px rgba(124,58,237,0.15);
-}
-.sn-player-tab.p2.active {
-  border-color: var(--teal-dim); color: var(--teal);
-  background: var(--teal-bg);
-  box-shadow: 0 0 16px rgba(34,211,187,0.15);
-}
-
-/* --- Phase Accordions (depth-themed) --- */
-.sn-phase {
-  background: var(--bg-card);
-  border: 1px solid rgba(124,58,237,0.06);
-  border-radius: var(--radius-sm);
-  margin-bottom: var(--sp-2);
-  overflow: hidden;
-  border-left: 3px solid rgba(124,58,237,0.15);
-  transition: border-color 0.3s;
-}
-.sn-phase:hover { border-left-color: rgba(124,58,237,0.35); }
-.sn-phase-done {
-  border-left-color: rgba(52,211,153,0.4) !important;
-  border-color: rgba(52,211,153,0.1);
-}
-.sn-phase-header {
-  display: flex; align-items: center; gap: var(--sp-3);
-  padding: var(--sp-3) var(--sp-4);
-  cursor: pointer; font-size: 0.8rem;
-  font-weight: 600; color: var(--text);
-  list-style: none;
-  transition: background 0.2s;
-}
-.sn-phase-header:hover { background: rgba(124,58,237,0.03); }
-.sn-phase-header::-webkit-details-marker { display: none; }
-.sn-phase-header::before {
-  content: "\\25B6"; font-size: 0.55rem;
-  color: #7c3aed; opacity: 0.5;
-  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.2s;
-}
-details.sn-phase[open] > .sn-phase-header::before { transform: rotate(90deg); opacity: 0.8; }
-.sn-phase-title { flex: 0 0 auto; }
-.sn-phase-badge {
-  font-family: var(--font-mono); font-size: 0.68rem;
-  color: var(--text-3); background: rgba(124,58,237,0.06);
-  padding: 2px 8px; border-radius: 10px;
-}
-.sn-phase-done .sn-phase-badge {
-  color: #34d399; background: rgba(52,211,153,0.08);
-}
-.sn-phase-body {
-  padding: 0 var(--sp-4) var(--sp-4);
-  border-top: 1px solid rgba(124,58,237,0.04);
-}
-
-/* --- Section Labels --- */
-.sn-section-label {
-  font-size: 0.66rem; font-weight: 700;
-  color: #7c3aed; opacity: 0.6;
-  text-transform: uppercase; letter-spacing: 0.1em;
-  margin: var(--sp-3) 0 var(--sp-2);
-}
-
-/* --- Skill Table --- */
-.sn-skill-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
-.sn-skill-table th {
-  text-align: left; padding: var(--sp-1) var(--sp-2);
-  color: var(--text-3); font-size: 0.64rem;
-  text-transform: uppercase; letter-spacing: 0.06em;
-  border-bottom: 1px solid rgba(124,58,237,0.06);
-}
-.sn-skill-row td {
-  padding: 6px var(--sp-2);
-  border-bottom: 1px solid rgba(124,58,237,0.04);
-  vertical-align: middle;
-}
-.sn-skill-row.sn-met { color: #34d399; }
-.sn-skill-row.sn-met td { opacity: 0.75; }
-.sn-skill-name { display: flex; align-items: center; gap: 6px; }
-.sn-skill-name img { border-radius: 2px; }
-.sn-skill-cur { font-family: var(--font-mono); font-weight: 800; }
-.sn-skill-req { font-family: var(--font-mono); color: var(--text-3); font-weight: 500; }
-.sn-gap-met { font-size: 0.65rem; color: #34d399; }
-.sn-gap-num {
-  font-family: var(--font-mono); font-weight: 700;
-  color: #f59e0b; background: rgba(245,158,11,0.08);
-  padding: 1px 6px; border-radius: 8px; font-size: 0.7rem;
-}
-.sn-skill-bar-cell { min-width: 60px; }
-.sn-skill-reason { color: var(--text-3); font-size: 0.65rem; opacity: 0.7; }
-
-/* --- Quest List --- */
-.sn-quest-list { display: flex; flex-direction: column; gap: 1px; }
-.sn-quest-item {
-  display: flex; align-items: center; gap: var(--sp-2);
-  padding: 6px var(--sp-2); font-size: 0.76rem;
-  border-radius: var(--radius-xs);
-  transition: background 0.15s;
-}
-.sn-quest-item:hover { background: rgba(124,58,237,0.04); }
-.sn-quest-done .sn-quest-name {
-  color: #34d399; opacity: 0.7;
-  text-decoration: line-through;
-  text-decoration-color: rgba(52,211,153,0.25);
-}
-.sn-quest-todo .sn-quest-name { color: var(--text); }
-.sn-quest-wiki {
-  font-size: 0.6rem; color: var(--text-3);
-  text-decoration: none; margin-left: auto;
-  padding: 2px 8px; border: 1px solid rgba(124,58,237,0.1);
-  border-radius: 10px; transition: all 0.2s;
-  opacity: 0;
-}
-.sn-quest-item:hover .sn-quest-wiki { opacity: 1; }
-.sn-quest-wiki:hover { color: #a78bfa; border-color: rgba(124,58,237,0.3); }
-
-/* --- Manual Items --- */
-.sn-manual-item {
-  display: flex; align-items: center; gap: var(--sp-2);
-  padding: 6px 0; font-size: 0.76rem;
-}
-.sn-check {
-  accent-color: #7c3aed; cursor: pointer;
-  width: 16px; height: 16px;
-}
-.sn-manual-label { color: var(--text-2); }
-.sn-empty { color: var(--text-3); font-size: 0.72rem; font-style: italic; margin: var(--sp-2) 0; }
-
-/* --- Soul Split Celebration --- */
-.sn-celebration {
-  position: relative; text-align: center;
-  padding: var(--sp-8) var(--sp-4);
-  margin: var(--sp-5) 0;
-  border-radius: var(--radius);
-  background: linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(6,6,14,1) 50%, rgba(52,211,153,0.06) 100%);
-  border: 1px solid rgba(124,58,237,0.2);
-  overflow: hidden;
-}
-.sn-celebration-glow {
-  position: absolute; inset: 0;
-  background: radial-gradient(ellipse at center, rgba(124,58,237,0.2) 0%, transparent 65%);
-  animation: sn-pulse 3s ease-in-out infinite;
-  pointer-events: none;
-}
-.sn-celebration-rays { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
-.sn-ray {
-  position: absolute; top: 50%; left: 50%;
-  width: 2px; height: 120%;
-  background: linear-gradient(to bottom, rgba(124,58,237,0.3), transparent);
-  transform-origin: center top;
-  animation: sn-ray-spin 12s linear infinite;
-}
-.sn-ray-1 { transform: rotate(0deg); animation-delay: 0s; }
-.sn-ray-2 { transform: rotate(90deg); animation-delay: -3s; }
-.sn-ray-3 { transform: rotate(45deg); animation-delay: -6s; opacity: 0.5; }
-.sn-ray-4 { transform: rotate(135deg); animation-delay: -9s; opacity: 0.5; }
-@keyframes sn-ray-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-.sn-celebration-icon { position: relative; margin-bottom: var(--sp-3); filter: drop-shadow(0 0 16px rgba(124,58,237,0.6)); }
-.sn-celebration-text {
-  font-family: var(--font-display);
-  font-size: 1.5rem; font-weight: 800;
-  background: linear-gradient(135deg, #c4b5fd, #34d399);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
-  position: relative;
-}
-.sn-celebration-sub {
-  font-size: 0.78rem; color: #7c3aed;
-  letter-spacing: 0.15em; text-transform: uppercase;
-  margin-top: var(--sp-2); position: relative;
-}
-@keyframes sn-pulse {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.08); }
-}
-
-/* --- Responsive --- */
-@media (max-width: 640px) {
-  .sn-skill-table { font-size: 0.68rem; }
-  .sn-skill-reason { display: none; }
-  .sn-hero-title { font-size: 1.1rem; }
-  .sn-hero-pct { font-size: 1.4rem; }
-  .sn-hero-ring-wrap { width: 120px; height: 120px; }
-  .sn-celebration-text { font-size: 1.1rem; }
-  .sn-quest-wiki { opacity: 1; }
-}
-`;
-  document.head.appendChild(style);
-}
-
-// ---- Ensure the page section exists in the DOM ----
-function snEnsureSection() {
-  let section = document.querySelector('[data-page="senntisten"]');
-  if (!section) {
-    section = document.createElement("section");
-    section.className = "page";
-    section.dataset.page = "senntisten";
-    section.setAttribute("role", "tabpanel");
-    section.id = "sn-page";
-    // Insert before the closing </main>
-    const main = document.getElementById("main-content");
-    if (main) main.appendChild(section);
-  }
-  return section;
-}
-
-// ============================================================
-// Main render function — called by _renderers["senntisten"]
-// ============================================================
-function renderSenntisten(players) {
-  snInjectStyles();
-  const section = snEnsureSection();
-  if (!players || players.length === 0) return;
-
-  const manual = snLoadManual();
-
-  // Default to first player
-  const activeIdx = parseInt(section.dataset.snActive || "0", 10);
-  const player = players[Math.min(activeIdx, players.length - 1)];
-
-  const counts = snCountDone(player);
-  const pct = SN_TOTAL_ITEMS > 0
-    ? Math.round((counts.total / SN_TOTAL_ITEMS) * 100)
-    : 0;
-  const allDone = counts.total >= SN_TOTAL_ITEMS;
-
-  // ---- Build HTML ----
-  let html = "";
-
-  // Hero section with SVG progress ring
-  const ringR = 58, ringC = 2 * Math.PI * ringR;
-  const ringOffset = ringC - (pct / 100) * ringC;
-  html += `<div class="sn-hero">
-    <div class="sn-hero-ambient"></div>
-    <div class="sn-hero-ring-wrap">
-      <svg class="sn-hero-ring" viewBox="0 0 140 140">
-        <circle cx="70" cy="70" r="${ringR}" fill="none" stroke="rgba(124,58,237,0.1)" stroke-width="6"/>
-        <circle cx="70" cy="70" r="${ringR}" fill="none"
-          stroke="${allDone ? 'url(#sn-ring-done)' : 'url(#sn-ring-grad)'}"
-          stroke-width="6" stroke-linecap="round"
-          stroke-dasharray="${ringC}" stroke-dashoffset="${ringOffset}"
-          transform="rotate(-90 70 70)"
-          style="transition: stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1);filter:drop-shadow(0 0 6px rgba(124,58,237,0.4))"/>
-        <defs>
-          <linearGradient id="sn-ring-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#a78bfa"/>
-            <stop offset="100%" stop-color="#7c3aed"/>
-          </linearGradient>
-          <linearGradient id="sn-ring-done" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#34d399"/>
-            <stop offset="100%" stop-color="#059669"/>
-          </linearGradient>
-        </defs>
-      </svg>
-      <div class="sn-hero-ring-inner">
-        <div class="sn-hero-pct ${allDone ? 'sn-done' : ''}">${pct}%</div>
-        <div class="sn-hero-stat">${counts.total}/${SN_TOTAL_ITEMS}</div>
-      </div>
-    </div>
-    <h2 class="sn-hero-title">${snT("snTitle")}</h2>
-    <p class="sn-hero-sub">${snT("snSubtitle")}</p>
-  </div>`;
-
-  // Player selector tabs (if more than one player)
-  if (players.length > 1) {
-    html += `<div class="sn-player-tabs">`;
-    players.forEach((p, i) => {
-      const cls = i === activeIdx ? "active" : "";
-      const pCls = i === 0 ? "p1" : "p2";
-      const pCounts = snCountDone(p);
-      const pPct = Math.round((pCounts.total / SN_TOTAL_ITEMS) * 100);
-      html += `<button class="sn-player-tab ${pCls} ${cls}" data-sn-player="${i}">
-        ${esc(p.name)} (${pPct}%)
-      </button>`;
-    });
-    html += `</div>`;
-  }
-
-  // Celebration banner (if all done)
-  if (allDone) {
-    html += snCelebration();
-  }
-
-  // Phase accordions
-  for (const phase of SN_PHASES) {
-    html += snPhaseSection(player, phase, manual);
-  }
-
-  section.innerHTML = html;
-
-  // ---- Grind tracker (appended after main content) ----
-  try { snAppendGrindTracker(section, player, players); } catch (e) { console.error("Grind tracker:", e); }
-
-  // ---- Event delegation ----
-  // Player tab switching
-  section.querySelectorAll(".sn-player-tab").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      const idx = e.currentTarget.dataset.snPlayer;
-      section.dataset.snActive = idx;
-      renderSenntisten(players);
-    });
-  });
-
-  // Manual checkbox persistence
-  section.addEventListener("change", function handler(e) {
-    if (!e.target.classList.contains("sn-check")) return;
-    const state = snLoadManual();
-    if (e.target.checked) {
-      state[e.target.dataset.key] = true;
-    } else {
-      delete state[e.target.dataset.key];
-    }
-    snSaveManual(state);
-    // Re-render to update progress counts
-    renderSenntisten(players);
-  }, { once: true });
-  // Note: we use { once: true } and re-attach on each render to avoid
-  // stacking listeners, since renderSenntisten replaces innerHTML.
-}
-
-// ============================================================
-// Agility Grind Tracker — live XP chart + rate/ETA
-// ============================================================
-
-const SN_GRIND_KEY = "rs3lb-sn-grind";
-const SN_GRIND_SKILL_ID = 16; // Agility
-const SN_GRIND_TARGET_XP = 302288; // Level 61
-const SN_GRIND_TARGET_LVL = 61;
-const SN_GRIND_MAX_SNAPSHOTS = 500;
-
-function snLoadSnapshots() {
-  try { return JSON.parse(localStorage.getItem(SN_GRIND_KEY) || "[]"); }
+// ---- Snapshot persistence ----
+function grindLoadSnapshots() {
+  try { return JSON.parse(localStorage.getItem(GRIND_KEY) || "[]"); }
   catch { return []; }
 }
-
-function snSaveSnapshots(arr) {
-  localStorage.setItem(SN_GRIND_KEY, JSON.stringify(arr));
+function grindSaveSnapshots(arr) {
+  localStorage.setItem(GRIND_KEY, JSON.stringify(arr));
 }
 
-function snRecordSnapshot(player) {
-  const sk = player.skills[SN_GRIND_SKILL_ID] || {};
-  const xp = (sk.xp || 0);
+function grindRecordSnapshot(player) {
+  const sk = player.skills[GRIND_SKILL_ID] || {};
+  const xp = sk.xp || 0;
   const lvl = sk.level || 1;
-  const snaps = snLoadSnapshots();
-  // Deduplicate: skip if XP unchanged
+  const snaps = grindLoadSnapshots();
   if (snaps.length > 0 && snaps[snaps.length - 1].xp === xp) return snaps;
   snaps.push({ t: Date.now(), xp, lvl });
-  // Cap length
-  if (snaps.length > SN_GRIND_MAX_SNAPSHOTS) snaps.splice(0, snaps.length - SN_GRIND_MAX_SNAPSHOTS);
-  snSaveSnapshots(snaps);
+  if (snaps.length > GRIND_MAX_SNAPSHOTS) snaps.splice(0, snaps.length - GRIND_MAX_SNAPSHOTS);
+  grindSaveSnapshots(snaps);
   return snaps;
 }
 
-function snCalcStats(snaps) {
+// ---- Stats computation ----
+function grindCalcStats(snaps) {
   if (snaps.length < 1) return null;
-  const first = snaps[0];
-  const last = snaps[snaps.length - 1];
+  const first = snaps[0], last = snaps[snaps.length - 1];
   const sessionGain = last.xp - first.xp;
   const sessionMs = last.t - first.t;
   const sessionHrs = sessionMs / 3600000;
 
-  // Rate from recent snapshots (last 30 min or all)
   const thirtyAgo = last.t - 30 * 60 * 1000;
   const recent = snaps.filter(s => s.t >= thirtyAgo);
   let ratePerHr = 0;
   if (recent.length >= 2) {
-    const rFirst = recent[0];
-    const rLast = recent[recent.length - 1];
+    const rFirst = recent[0], rLast = recent[recent.length - 1];
     const dt = (rLast.t - rFirst.t) / 3600000;
     if (dt > 0) ratePerHr = (rLast.xp - rFirst.xp) / dt;
   } else if (sessionHrs > 0) {
     ratePerHr = sessionGain / sessionHrs;
   }
 
-  const remaining = Math.max(0, SN_GRIND_TARGET_XP - last.xp);
+  const remaining = Math.max(0, GRIND_TARGET_XP - last.xp);
   const etaHrs = ratePerHr > 0 ? remaining / ratePerHr : null;
 
   return {
     sessionGain, ratePerHr: Math.round(ratePerHr),
     remaining, etaHrs, currentXp: last.xp, currentLvl: last.lvl,
     elapsed: sessionMs, snapCount: snaps.length,
-    done: last.xp >= SN_GRIND_TARGET_XP,
+    done: last.xp >= GRIND_TARGET_XP,
   };
 }
 
-function snFormatEta(hrs) {
+function grindFormatEta(hrs) {
   if (hrs == null || hrs <= 0) return "--";
   const h = Math.floor(hrs);
   const m = Math.round((hrs - h) * 60);
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
-
-function snFormatElapsed(ms) {
+function grindFormatElapsed(ms) {
   const mins = Math.round(ms / 60000);
   if (mins < 60) return `${mins}m`;
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  return `${h}h ${m}m`;
+  return `${Math.floor(mins / 60)}h ${mins % 60}m`;
 }
 
-function snRenderGrindStats(stats) {
-  if (!stats) return `<div class="sn-grind-stats"><p class="sn-empty">Waiting for data...</p></div>`;
+// ---- Render stats HTML ----
+function grindRenderStats(stats) {
+  if (!stats) return `<div class="grind-stats"><p style="color:var(--text-3);font-size:0.72rem;font-style:italic;">Waiting for data...</p></div>`;
   const lang = typeof currentLang !== "undefined" ? currentLang : "en";
-  const pct = Math.min(100, Math.round((stats.currentXp / SN_GRIND_TARGET_XP) * 100));
-  const labels = lang === "pt"
+  const pct = Math.min(100, Math.round((stats.currentXp / GRIND_TARGET_XP) * 100));
+  const L = lang === "pt"
     ? { rate: "XP/hora", eta: "ETA p/ 61", gained: "Ganho", elapsed: "Tempo", remaining: "Restante" }
     : { rate: "XP/hour", eta: "ETA to 61", gained: "Gained", elapsed: "Elapsed", remaining: "Remaining" };
 
-  return `<div class="sn-grind-stats">
-    <div class="sn-grind-stat">
-      <span class="sn-grind-val ${stats.ratePerHr > 0 ? "sn-grind-live" : ""}">${stats.ratePerHr > 0 ? stats.ratePerHr.toLocaleString() : "--"}</span>
-      <span class="sn-grind-label">${labels.rate}</span>
-    </div>
-    <div class="sn-grind-stat">
-      <span class="sn-grind-val">${snFormatEta(stats.etaHrs)}</span>
-      <span class="sn-grind-label">${labels.eta}</span>
-    </div>
-    <div class="sn-grind-stat">
-      <span class="sn-grind-val">${stats.sessionGain > 0 ? "+" + stats.sessionGain.toLocaleString() : "0"}</span>
-      <span class="sn-grind-label">${labels.gained}</span>
-    </div>
-    <div class="sn-grind-stat">
-      <span class="sn-grind-val">${stats.remaining.toLocaleString()}</span>
-      <span class="sn-grind-label">${labels.remaining}</span>
-    </div>
-    <div class="sn-grind-stat">
-      <span class="sn-grind-val">${snFormatElapsed(stats.elapsed)}</span>
-      <span class="sn-grind-label">${labels.elapsed}</span>
-    </div>
+  return `<div class="grind-stats">
+    <div class="grind-stat"><span class="grind-val ${stats.ratePerHr > 0 ? "grind-live" : ""}">${stats.ratePerHr > 0 ? stats.ratePerHr.toLocaleString() : "--"}</span><span class="grind-label">${L.rate}</span></div>
+    <div class="grind-stat"><span class="grind-val">${grindFormatEta(stats.etaHrs)}</span><span class="grind-label">${L.eta}</span></div>
+    <div class="grind-stat"><span class="grind-val">${stats.sessionGain > 0 ? "+" + stats.sessionGain.toLocaleString() : "0"}</span><span class="grind-label">${L.gained}</span></div>
+    <div class="grind-stat"><span class="grind-val">${stats.remaining.toLocaleString()}</span><span class="grind-label">${L.remaining}</span></div>
+    <div class="grind-stat"><span class="grind-val">${grindFormatElapsed(stats.elapsed)}</span><span class="grind-label">${L.elapsed}</span></div>
   </div>
-  ${snProgressBar(pct, "sn-bar-hero")}
-  <div style="text-align:center;margin-top:4px;">
-    <span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-3);">
-      Lvl ${stats.currentLvl} — ${stats.currentXp.toLocaleString()} / ${SN_GRIND_TARGET_XP.toLocaleString()} XP (${pct}%)
-    </span>
+  ${grindProgressBar(pct, "grind-bar-hero")}
+  <div style="text-align:center;margin-top:4px;font-family:var(--font-mono);font-size:0.72rem;color:var(--text-3);">
+    Lvl ${stats.currentLvl} &mdash; ${stats.currentXp.toLocaleString()} / ${GRIND_TARGET_XP.toLocaleString()} XP (${pct}%)
   </div>`;
 }
 
-function snRenderGrindChart(snaps) {
-  if (typeof Chart === "undefined" || snaps.length < 2) return `<div class="sn-grind-chart-wrap" style="display:flex;align-items:center;justify-content:center;"><span style="color:var(--text-3);font-size:0.75rem;">Chart appears after next refresh...</span></div>`;
-  const canvasId = "sn-grind-chart";
-  return `<div class="sn-grind-chart-wrap">
-    <canvas id="${canvasId}" height="200"></canvas>
-  </div>`;
+// ---- Render chart canvas ----
+function grindRenderChart(snaps) {
+  if (typeof Chart === "undefined" || snaps.length < 2)
+    return `<div class="grind-chart-wrap" style="display:flex;align-items:center;justify-content:center;"><span style="color:var(--text-3);font-size:0.72rem;">Chart appears after next refresh...</span></div>`;
+  return `<div class="grind-chart-wrap"><canvas id="grind-chart" height="200"></canvas></div>`;
 }
 
-function snBuildGrindChart(snaps, stats) {
+// ---- Build Chart.js instance ----
+function grindBuildChart(snaps, stats) {
   if (typeof Chart === "undefined" || typeof makeChart !== "function" || snaps.length < 2) return;
-  const canvasId = "sn-grind-chart";
-  const canvas = document.getElementById(canvasId);
+  const canvas = document.getElementById("grind-chart");
   if (!canvas) return;
 
   const t0 = snaps[0].t;
-  const dataPoints = snaps.map(s => ({ x: (s.t - t0) / 60000, y: s.xp }));
-
+  const pts = snaps.map(s => ({ x: (s.t - t0) / 60000, y: s.xp }));
   const datasets = [
-    {
-      label: "Agility XP",
-      data: dataPoints,
-      borderColor: "rgba(212,168,67,1)",
-      backgroundColor: "rgba(212,168,67,0.1)",
-      borderWidth: 2,
-      pointRadius: snaps.length > 50 ? 0 : 3,
-      pointBackgroundColor: "rgba(212,168,67,1)",
-      fill: true,
-      tension: 0.3,
-    },
-    {
-      label: `Target (Lvl ${SN_GRIND_TARGET_LVL})`,
-      data: [{ x: 0, y: SN_GRIND_TARGET_XP }, { x: Math.max(dataPoints[dataPoints.length - 1].x, 60), y: SN_GRIND_TARGET_XP }],
-      borderColor: "rgba(52,211,153,0.6)",
-      borderWidth: 2,
-      borderDash: [8, 4],
-      pointRadius: 0,
-      fill: false,
-    },
+    { label: "Agility XP", data: pts, borderColor: "rgba(212,168,67,1)", backgroundColor: "rgba(212,168,67,0.1)", borderWidth: 2, pointRadius: snaps.length > 50 ? 0 : 3, pointBackgroundColor: "rgba(212,168,67,1)", fill: true, tension: 0.3 },
+    { label: `Target (Lvl ${GRIND_TARGET_LVL})`, data: [{ x: 0, y: GRIND_TARGET_XP }, { x: Math.max(pts[pts.length - 1].x, 60), y: GRIND_TARGET_XP }], borderColor: "rgba(52,211,153,0.6)", borderWidth: 2, borderDash: [8, 4], pointRadius: 0, fill: false },
   ];
-
-  // Projected line if we have a rate
   if (stats && stats.ratePerHr > 0 && !stats.done) {
-    const lastPt = dataPoints[dataPoints.length - 1];
-    const minsToTarget = ((SN_GRIND_TARGET_XP - lastPt.y) / stats.ratePerHr) * 60;
-    datasets.push({
-      label: "Projected",
-      data: [{ x: lastPt.x, y: lastPt.y }, { x: lastPt.x + minsToTarget, y: SN_GRIND_TARGET_XP }],
-      borderColor: "rgba(212,168,67,0.35)",
-      borderWidth: 2,
-      borderDash: [4, 4],
-      pointRadius: 0,
-      fill: false,
-    });
+    const lp = pts[pts.length - 1];
+    const mt = ((GRIND_TARGET_XP - lp.y) / stats.ratePerHr) * 60;
+    datasets.push({ label: "Projected", data: [{ x: lp.x, y: lp.y }, { x: lp.x + mt, y: GRIND_TARGET_XP }], borderColor: "rgba(212,168,67,0.35)", borderWidth: 2, borderDash: [4, 4], pointRadius: 0, fill: false });
   }
 
-  makeChart(canvasId, {
-    type: "line",
-    data: { datasets },
+  makeChart("grind-chart", {
+    type: "line", data: { datasets },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false,
       interaction: { mode: "nearest", intersect: false },
       scales: {
-        x: {
-          type: "linear",
-          title: { display: true, text: "Minutes", color: "#9a9488", font: { size: 10 } },
-          ticks: { callback: (v) => Math.round(v) + "m" },
-        },
-        y: {
-          title: { display: true, text: "XP", color: "#9a9488", font: { size: 10 } },
-          ticks: { callback: (v) => (v / 1000).toFixed(0) + "k" },
-          suggestedMin: snaps[0].xp * 0.98,
-          suggestedMax: SN_GRIND_TARGET_XP * 1.02,
-        },
+        x: { type: "linear", title: { display: true, text: "Minutes", color: "#9a9488", font: { size: 10 } }, ticks: { callback: v => Math.round(v) + "m" } },
+        y: { title: { display: true, text: "XP", color: "#9a9488", font: { size: 10 } }, ticks: { callback: v => (v / 1000).toFixed(0) + "k" }, suggestedMin: snaps[0].xp * 0.98, suggestedMax: GRIND_TARGET_XP * 1.02 },
       },
       plugins: {
         legend: { display: true, position: "top" },
-        tooltip: {
-          callbacks: {
-            label: (ctx) => `${ctx.dataset.label}: ${Math.round(ctx.parsed.y).toLocaleString()} XP`,
-            title: (items) => {
-              if (!items.length) return "";
-              const mins = Math.round(items[0].parsed.x);
-              const h = Math.floor(mins / 60);
-              const m = mins % 60;
-              return h > 0 ? `+${h}h ${m}m` : `+${m}m`;
-            },
-          },
-        },
+        tooltip: { callbacks: {
+          label: ctx => `${ctx.dataset.label}: ${Math.round(ctx.parsed.y).toLocaleString()} XP`,
+          title: items => { if (!items.length) return ""; const m = Math.round(items[0].parsed.x); return m >= 60 ? `+${Math.floor(m/60)}h ${m%60}m` : `+${m}m`; },
+        }},
       },
     },
   });
 }
 
-// ---- Inject grind tracker styles ----
-function snInjectGrindStyles() {
-  if (document.getElementById("sn-grind-styles")) return;
-  const style = document.createElement("style");
-  style.id = "sn-grind-styles";
-  style.textContent = `
-.sn-grind-section {
-  margin: var(--sp-5) 0 var(--sp-3);
-  padding: var(--sp-5);
-  background: linear-gradient(135deg, var(--bg-card) 0%, rgba(124,58,237,0.03) 100%);
-  border: 1px solid rgba(124,58,237,0.1);
-  border-radius: var(--radius);
-  position: relative; overflow: hidden;
-}
-.sn-grind-section::before {
-  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(124,58,237,0.3), transparent);
-}
-.sn-grind-header {
-  display: flex; align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--sp-4);
-}
-.sn-grind-title {
-  font-family: var(--font-display);
-  font-size: 1.05rem; font-weight: 700;
-  color: #c4b5fd;
-  display: flex; align-items: center; gap: var(--sp-2);
-  text-shadow: 0 0 12px rgba(124,58,237,0.2);
-}
-.sn-grind-reset {
-  font-size: 0.62rem; padding: 4px 10px;
-  border: 1px solid rgba(124,58,237,0.15);
-  border-radius: 12px; background: transparent;
-  color: var(--text-3); cursor: pointer;
-  transition: all 0.2s; text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-.sn-grind-reset:hover { border-color: rgba(248,113,113,0.4); color: #f87171; }
-.sn-grind-stats {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: var(--sp-2);
-  margin-bottom: var(--sp-4);
-}
-.sn-grind-stat {
-  display: flex; flex-direction: column;
-  align-items: center; padding: var(--sp-3) var(--sp-2);
-  background: rgba(124,58,237,0.04);
-  border: 1px solid rgba(124,58,237,0.06);
-  border-radius: var(--radius-sm);
-  transition: border-color 0.2s;
-}
-.sn-grind-stat:hover { border-color: rgba(124,58,237,0.15); }
-.sn-grind-val {
-  font-family: var(--font-mono);
-  font-size: 0.88rem; font-weight: 800;
-  color: var(--text);
-}
-.sn-grind-val.sn-grind-live {
-  color: #a78bfa;
-  text-shadow: 0 0 8px rgba(167,139,250,0.3);
-}
-.sn-grind-label {
-  font-size: 0.58rem; color: var(--text-3);
-  text-transform: uppercase; letter-spacing: 0.06em;
-  margin-top: 3px;
-}
-.sn-grind-chart-wrap {
-  position: relative; height: 220px;
-  margin-top: var(--sp-3);
-  padding: var(--sp-2);
-  background: rgba(0,0,0,0.2);
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(124,58,237,0.05);
-}
-@media (max-width: 640px) {
-  .sn-grind-stats { grid-template-columns: repeat(3, 1fr); }
-  .sn-grind-chart-wrap { height: 180px; }
-  .sn-grind-val { font-size: 0.76rem; }
-  .sn-grind-section { padding: var(--sp-3); }
-}
+// ---- Inject scoped CSS ----
+function grindInjectStyles() {
+  if (document.getElementById("grind-styles")) return;
+  const s = document.createElement("style");
+  s.id = "grind-styles";
+  s.textContent = `
+.grind-section { padding: var(--sp-4); background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); position: relative; overflow: hidden; }
+.grind-section::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(212,168,67,0.2), transparent); }
+.grind-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-3); }
+.grind-title { font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; color: var(--gold-bright); display: flex; align-items: center; gap: var(--sp-2); }
+.grind-reset { font-size: 0.6rem; padding: 3px 8px; border: 1px solid var(--border); border-radius: 10px; background: transparent; color: var(--text-3); cursor: pointer; transition: all 0.2s; text-transform: uppercase; letter-spacing: 0.05em; }
+.grind-reset:hover { border-color: rgba(248,113,113,0.4); color: #f87171; }
+.grind-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.grind-stat { display: flex; flex-direction: column; align-items: center; padding: var(--sp-2); background: var(--bg-raised); border-radius: var(--radius-xs); }
+.grind-val { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 800; color: var(--text); }
+.grind-val.grind-live { color: var(--gold-bright); }
+.grind-label { font-size: 0.56rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+.grind-bar { height: 5px; background: var(--bg-raised); border-radius: 3px; overflow: hidden; min-width: 60px; }
+.grind-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--gold-dim), var(--gold)); transition: width 0.6s ease; }
+.grind-bar-fill.grind-bar-done { background: linear-gradient(90deg, #059669, #34d399); }
+.grind-bar-hero { height: 6px; max-width: 320px; margin: var(--sp-3) auto 0; }
+.grind-chart-wrap { position: relative; height: 200px; margin-top: var(--sp-3); }
+@media (max-width: 640px) { .grind-stats { grid-template-columns: repeat(3, 1fr); } .grind-chart-wrap { height: 160px; } .grind-val { font-size: 0.74rem; } }
 `;
-  document.head.appendChild(style);
+  document.head.appendChild(s);
 }
 
-// ---- Append grind tracker after main render ----
-function snAppendGrindTracker(section, player, players) {
-  snInjectGrindStyles();
-
-  // Record snapshot
-  const snaps = snRecordSnapshot(player);
-  const stats = snCalcStats(snaps);
-
-  // Build grind tracker HTML
+// ============================================================
+// Public: renderGrindTracker(container, player)
+// Called from dashboard renderer to append grind tracker.
+// ============================================================
+function renderGrindTracker(container, player) {
+  grindInjectStyles();
+  const snaps = grindRecordSnapshot(player);
+  const stats = grindCalcStats(snaps);
   const lang = typeof currentLang !== "undefined" ? currentLang : "en";
   const title = lang === "pt" ? "Grind de Agility" : "Agility Grind Tracker";
   const resetLabel = lang === "pt" ? "Resetar" : "Reset";
 
-  const grindDiv = document.createElement("div");
-  grindDiv.className = "sn-grind-section";
-  grindDiv.innerHTML = `
-    <div class="sn-grind-header">
-      <div class="sn-grind-title">
-        ${typeof skillIconImg === "function" ? skillIconImg(SN_GRIND_SKILL_ID, 22) : ""}
-        ${title}
-      </div>
-      <button class="sn-grind-reset" id="sn-grind-reset">${resetLabel}</button>
+  const div = document.createElement("div");
+  div.className = "grind-section";
+  div.innerHTML = `
+    <div class="grind-header">
+      <div class="grind-title">${typeof skillIconImg === "function" ? skillIconImg(GRIND_SKILL_ID, 20) : ""} ${title}</div>
+      <button class="grind-reset" id="grind-reset">${resetLabel}</button>
     </div>
-    ${snRenderGrindStats(stats)}
-    ${snRenderGrindChart(snaps)}`;
+    ${grindRenderStats(stats)}
+    ${grindRenderChart(snaps)}`;
+  container.appendChild(div);
 
-  section.appendChild(grindDiv);
+  try { grindBuildChart(snaps, stats); } catch (e) { console.error("Grind chart:", e); }
 
-  // Build chart after DOM insertion
-  try { snBuildGrindChart(snaps, stats); } catch (e) { console.error("Grind chart error:", e); }
-
-  // Reset button
-  const resetBtn = document.getElementById("sn-grind-reset");
-  if (resetBtn) {
-    resetBtn.addEventListener("click", () => {
-      snSaveSnapshots([]);
-      renderSenntisten(players);
-    });
-  }
+  const btn = document.getElementById("grind-reset");
+  if (btn) btn.addEventListener("click", () => { grindSaveSnapshots([]); renderGrindTracker(container, player); });
 }

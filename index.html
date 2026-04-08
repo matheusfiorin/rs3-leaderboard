@@ -81,12 +81,10 @@
         <!-- Hidden tabs for i18n updateUIText compatibility -->
         <div style="display:none">
           <span id="tab-overview"></span><span id="tab-skills"></span>
-          <span id="tab-senntisten"></span><span id="tab-prifddinas"></span>
+          <span id="tab-senntisten" style="display:none"></span>
           <span id="tab-lookup"></span><span id="tab-quests"></span>
           <span id="tab-activity"></span><span id="tab-combat"></span>
           <span id="tab-journal"></span><span id="tab-money"></span>
-          <span id="tab-meetup"></span><span id="tab-chat"></span>
-          <span id="tab-easter"></span>
         </div>
       </header>
 
@@ -130,7 +128,6 @@
             <button class="home-card" data-launch="combat"><span class="home-card-icon"><img src="https://runescape.wiki/images/thumb/Attack-icon.png/28px-Attack-icon.png" width="28" height="28" alt="" loading="lazy" onerror="this.outerHTML='⚔️'"></span><span class="home-card-label" id="hc-combat">Combate</span><span class="home-card-stat" id="hcs-combat"></span></button>
             <button class="home-card" data-launch="journal"><span class="home-card-icon"><img src="https://runescape.wiki/images/RuneScore.png" width="28" height="28" alt="" loading="lazy" onerror="this.outerHTML='📖'"></span><span class="home-card-label" id="hc-journal">Diário</span><span class="home-card-stat" id="hcs-journal"></span></button>
             <button class="home-card" data-launch="money"><span class="home-card-icon"><img src="https://runescape.wiki/images/Coins_10000.png" width="28" height="28" alt="" loading="lazy" onerror="this.outerHTML='💰'"></span><span class="home-card-label" id="hc-money">GP</span><span class="home-card-stat" id="hcs-money"></span></button>
-            <button class="home-card" data-launch="meetup"><span class="home-card-icon"><img src="https://runescape.wiki/images/Grouping_System_icon.png" width="28" height="28" alt="" loading="lazy" onerror="this.outerHTML='🤝'"></span><span class="home-card-label" id="hc-meetup">Encontros</span><span class="home-card-stat" id="hcs-meetup"></span></button>
           </div>
           <div class="section-head">
             <h2 class="section-title" id="h2h-title">Frente a Frente</h2>
@@ -339,20 +336,7 @@
         <!-- UNIFIED GOALS PAGE -->
         <section class="page" data-page="goals" role="tabpanel"></section>
 
-        <!-- Legacy tracker sections (kept for hash compat) -->
-        <section class="page" data-page="senntisten" role="tabpanel">
-          <div id="senntisten-content"></div>
-        </section>
-        <section class="page" data-page="prifddinas" role="tabpanel">
-          <div id="prifddinas-content"></div>
-        </section>
-
-        <!-- MEETUP / ENCONTROS -->
-        <section class="page" data-page="meetup" role="tabpanel">
-          <div id="meetup-content"></div>
-        </section>
-
-        <!-- EASTER removed: seasonal event ended -->
+        <!-- Dead pages removed: senntisten, prifddinas, meetup, easter, chat -->
       </main>
 
       <!-- VISITOR STATS -->
@@ -377,11 +361,8 @@
 
     <script src="i18n.js?v=17"></script>
     <script src="combat.js?v=17"></script>
-    <script src="meetup.js?v=17"></script>
-    <!-- chat.js removed -->
     <script src="lookup.js?v=17"></script>
-    <script src="senntisten.js?v=19"></script>
-    <script src="prifddinas.js?v=18"></script>
+    <script src="senntisten.js?v=20"></script>
     <script src="major-goals.js?v=19"></script>
     <script src="goals.js?v=19"></script>
     <script src="script.js?v=19"></script>
