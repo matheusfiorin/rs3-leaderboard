@@ -2114,29 +2114,30 @@ async function loadVisitorStats() {
 
 // ---- Lazy tab rendering ----
 const _renderers = {
-  overview: (r) => {
+  dashboard: (r) => {
     if (typeof renderGoalsSummary === "function") renderGoalsSummary(r);
     renderCards(r);
     renderH2H(r);
-    renderJournal(r, "#journal-scores", null);
-    if (typeof renderOverviewGainsChart === "function")
-      renderOverviewGainsChart();
-    if (typeof renderNextSteps === "function") renderNextSteps(r);
+    renderActivity(r);
+    // Grind tracker
+    const mount = document.getElementById("grind-tracker-mount");
+    if (mount && typeof renderGrindTracker === "function" && r.length > 0) {
+      mount.innerHTML = "";
+      renderGrindTracker(mount, r[0]);
+    }
+    if (typeof renderOverviewGainsChart === "function") renderOverviewGainsChart();
   },
+  // Alias: old "overview" hash → dashboard
+  overview: (r) => { _renderers.dashboard(r); },
   skills: (r) => {
     renderSkills(r);
-  },
-  journal: (r) => {
-    renderJournal(r, "#journal-scores-full", "#journal-grid");
+    if (typeof renderCombat === "function") renderCombat(r);
   },
   quests: (r) => {
     renderQuests(r);
   },
-  activity: (r) => {
-    renderActivity(r);
-  },
-  combat: (r) => {
-    if (typeof renderCombat === "function") renderCombat(r);
+  journal: (r) => {
+    renderJournal(r, "#journal-scores-full", "#journal-grid");
   },
   lookup: () => {
     if (typeof renderLookupPage === "function") renderLookupPage();
@@ -2149,7 +2150,7 @@ const _rendered = new Set();
 
 function getActiveTab() {
   const active = document.querySelector(".page.active");
-  return active ? active.dataset.page : "overview";
+  return active ? active.dataset.page : "dashboard";
 }
 
 function renderTab(tab, results) {
