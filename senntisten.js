@@ -664,6 +664,9 @@ function renderSenntisten(players) {
 
   section.innerHTML = html;
 
+  // ---- Grind tracker (appended after main content) ----
+  try { snAppendGrindTracker(section, player, players); } catch (e) { console.error("Grind tracker:", e); }
+
   // ---- Event delegation ----
   // Player tab switching
   section.querySelectorAll(".sn-player-tab").forEach((btn) => {
@@ -810,7 +813,7 @@ function snRenderGrindStats(stats) {
 }
 
 function snRenderGrindChart(snaps) {
-  if (typeof Chart === "undefined" || snaps.length < 1) return "";
+  if (typeof Chart === "undefined" || snaps.length < 2) return `<div class="sn-grind-chart-wrap" style="display:flex;align-items:center;justify-content:center;"><span style="color:var(--text-3);font-size:0.75rem;">Chart appears after next refresh...</span></div>`;
   const canvasId = "sn-grind-chart";
   return `<div class="sn-grind-chart-wrap">
     <canvas id="${canvasId}" height="200"></canvas>
@@ -818,7 +821,7 @@ function snRenderGrindChart(snaps) {
 }
 
 function snBuildGrindChart(snaps, stats) {
-  if (typeof Chart === "undefined" || typeof makeChart !== "function" || snaps.length < 1) return;
+  if (typeof Chart === "undefined" || typeof makeChart !== "function" || snaps.length < 2) return;
   const canvasId = "sn-grind-chart";
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
@@ -984,18 +987,9 @@ function snInjectGrindStyles() {
   document.head.appendChild(style);
 }
 
-// ---- Hook into renderSenntisten ----
-const _origRenderSenntisten = renderSenntisten;
-renderSenntisten = function(players) {
-  _origRenderSenntisten(players);
+// ---- Append grind tracker after main render ----
+function snAppendGrindTracker(section, player, players) {
   snInjectGrindStyles();
-
-  const section = document.querySelector('[data-page="senntisten"]');
-  if (!section || !players || !players.length) return;
-
-  // Use the currently active player (same logic as main render)
-  const activeIdx = parseInt(section.dataset.snActive || "0", 10);
-  const player = players[Math.min(activeIdx, players.length - 1)];
 
   // Record snapshot
   const snaps = snRecordSnapshot(player);
@@ -1006,25 +1000,23 @@ renderSenntisten = function(players) {
   const title = lang === "pt" ? "Grind de Agility" : "Agility Grind Tracker";
   const resetLabel = lang === "pt" ? "Resetar" : "Reset";
 
-  let grindHtml = `<div class="sn-grind-section">
+  const grindDiv = document.createElement("div");
+  grindDiv.className = "sn-grind-section";
+  grindDiv.innerHTML = `
     <div class="sn-grind-header">
       <div class="sn-grind-title">
-        ${skillIconImg(SN_GRIND_SKILL_ID, 22)}
+        ${typeof skillIconImg === "function" ? skillIconImg(SN_GRIND_SKILL_ID, 22) : ""}
         ${title}
       </div>
       <button class="sn-grind-reset" id="sn-grind-reset">${resetLabel}</button>
     </div>
     ${snRenderGrindStats(stats)}
-    ${snRenderGrindChart(snaps)}
-  </div>`;
+    ${snRenderGrindChart(snaps)}`;
 
-  // Insert after existing content
-  const wrapper = document.createElement("div");
-  wrapper.innerHTML = grindHtml;
-  section.appendChild(wrapper.firstElementChild);
+  section.appendChild(grindDiv);
 
   // Build chart after DOM insertion
-  snBuildGrindChart(snaps, stats);
+  try { snBuildGrindChart(snaps, stats); } catch (e) { console.error("Grind chart error:", e); }
 
   // Reset button
   const resetBtn = document.getElementById("sn-grind-reset");
@@ -1034,4 +1026,4 @@ renderSenntisten = function(players) {
       renderSenntisten(players);
     });
   }
-};
+}
