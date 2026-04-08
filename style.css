@@ -543,7 +543,11 @@ body::after {
 
 /* ===== COMBAT ===== */
 .combat-notice { font-size: 0.65rem; color: var(--text-3); margin-bottom: var(--sp-3); }
-.combat-grid { display: flex; flex-direction: column; gap: var(--sp-3); }
+.combat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+.combat-player-col { display: flex; flex-direction: column; gap: var(--sp-3); }
+.combat-player-name { font-family: var(--font-display); font-size: 0.9rem; font-weight: 700; margin-bottom: var(--sp-1); }
+.combat-player-name.p1 { color: var(--gold); }
+.combat-player-name.p2 { color: var(--teal); }
 .combat-style-card {
   background: var(--bg-card); border: 1px solid var(--border);
   border-radius: var(--radius-sm); padding: var(--sp-3);
@@ -563,6 +567,32 @@ body::after {
 .combat-stat { background: var(--bg-raised); border-radius: var(--radius-xs); padding: 4px 6px; text-align: center; }
 .combat-stat-val { font-family: var(--font-mono); font-weight: 800; font-size: 0.72rem; display: block; }
 .combat-stat-label { color: var(--text-3); }
+/* DPS stats grid (combat.js output) */
+.dps-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 6px; }
+.dps-stat { background: var(--bg-raised); border-radius: var(--radius-xs); padding: 5px 4px; text-align: center; }
+.dps-stat-val { font-family: var(--font-mono); font-weight: 800; font-size: 0.72rem; display: block; }
+.dps-stat-label { color: var(--text-3); font-size: 0.5rem; }
+/* Combat subsections */
+.combat-subsection { margin-top: 8px; }
+.combat-sub-label { font-size: 0.58rem; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+/* Revolution bar (combat.js) */
+.revo-bar { display: flex; gap: 2px; padding: 4px; background: rgba(0,0,0,0.3); border-radius: var(--radius-xs); overflow-x: auto; }
+.revo-slot {
+  width: 30px; height: 30px; border-radius: 3px;
+  background: var(--bg-raised); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; position: relative; cursor: default;
+}
+.revo-slot img { width: 26px; height: 26px; border-radius: 2px; }
+.revo-slot.enhanced { border-color: rgba(212,168,67,0.3); }
+.revo-slot.ultimate { border-color: rgba(167,139,250,0.3); }
+.revo-slot .revo-tooltip {
+  display: none; position: absolute; bottom: calc(100% + 4px); left: 50%;
+  transform: translateX(-50%); background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 4px; padding: 4px 8px; font-size: 0.55rem; white-space: nowrap;
+  z-index: 10; color: var(--text); pointer-events: none; box-shadow: var(--shadow-md);
+}
+.revo-slot:hover .revo-tooltip { display: block; }
 .revolution-bar { display: flex; gap: 2px; margin-top: 6px; padding: 4px; background: rgba(0,0,0,0.3); border-radius: 4px; overflow-x: auto; }
 .ability-slot {
   width: 28px; height: 28px; border-radius: 3px;
@@ -585,6 +615,32 @@ body::after {
   padding: 3px 8px; background: var(--bg-raised);
   border-radius: var(--radius-xs); font-size: 0.58rem; color: var(--text-3);
 }
+
+/* ===== MONEY MAKING ===== */
+.money-grid { display: flex; flex-direction: column; gap: 4px; }
+.money-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 12px;
+  transition: all 0.15s;
+}
+.money-card:hover { border-color: var(--border-hover); background: var(--bg-hover); }
+.money-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.money-card-title { font-weight: 700; font-size: 0.76rem; }
+.money-card-profit { font-family: var(--font-mono); font-weight: 800; font-size: 0.78rem; color: var(--gold-bright); }
+.money-card-desc { font-size: 0.65rem; color: var(--text-2); margin-bottom: 6px; line-height: 1.4; }
+.money-card-reqs { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 6px; }
+.money-req {
+  font-size: 0.55rem; font-weight: 600; padding: 2px 6px;
+  border-radius: 8px; background: var(--bg-raised);
+}
+.money-req.met { color: var(--green); }
+.money-req.unmet { color: var(--red); }
+.money-card-players { display: flex; gap: 6px; font-size: 0.6rem; }
+.money-player-tag { padding: 2px 8px; border-radius: 8px; font-weight: 600; }
+.money-player-tag.can { color: var(--green); background: var(--green-bg); }
+.money-player-tag.cant { color: var(--text-3); background: var(--bg-raised); }
+.money-card-daily { font-size: 0.58rem; color: var(--text-3); margin-top: 4px; }
+.money-disclaimer { font-size: 0.55rem; color: var(--text-3); text-align: center; margin-top: 8px; font-style: italic; }
 
 /* ===== CHART ===== */
 .chart-container { position: relative; height: 280px; margin-bottom: var(--sp-4); }
@@ -809,8 +865,12 @@ body::after {
   .lk-skills-grid { grid-template-columns: 1fr; }
 
   /* Combat */
+  .combat-grid { grid-template-columns: 1fr; }
   .combat-stats-grid { grid-template-columns: repeat(3, 1fr); }
-  .revolution-bar { gap: 1px; }
+  .dps-stats { grid-template-columns: repeat(2, 1fr); }
+  .revo-bar { gap: 1px; }
+  .revo-slot { width: 26px; height: 26px; }
+  .revo-slot img { width: 22px; height: 22px; }
   .ability-slot { width: 24px; height: 24px; }
   .ability-slot img { width: 20px; height: 20px; }
 }

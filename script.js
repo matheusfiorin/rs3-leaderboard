@@ -2083,6 +2083,7 @@ const _renderers = {
       mount.innerHTML = "";
       renderGrindTracker(mount, r[0]);
     }
+    renderMoney(r);
     if (typeof renderOverviewGainsChart === "function") renderOverviewGainsChart();
   },
   // Alias: old "overview" hash → dashboard
