@@ -378,17 +378,43 @@ body::before {
 .q-card-stats .stat-val { font-family: var(--font-mono); font-weight: 800; font-size: 0.7rem; }
 .q-card-stats .stat-label { color: var(--text-3); }
 
+/* Quest card internal */
+.q-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.q-name { font-family: var(--font-display); font-size: 0.85rem; font-weight: 700; }
+.q-pct { font-family: var(--font-mono); font-size: 0.8rem; font-weight: 800; }
+.q-card.p1 .q-name, .q-card.p1 .q-pct { color: var(--gold); }
+.q-card.p2 .q-name, .q-card.p2 .q-pct { color: var(--teal); }
+.q-bar { display: flex; height: 4px; background: var(--bg-raised); border-radius: 2px; overflow: hidden; margin-bottom: 8px; }
+.q-bar-fill { height: 100%; transition: width 0.6s ease; }
+.q-bar-fill.done { background: var(--green); }
+.q-bar-fill.started { background: var(--orange); }
+.q-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; text-align: center; font-size: 0.62rem; }
+.q-stat-val { font-family: var(--font-mono); font-weight: 800; font-size: 0.72rem; display: block; }
+.q-stat-val.done { color: var(--green); }
+.q-stat-val.started { color: var(--orange); }
+.q-stat-val.none { color: var(--text-3); }
+.q-stat-lbl { color: var(--text-3); }
+
 /* Quest list */
 .quest-list { display: flex; flex-direction: column; gap: 1px; }
-.quest-row {
-  display: grid; grid-template-columns: 24px 1fr 60px 60px;
+.ql-row {
+  display: grid; grid-template-columns: 1fr auto 70px;
   align-items: center; gap: 6px;
   padding: 5px 8px; background: var(--bg-card);
   border-radius: var(--radius-xs); font-size: 0.7rem;
 }
-.quest-diff { color: var(--text-3); font-size: 0.6rem; }
-.quest-name { font-weight: 500; }
-.quest-p1, .quest-p2 { text-align: center; font-size: 0.7rem; }
+.ql-row[data-qcat="both-done"] { opacity: 0.5; }
+.ql-name { font-weight: 500; }
+.ql-name a { color: var(--text); }
+.ql-name a:hover { color: var(--gold); }
+.ql-diff { font-size: 0.55rem; color: var(--orange); margin-left: 4px; }
+.ql-members { font-size: 0.5rem; color: var(--text-3); background: var(--bg-raised); padding: 1px 4px; border-radius: 4px; margin-left: 4px; }
+.ql-pts { font-family: var(--font-mono); font-size: 0.6rem; color: var(--text-3); }
+.ql-statuses { display: flex; gap: 6px; justify-content: center; }
+.ql-status { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; background: var(--bg-raised); }
+.ql-status.done { background: var(--green-bg); color: var(--green); }
+.ql-status.started { background: rgba(251,191,36,0.1); color: var(--orange); }
+.ql-status.none { color: var(--text-3); }
 
 /* ===== JOURNAL ===== */
 .journal-scores {
@@ -405,8 +431,15 @@ body::before {
 .j-score-card.p2 .j-num { color: var(--teal); }
 .j-score-card .j-bar { height: 3px; background: var(--bg-raised); border-radius: 2px; margin-top: 6px; overflow: hidden; }
 .j-score-card .j-bar-fill { height: 100%; border-radius: 2px; }
-.j-score-card.p1 .j-bar-fill { background: var(--gold-dim); }
-.j-score-card.p2 .j-bar-fill { background: var(--teal-dim); }
+.j-score-card.p1 .j-bar-fill, .j-score-card.p1 .j-score-bar-fill { background: var(--gold-dim); }
+.j-score-card.p2 .j-bar-fill, .j-score-card.p2 .j-score-bar-fill { background: var(--teal-dim); }
+.j-score-name { font-size: 0.7rem; color: var(--text-2); margin-bottom: 4px; }
+.j-score-value { font-family: var(--font-mono); font-size: 1.6rem; font-weight: 800; }
+.j-score-card.p1 .j-score-value { color: var(--gold); }
+.j-score-card.p2 .j-score-value { color: var(--teal); }
+.j-score-sub { font-size: 0.6rem; color: var(--text-3); margin-top: 2px; }
+.j-score-bar { height: 3px; background: var(--bg-raised); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+.j-score-bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
 
 .journal-grid { display: flex; flex-direction: column; gap: 2px; }
 .journal-row {
@@ -420,6 +453,29 @@ body::before {
 .journal-row .j-title { font-weight: 600; font-size: 0.7rem; }
 .journal-row .j-desc { font-size: 0.58rem; color: var(--text-3); }
 .journal-row .j-check { text-align: center; font-size: 0.75rem; }
+
+/* Journal rows (actual renderer output) */
+.j-row {
+  display: grid; grid-template-columns: 1fr auto 70px;
+  align-items: center; gap: 6px;
+  padding: 6px 8px; background: var(--bg-card);
+  border-radius: var(--radius-xs); font-size: 0.7rem;
+}
+.j-info { display: flex; flex-direction: column; gap: 1px; }
+.j-title { font-weight: 600; font-size: 0.7rem; display: flex; align-items: center; gap: 4px; }
+.j-title-icon { font-size: 0.85rem; }
+.j-desc { font-size: 0.58rem; color: var(--text-3); }
+.j-pts { font-family: var(--font-mono); font-size: 0.6rem; color: var(--text-3); white-space: nowrap; }
+.j-checks { display: flex; gap: 6px; justify-content: center; }
+.j-check {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.65rem; font-weight: 700; background: var(--bg-raised);
+  color: var(--text-3);
+}
+.j-check.done { color: var(--green); }
+.j-check.p1-color.done { background: var(--gold-bg); color: var(--gold); }
+.j-check.p2-color.done { background: var(--teal-bg); color: var(--teal); }
 
 /* ===== COMBAT ===== */
 .combat-notice { font-size: 0.65rem; color: var(--text-3); margin-bottom: var(--sp-3); }
