@@ -8,7 +8,7 @@
     <meta name="theme-color" content="#07070d" />
     <meta http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://gc.zgo.at; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://runescape.wiki https://runescape.wiki/images/ data:; connect-src 'self' https://apps.runescape.com https://secure.runescape.com https://*.goatcounter.com https://api.allorigins.win https://api.weirdgloop.org" />
-    <link rel="stylesheet" href="style.css?v=24" />
+    <link rel="stylesheet" href="style.css?v=25" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
@@ -76,8 +76,13 @@
           <!-- H2H comparison -->
           <div class="section-head"><h2 class="section-title" id="h2h-title">Frente a Frente</h2></div>
           <div class="h2h-container" id="h2h-container"></div>
-          <!-- Activity feed (merged from activity page) -->
-          <div class="section-head" style="margin-top:20px">
+          <!-- Journal scores (compact) -->
+          <div class="journal-scores" id="journal-scores" style="margin-top:20px"></div>
+        </section>
+
+        <!-- PAGE: ACTIVITY -->
+        <section class="page" data-page="activity" role="tabpanel">
+          <div class="section-head">
             <h2 class="section-title" id="activity-title">Atividade Recente</h2>
             <span class="badge" id="activity-count">0</span>
           </div>
@@ -90,16 +95,19 @@
           <div class="activity-feed" id="activity-feed"></div>
           <!-- Grind tracker (injected by senntisten.js) -->
           <div id="grind-tracker-mount" style="margin-top:20px"></div>
-          <!-- Money making -->
-          <div class="section-head" style="margin-top:20px">
-            <h2 class="section-title" id="money-title">Formas de Ganhar GP</h2>
-          </div>
-          <div class="money-grid" id="money-grid"></div>
           <!-- Gains chart -->
           <div class="section-head" style="margin-top:20px">
             <h2 class="section-title" id="gains-title">Ganhos desde o ultimo snapshot</h2>
           </div>
           <div class="chart-container"><canvas id="overview-gains-chart"></canvas></div>
+        </section>
+
+        <!-- PAGE: MONEY -->
+        <section class="page" data-page="money" role="tabpanel">
+          <div class="section-head">
+            <h2 class="section-title" id="money-title">Formas de Ganhar GP</h2>
+          </div>
+          <div class="money-grid" id="money-grid"></div>
         </section>
 
         <!-- PAGE 2: SKILLS -->
@@ -166,7 +174,6 @@
               <button class="pill" data-jfilter="xp" id="jfilter-xp">XP</button>
             </div>
           </div>
-          <div class="journal-scores" id="journal-scores"></div>
           <div class="journal-scores" id="journal-scores-full"></div>
           <div class="journal-grid" id="journal-grid"></div>
         </section>
@@ -179,8 +186,13 @@
           <div id="lookup-content"></div>
         </section>
 
-        <!-- Goals page (rendered by goals.js into quests tab) -->
-        <section class="page" data-page="goals" role="tabpanel"></section>
+        <!-- PAGE: GOALS -->
+        <section class="page" data-page="goals" role="tabpanel">
+          <div class="section-head">
+            <h2 class="section-title" id="goals-title">Metas</h2>
+          </div>
+          <div id="goals-content"></div>
+        </section>
 
       </main>
 
@@ -196,7 +208,7 @@
       </footer>
     </div>
 
-    <!-- DOCK: 5 buttons -->
+    <!-- DOCK: 7 buttons -->
     <nav class="dock" id="dock">
       <button class="dock-btn" data-launch="dashboard" title="Dashboard">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -207,21 +219,28 @@
       <button class="dock-btn" data-launch="quests" title="Quests">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
       </button>
-      <button class="dock-btn" data-launch="journal" title="Journal">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <button class="dock-btn" data-launch="goals" title="Goals">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22c5.5 0 10-4.5 10-10S17.5 2 12 2 2 6.5 2 12s4.5 10 10 10z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+      <button class="dock-btn" data-launch="activity" title="Activity">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </button>
+      <button class="dock-btn" data-launch="money" title="Money">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v12m-4-8h8"/></svg>
       </button>
       <button class="dock-btn" data-launch="lookup" title="Lookup">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       </button>
     </nav>
 
-    <script src="i18n.js?v=24"></script>
-    <script src="combat.js?v=24"></script>
-    <script src="lookup.js?v=24"></script>
-    <script src="senntisten.js?v=24"></script>
-    <script src="major-goals.js?v=24"></script>
-    <script src="goals.js?v=24"></script>
-    <script src="script.js?v=24"></script>
+    <script src="i18n.js?v=25"></script>
+    <script src="combat.js?v=25"></script>
+    <script src="lookup.js?v=25"></script>
+    <script src="senntisten.js?v=25"></script>
+    <script src="major-goals.js?v=25"></script>
+    <script src="goals.js?v=25"></script>
+    <script src="money.js?v=25"></script>
+    <script src="script.js?v=25"></script>
     <script data-goatcounter="https://rs3placar.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   </body>
 </html>
