@@ -1279,6 +1279,9 @@ let _navFromPop = false; // flag to prevent pushState during popstate
 function launchSection(page) {
   // Alias: overview → dashboard
   if (page === "overview") page = "dashboard";
+  // Fallback: unknown pages → dashboard (handles dead hashes like #senntisten, #easter, etc.)
+  const validPages = new Set(Array.from($$(".page")).map(p => p.dataset.page));
+  if (!validPages.has(page)) page = "dashboard";
   const dock = document.getElementById("dock");
 
   // Show target page
@@ -1434,7 +1437,7 @@ function initFilters() {
       );
       b.classList.add("active");
       const filter = b.dataset.afilter;
-      $$(".act-item").forEach((r) => {
+      $$(".feed-item").forEach((r) => {
         if (filter === "all") {
           r.classList.remove("hidden");
           return;
