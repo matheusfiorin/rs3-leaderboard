@@ -100,14 +100,6 @@ body::before {
     radial-gradient(ellipse 60% 40% at 95% 110%, rgba(34,211,187,0.04) 0%, transparent 45%),
     radial-gradient(ellipse 100% 80% at 50% 50%, rgba(22,19,31,0.4) 0%, transparent 70%);
 }
-/* Layer 2: Subtle noise grain — volcanic texture */
-body::after {
-  content: ""; position: fixed; inset: 0; z-index: 9998;
-  opacity: 0.02; pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 256px 256px;
-}
-
 /* ===== HEADER ===== */
 .header {
   position: sticky; top: 0; z-index: 100;
@@ -216,7 +208,7 @@ body::after {
 /* ===== PAGES ===== */
 .page { display: none; }
 .page.active { display: block; animation: pageIn 0.4s cubic-bezier(0.22,1,0.36,1); }
-@keyframes pageIn { from { opacity: 0; transform: translateY(12px); filter: blur(2px); } to { opacity: 1; transform: none; filter: blur(0); } }
+@keyframes pageIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 
 /* ===== SECTION HEADS ===== */
 .section-head {
@@ -400,15 +392,9 @@ body::after {
   border-radius: var(--radius-xs); font-size: 0.72rem;
   border-left: 2px solid transparent;
   transition: all 0.15s;
-  animation: feedIn 0.3s cubic-bezier(0.22,1,0.36,1) backwards;
+  animation: fadeIn 0.2s ease;
 }
-.feed-item:nth-child(1) { animation-delay: 0s; }
-.feed-item:nth-child(2) { animation-delay: 0.03s; }
-.feed-item:nth-child(3) { animation-delay: 0.06s; }
-.feed-item:nth-child(4) { animation-delay: 0.09s; }
-.feed-item:nth-child(5) { animation-delay: 0.12s; }
 .feed-item:hover { border-left-color: var(--gold-dim); background: var(--bg-hover); }
-@keyframes feedIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
 .feed-icon { font-size: 0.8rem; flex-shrink: 0; margin-top: 1px; }
 .feed-body { flex: 1; }
 .feed-player { font-weight: 700; }
@@ -762,21 +748,6 @@ body::after {
 }
 .footer-meta { margin-top: 4px; }
 
-/* ===== HOME GRID (legacy compat) ===== */
-.home-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: var(--sp-5); }
-.home-card {
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  padding: var(--sp-3); background: var(--bg-card);
-  border: 1px solid var(--border); border-radius: var(--radius-sm);
-  cursor: pointer; color: var(--text); font-size: 0.65rem;
-  transition: all 0.15s;
-}
-.home-card:hover { border-color: var(--border-hover); background: var(--bg-hover); }
-.home-card-icon { font-size: 1.2rem; }
-.home-card-icon img { width: 24px; height: 24px; }
-.home-card-label { font-weight: 600; }
-.home-card-stat { font-family: var(--font-mono); font-size: 0.58rem; color: var(--text-3); }
-
 /* ===== GOALS PAGE ===== */
 .goals-hero { text-align: center; padding: var(--sp-4); }
 .goals-hero-title { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--gold-bright); }
@@ -862,11 +833,6 @@ body::after {
   .j-score-value { font-size: 1.3rem; }
   .journal-scores { gap: var(--sp-2); }
 
-  /* Home grid */
-  .home-grid { grid-template-columns: repeat(4, 1fr); gap: 4px; }
-  .home-card { padding: var(--sp-2); font-size: 0.58rem; }
-  .home-card-icon img { width: 20px; height: 20px; }
-
   /* Pills */
   .pill { padding: 5px 10px; font-size: 0.62rem; }
   .pill-filters { gap: 3px; }
@@ -905,7 +871,6 @@ body::after {
   html { font-size: 13px; }
   .main { padding: 10px 6px 90px; }
   .p-stats { grid-template-columns: repeat(2, 1fr); }
-  .home-grid { grid-template-columns: repeat(3, 1fr); }
   .grind-stats { grid-template-columns: repeat(3, 1fr) !important; }
   .dock-btn { width: 38px; height: 38px; }
 }
@@ -926,6 +891,8 @@ body::after {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* ---- Scrollbar ---- */
 ::-webkit-scrollbar { width: 6px; }
