@@ -1969,7 +1969,7 @@ async function loadVisitorStats() {
 // ---- Lazy tab rendering ----
 const _renderers = {
   dashboard: (r) => {
-    if (typeof renderGoalsSummary === "function") renderGoalsSummary(r);
+    if (typeof renderMajorGoals === "function") renderMajorGoals(r);
     renderCards(r);
     renderH2H(r);
     renderActivity(r);

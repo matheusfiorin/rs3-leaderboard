@@ -389,48 +389,5 @@ function renderGoalsPage(players) {
   }, { once: true });
 }
 
-// ---- Overview: Major Goals summary cards ----
-function renderGoalsSummary(players) {
-  goalsInjectStyles();
-  const el = document.getElementById("major-goals");
-  if (!el || !players || !players.length) return;
-
-  const lang = typeof currentLang !== "undefined" ? currentLang : "en";
-  const p = players[0];
-
-  el.innerHTML = `<div class="section-head">
-    <h2 class="section-title">${lang === "pt" ? "Objetivos Principais" : "Major Goals"}</h2>
-  </div>
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;margin-bottom:8px">
-    ${GOALS.map(g => {
-      const prog = goalProgress(g, p);
-      const colorVar = g.color === "gold" ? "--gold" : g.color === "teal" ? "--teal" : g.color === "orange" ? "--orange" : "--purple";
-      const label = lang === "pt" ? g.label_pt : g.label_en;
-      // Endowed progress: emphasize what's done, not what's left
-      const remaining = prog.total - prog.done;
-      const almostLabel = prog.pct >= 80 && prog.pct < 100
-        ? `<span style="font-size:0.5rem;color:var(--orange);font-weight:700">${lang === "pt" ? "QUASE!" : "ALMOST!"}</span>`
-        : "";
-      const progressBar = `<span style="display:block;height:3px;background:rgba(255,255,255,0.05);border-radius:2px;margin-top:4px;overflow:hidden;width:100%"><span style="display:block;height:100%;width:${prog.pct}%;background:var(${prog.pct >= 100 ? "--green" : colorVar});border-radius:2px;transition:width 1s ease"></span></span>`;
-      return `<button class="home-card" data-launch="goals" style="border-left:3px solid var(${colorVar});text-align:left;align-items:stretch">
-        <span style="display:flex;align-items:center;gap:8px">
-          <span class="home-card-icon" style="font-size:1rem">${g.icon}</span>
-          <span class="home-card-label" style="font-size:0.58rem;text-align:left">${label}</span>
-        </span>
-        <span class="home-card-stat" style="color:var(${prog.pct >= 100 ? "--green" : colorVar});display:flex;justify-content:space-between;align-items:center">
-          <span>${prog.pct}%</span>
-          <span style="font-size:0.5rem;color:var(--text-3)">${prog.done}/${prog.total}</span>
-          ${almostLabel}
-        </span>
-        ${progressBar}
-      </button>`;
-    }).join("")}
-  </div>`;
-
-  // Bind click to navigate to goals page
-  el.querySelectorAll("[data-launch='goals']").forEach(btn => {
-    btn.addEventListener("click", () => {
-      if (typeof launchSection === "function") launchSection("goals");
-    });
-  });
-}
+// renderGoalsSummary removed — major-goals.js handles the overview cards now
+// using goalProgress() from this file for accurate counts.

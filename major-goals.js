@@ -49,40 +49,15 @@ function mgRing(pct, size, stroke, color) {
   </svg>`;
 }
 
-// ---- Count done for Senntisten ----
-function mgSnCount(player) {
-  if (typeof SN_SKILLS === "undefined") return { done: 0, total: 0 };
-  const manual = typeof snLoadManual === "function" ? snLoadManual() : {};
-  let done = 0;
-  const total = SN_SKILLS.length + SN_ALL_QUESTS.length + SN_MANUAL.length;
-  for (const sk of SN_SKILLS) {
-    if ((player.skills[sk.id] || {}).level >= sk.required) done++;
-  }
-  for (const q of SN_ALL_QUESTS) {
-    if (hasQuest(player, q)) done++;
-  }
-  for (const m of SN_MANUAL) {
-    if (manual[`${m.id}_${player.name}`]) done++;
-  }
-  return { done, total };
-}
-
-// ---- Count done for Prifddinas ----
-function mgPeCount(player) {
-  if (typeof PE_SKILLS === "undefined") return { done: 0, total: 0 };
-  const manual = typeof peLoadManual === "function" ? peLoadManual() : {};
-  let done = 0;
-  const total = PE_SKILLS.length + PE_ALL_QUESTS.length + PE_MANUAL.length;
-  for (const sk of PE_SKILLS) {
-    if ((player.skills[sk.id] || {}).level >= sk.required) done++;
-  }
-  for (const q of PE_ALL_QUESTS) {
-    if (hasQuest(player, q)) done++;
-  }
-  for (const m of PE_MANUAL) {
-    if (manual[`${m.id}_${player.name}`]) done++;
-  }
-  return { done, total };
+// ---- Count via goalProgress from goals.js ----
+function mgGoalCount(goalId) {
+  return function(player) {
+    if (typeof GOALS === "undefined" || typeof goalProgress !== "function") return { done: 0, total: 0 };
+    const goal = GOALS.find(g => g.id === goalId);
+    if (!goal) return { done: 0, total: 0 };
+    const p = goalProgress(goal, player);
+    return { done: p.done, total: p.total };
+  };
 }
 
 // ---- Navigate to section ----
@@ -219,38 +194,35 @@ function renderMajorGoals(players) {
   const el = document.getElementById("major-goals");
   if (!el || !players || players.length === 0) return;
 
-  const goals = [
-    {
-      title: mgT("mgSoulSplit"),
-      icon: "\u2694\uFE0F",
-      theme: "gold",
-      tab: "senntisten",
-      ringColor: "var(--gold-bright)",
-      count: mgSnCount,
-    },
-  ];
+  // Build goals from the GOALS array in goals.js
+  const themeMap = { senntisten: "gold", prifddinas: "teal", rotm: "purple" };
+  const ringMap = { gold: "var(--gold-bright)", teal: "var(--teal-bright)", purple: "#a78bfa" };
+  const goals = [];
 
-  // Ritual of the Mahjarrat (always show — grandmaster quest goal)
+  if (typeof GOALS !== "undefined") {
+    for (const g of GOALS) {
+      const theme = themeMap[g.id] || "gold";
+      const lang = typeof currentLang !== "undefined" ? currentLang : "en";
+      goals.push({
+        title: lang === "pt" ? g.label_pt : g.label_en,
+        icon: g.icon || "\u2694\uFE0F",
+        theme,
+        tab: "goals",
+        ringColor: ringMap[theme] || "var(--gold-bright)",
+        count: mgGoalCount(g.id),
+      });
+    }
+  }
+
+  // ROTM (defined locally since it's not in goals.js)
   goals.push({
     title: mgT("mgRitualTitle"),
-    icon: "\uD83D\uDD25",  // fire emoji
+    icon: "\uD83D\uDD25",
     theme: "purple",
     tab: "goals",
     ringColor: "#a78bfa",
     count: mgRotmCount,
   });
-
-  // Only show Prifddinas card if its module is loaded
-  if (typeof PE_SKILLS !== "undefined") {
-    goals.push({
-      title: mgT("mgPrif"),
-      icon: "\uD83C\uDFF0",
-      theme: "teal",
-      tab: "prifddinas",
-      ringColor: "var(--teal-bright)",
-      count: mgPeCount,
-    });
-  }
 
   el.innerHTML = `
     <div class="section-head" style="margin-top:24px">
