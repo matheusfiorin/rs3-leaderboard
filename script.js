@@ -1469,8 +1469,12 @@ function renderAll(results) {
     }
   }
   const prevData = data.length ? data : null;
+  // Skip DOM rebuild if nothing changed (same XP + quests)
+  const changed = !prevData || results.some((r, i) =>
+    !prevData[i] || r.totalXp !== prevData[i].totalXp || r.questsDone !== prevData[i].questsDone
+  );
   data = results;
-  _rendered.clear();
+  if (changed) _rendered.clear();
   renderTab(getActiveTab(), results);
   updateHomeStats();
 
