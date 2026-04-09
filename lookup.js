@@ -35,10 +35,10 @@ function renderLookupPage() {
   if (root.querySelector("#lk-input")) return;
   root.innerHTML = `
     <div class="lk-search-box">
-      <input id="lk-input" class="chat-key-input" type="text"
+      <input id="lk-input" class="lk-input" type="text"
              placeholder="${esc(t("lookupPlaceholder"))}"
              autocomplete="off" spellcheck="false">
-      <button id="lk-btn" class="chat-key-btn">${esc(t("lookupSearch"))}</button>
+      <button id="lk-btn" class="lk-btn">${esc(t("lookupSearch"))}</button>
     </div>
     <div id="lk-history" class="lk-history"></div>
     <div id="lk-status"></div>

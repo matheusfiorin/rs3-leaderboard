@@ -25,14 +25,9 @@ const LANG = {
     navActivity: "Atividade",
     navCombat: "Combate",
     navMoney: "GP",
-    navChat: "Chat",
-    navMeetup: "Encontros",
-    navEaster: "Páscoa",
     noReqs: "Sem requisitos",
     daily: "DIÁRIO",
     soon: "QUASE",
-    sessionSummary: "Resumo da Sessão",
-
     // Lookup
     navLookup: "Consulta",
     lookupPlaceholder: "Digite um nome de jogador...",
@@ -43,8 +38,6 @@ const LANG = {
     lookupBack: "Nova busca",
 
     // Senntisten
-    navSenntisten: "Senntisten",
-    navPrifddinas: "Prifddinas",
     snTitle: "Rumo ao Soul Split",
     snSubtitle: "Rastreador da cadeia Temple at Senntisten",
     snSkills: "Habilidades Necessárias",
@@ -115,13 +108,6 @@ const LANG = {
     combatNotice: "Barras baseadas no Combat Style Modernisation (Março 2026). Arraste habilidades no jogo para ajustar.",
     combatWikiLink: "Wiki Revolution Bars",
 
-    // Chat
-    chatAssistant: "Assistente RS3",
-    chatKeyDesc: "Cole sua API key da Anthropic para conversar. A key não é salva — usada apenas durante esta sessão.",
-    chatStart: "Iniciar",
-    chatHint: "Usa Claude Haiku 4.5 para respostas rápidas.",
-    chatPlaceholder: "Pergunte sobre RS3...",
-
     // Meetup
     meetupXpPerSkill: "XP Ganho por Habilidade",
     meetupTotalXp: "XP Total Ganho",
@@ -133,9 +119,6 @@ const LANG = {
     meetupEmpty: "Nenhum encontro planejado.",
     meetupChartsEmpty: "Gráficos disponíveis após o primeiro encontro registrado.",
     meetupLevelsGained: "Níveis Ganhos",
-
-    // Easter
-    easterTitle: "Caça aos Ovos de Gielinor 2026",
 
     // Quest points
     questPoints: "pontos de missão",
@@ -321,14 +304,9 @@ const LANG = {
     navActivity: "Activity",
     navCombat: "Combat",
     navMoney: "GP",
-    navChat: "Chat",
-    navMeetup: "Meetups",
-    navEaster: "Easter",
     noReqs: "No requirements",
     daily: "DAILY",
     soon: "SOON",
-    sessionSummary: "Session Summary",
-
     // Lookup
     navLookup: "Lookup",
     lookupPlaceholder: "Enter a player name...",
@@ -339,8 +317,6 @@ const LANG = {
     lookupBack: "New search",
 
     // Senntisten
-    navSenntisten: "Senntisten",
-    navPrifddinas: "Prifddinas",
     snTitle: "Road to Soul Split",
     snSubtitle: "Temple at Senntisten quest chain tracker",
     snSkills: "Skill Requirements",
@@ -411,13 +387,6 @@ const LANG = {
     combatNotice: "Bars based on Combat Style Modernisation (March 2026). Drag abilities in-game to adjust.",
     combatWikiLink: "Wiki Revolution Bars",
 
-    // Chat
-    chatAssistant: "RS3 Assistant",
-    chatKeyDesc: "Paste your Anthropic API key to chat. The key is not saved — used only during this session.",
-    chatStart: "Start",
-    chatHint: "Uses Claude Haiku 4.5 for quick responses.",
-    chatPlaceholder: "Ask about RS3...",
-
     // Meetup
     meetupXpPerSkill: "XP Gained per Skill",
     meetupTotalXp: "Total XP Gained",
@@ -429,9 +398,6 @@ const LANG = {
     meetupEmpty: "No meetups planned.",
     meetupChartsEmpty: "Charts available after the first recorded meetup.",
     meetupLevelsGained: "Levels Gained",
-
-    // Easter
-    easterTitle: "Gielinor Egg Hunt 2026",
 
     // Quest points
     questPoints: "quest points",

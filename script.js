@@ -439,94 +439,6 @@ function hasQuest(p, name) {
 }
 const MAX_PTS = JOURNAL.reduce((a, g) => a + g.pts, 0);
 
-// ---- Easter Goals (manual, localStorage) ----
-const EASTER = [
-  { id: "e_tutorial", icon: "\uD83D\uDC30" },
-  { id: "e_week1", icon: "\uD83E\uDD5A" },
-  { id: "e_week2", icon: "\uD83E\uDD5A" },
-  { id: "e_week3", icon: "\uD83E\uDD5A" },
-  { id: "e_all21", icon: "\uD83C\uDFC6" },
-  { id: "e_tokens", icon: "\uD83D\uDCB0" },
-  { id: "e_reward", icon: "\uD83C\uDF81" },
-  { id: "e_bunny", icon: "\uD83D\uDC30" },
-];
-const EASTER_I18N = {
-  pt: {
-    e_tutorial: {
-      title: "Completar Blooming Burrow Egg Hunt",
-      desc: "Pr\u00e9-requisito para a Ca\u00e7a aos Ovos",
-    },
-    e_week1: {
-      title: "Encontrar Ovos da Semana 1",
-      desc: "7 ovos dourados (3 F2P)",
-    },
-    e_week2: {
-      title: "Encontrar Ovos da Semana 2",
-      desc: "7 ovos dourados (3 F2P)",
-    },
-    e_week3: {
-      title: "Encontrar Ovos da Semana 3",
-      desc: "7 ovos dourados (3 F2P)",
-    },
-    e_all21: {
-      title: "Encontrar todos os 21 ovos",
-      desc: "Mestre da Ca\u00e7a aos Ovos",
-    },
-    e_tokens: {
-      title: "Gastar Spring Tokens",
-      desc: "Na loja Grand Eggs-change",
-    },
-    e_reward: {
-      title: "Receber Ba\u00fa de Recompensa",
-      desc: "Completar 12+ ovos e falar com Nougat Bunny",
-    },
-    e_bunny: {
-      title: "Desbloquear Cosm\u00e9tico de Bichinho Coelho",
-      desc: "Token de apar\u00eancia de bichinho de P\u00e1scoa",
-    },
-    infoTitle: "Sobre o Evento",
-    infoItems: [
-      "Blooming Burrow acess\u00edvel pelo portal ao norte do Grand Exchange em Varrock",
-      "Evento: 30 Mar - 20 Abr 2026",
-      "Cada ovo encontrado d\u00e1 200 Spring Tokens + 10 Treasure Trail Points",
-      "Ovos liberados semanalmente (7 por semana, 3 F2P)",
-      "Fale com Nougat Bunny para a primeira pista de cada semana",
-      "Spring Tokens tamb\u00e9m obtidos treinando habilidades durante o evento",
-    ],
-  },
-  en: {
-    e_tutorial: {
-      title: "Complete Blooming Burrow Egg Hunt",
-      desc: "Prerequisite for the Egg Hunt",
-    },
-    e_week1: { title: "Find Week 1 Eggs", desc: "7 golden eggs (3 F2P)" },
-    e_week2: { title: "Find Week 2 Eggs", desc: "7 golden eggs (3 F2P)" },
-    e_week3: { title: "Find Week 3 Eggs", desc: "7 golden eggs (3 F2P)" },
-    e_all21: { title: "Find all 21 eggs", desc: "Master Egg Hunter" },
-    e_tokens: {
-      title: "Spend Spring Tokens",
-      desc: "At The Grand Eggs-change",
-    },
-    e_reward: {
-      title: "Receive Holiday Reward Casket",
-      desc: "Complete 12+ eggs and talk to Nougat Bunny",
-    },
-    e_bunny: {
-      title: "Unlock Bunny Pet Cosmetic",
-      desc: "Easter pet appearance token",
-    },
-    infoTitle: "About the Event",
-    infoItems: [
-      "Blooming Burrow accessible via portal north of Grand Exchange in Varrock",
-      "Event: Mar 30 - Apr 20, 2026",
-      "Each egg found awards 200 Spring Tokens + 10 Treasure Trail Points",
-      "Eggs released weekly (7 per week, 3 F2P)",
-      "Talk to Nougat Bunny for each week's first clue",
-      "Spring Tokens also earnable through skilling during the event",
-    ],
-  },
-};
-
 // ---- State ----
 let data = [];
 let source = "";
@@ -1043,66 +955,6 @@ function renderJournal(players, targetScores, targetGrid) {
   }).join("");
 }
 
-// ---- Render: Easter ----
-function renderEaster(players) {
-  const EASTER_END = new Date("2026-04-20T23:59:59Z");
-  const tabEl = document.getElementById("tab-easter");
-  if (Date.now() > EASTER_END.getTime()) {
-    if (tabEl) tabEl.style.display = "none";
-    return;
-  }
-  // Guard: Easter HTML sections may have been removed
-  if (!$("#easter-checklist") || !$("#easter-info")) return;
-  const easterLang = EASTER_I18N[currentLang] || EASTER_I18N.en;
-  const saved = JSON.parse(localStorage.getItem("rs3lb-easter") || "{}");
-
-  const p1Done = EASTER.filter(
-    (e) => saved[`${e.id}_${players[0].name}`],
-  ).length;
-  const p2Done = EASTER.filter(
-    (e) => saved[`${e.id}_${players[1].name}`],
-  ).length;
-
-  // Render progress
-  const progressEl =
-    document.getElementById("easter-progress") ||
-    (() => {
-      const div = document.createElement("div");
-      div.id = "easter-progress";
-      div.style.cssText =
-        "display:flex;gap:16px;justify-content:center;margin-bottom:16px";
-      document.querySelector(".easter-hero").after(div);
-      return div;
-    })();
-  progressEl.innerHTML = players
-    .map((p, i) => {
-      const done = i === 0 ? p1Done : p2Done;
-      const c = i === 0 ? "gold" : "teal";
-      return `<div style="text-align:center"><span style="font-size:0.72rem;font-weight:700;color:var(--${c})">${esc(p.name)}</span><div style="font-family:var(--font-mono);font-size:1.1rem;font-weight:800;color:var(--${c})">${done}/${EASTER.length}</div></div>`;
-    })
-    .join("");
-
-  $("#easter-checklist").innerHTML = EASTER.map((e) => {
-    const info = easterLang[e.id] || {};
-    return players
-      .map((p, i) => {
-        const key = `${e.id}_${p.name}`;
-        const checked = saved[key] ? "checked" : "";
-        const c = i === 0 ? "p1" : "p2";
-        return `<div class="easter-item">
-        <input type="checkbox" class="easter-check" data-key="${key}" ${checked}>
-        <div class="easter-item-info"><div class="easter-item-title">${e.icon} ${info.title || e.id}</div><div class="easter-item-desc">${info.desc || ""}</div></div>
-        <div class="easter-item-player ${c}">${esc(p.name)}</div>
-      </div>`;
-      })
-      .join("");
-  }).join("");
-
-  // Info section
-  $("#easter-info").innerHTML =
-    `<h3>${easterLang.infoTitle || "Info"}</h3><ul>${(easterLang.infoItems || []).map((i) => `<li>${i}</li>`).join("")}</ul>`;
-}
-
 // ---- Utils ----
 function parseDate(s) {
   if (!s) return 0;
@@ -1204,19 +1056,9 @@ function updateUIText() {
   s("tab-activity", t("navActivity"));
   h("tab-combat", "\u2694\uFE0F " + t("navCombat"));
   h("tab-money", "\uD83D\uDCB0 " + t("navMoney"));
-  h("tab-chat", "\uD83E\uDD16 " + t("navChat"));
-  h("tab-meetup", "\uD83E\uDD1D " + t("navMeetup"));
-  h("tab-easter", "\uD83E\uDD5A " + t("navEaster"));
   h("tab-lookup", "\uD83D\uDD0D " + t("navLookup"));
   h("tab-senntisten", "\u2694\uFE0F " + t("navSenntisten"));
   h("tab-prifddinas", "\uD83C\uDFF0 " + t("navPrifddinas"));
-
-  // Chat i18n (tab removed but keys kept safe)
-  s("chat-key-title", t("chatAssistant"));
-  s("chat-key-desc", t("chatKeyDesc"));
-  s("chat-key-hint", t("chatHint"));
-  s("chat-key-submit", t("chatStart"));
-  p("chat-input", t("chatPlaceholder"));
 
   // Combat section
   h("combat-title", "\u2694\uFE0F " + t("navCombat") + " & Revolution");
@@ -1288,7 +1130,6 @@ function updateUIText() {
   s("hc-combat", t("navCombat"));
   s("hc-journal", t("navJournal"));
   s("hc-money", t("navMoney"));
-  s("hc-meetup", t("navMeetup"));
   s("home-grid-title", lang === "pt" ? "Explorar" : "Explore");
 }
 
@@ -2139,7 +1980,6 @@ const _renderers = {
       renderGrindTracker(mount, r[0]);
     }
     renderMoney(r);
-    if (typeof renderOverviewGainsChart === "function") renderOverviewGainsChart();
   },
   // Alias: old "overview" hash → dashboard
   overview: (r) => { _renderers.dashboard(r); },
@@ -2379,21 +2219,9 @@ document.addEventListener("DOMContentLoaded", () => {
     _navFromPop = false;
   });
   initFilters();
-  if (typeof initChat === "function") initChat();
-  // Easter event delegation (safe — element may not exist)
-  const easterEl = document.getElementById("easter-checklist");
-  if (easterEl) {
-    easterEl.addEventListener("change", (e) => {
-      if (!e.target.classList.contains("easter-check")) return;
-      const s = JSON.parse(localStorage.getItem("rs3lb-easter") || "{}");
-      if (e.target.checked) s[e.target.dataset.key] = true;
-      else delete s[e.target.dataset.key];
-      localStorage.setItem("rs3lb-easter", JSON.stringify(s));
-    });
-  }
   Promise.all([
     loadGEPrices(),
-    typeof loadSessions === "function" ? loadSessions() : Promise.resolve(),
+    Promise.resolve(),
   ]).then(() => { scheduledLoad(); loadVisitorStats(); });
   $("#btn-refresh").addEventListener("click", () => {
     clearTimeout(timer);
@@ -2405,42 +2233,6 @@ document.addEventListener("DOMContentLoaded", () => {
     updateUIText();
     if (data.length) renderAll(data);
   });
-
-  // ---- Scroll-triggered reveals (IntersectionObserver) ----
-  const revealObserver = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("revealed");
-          revealObserver.unobserve(entry.target);
-        }
-      });
-    },
-    { threshold: 0.06, rootMargin: "0px 0px -30px 0px" }
-  );
-
-  // Observe all cards and rows as they're added via MutationObserver
-  const mutObs = new MutationObserver((mutations) => {
-    for (const m of mutations) {
-      for (const node of m.addedNodes) {
-        if (node.nodeType !== 1) continue;
-        // Don't reveal-target items inside scroll containers (.act-item, .ql-row)
-        // — IntersectionObserver won't fire for offscreen items in overflow containers
-        const revealTargets = node.querySelectorAll
-          ? node.querySelectorAll(".p-card, .skill-row, .j-row, .money-card, .ns-item, .q-card, .j-score-card")
-          : [];
-        revealTargets.forEach((el) => {
-          el.classList.add("reveal-target");
-          revealObserver.observe(el);
-        });
-        if (node.classList && (node.classList.contains("p-card") || node.classList.contains("skill-row"))) {
-          node.classList.add("reveal-target");
-          revealObserver.observe(node);
-        }
-      }
-    }
-  });
-  mutObs.observe(document.getElementById("main-content"), { childList: true, subtree: true });
 
   // ---- Chart.js RS3 theming ----
   if (typeof Chart !== "undefined") {
