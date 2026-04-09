@@ -848,10 +848,11 @@ function renderActivity(players) {
       `<div style="text-align:center;color:var(--text-3);padding:24px">${t("noActivity")}</div>`;
     return;
   }
-  $("#activity-feed").innerHTML = all
-    .map((a) => {
-      const c = a.pi === 0 ? "p1" : "p2";
-      return `<div class="feed-item" data-atype="${a.type}">
+  const FEED_PAGE = 10;
+  const feed = $("#activity-feed");
+  const renderItem = (a) => {
+    const c = a.pi === 0 ? "p1" : "p2";
+    return `<div class="feed-item" data-atype="${a.type}">
       <div class="feed-icon">${ACT_ICONS[a.type] || ""}</div>
       <div class="feed-body">
         <span class="feed-player ${c}">${esc(a.player)}</span> <span class="feed-text">${esc(localizeActivity(a.text))}</span>
@@ -859,8 +860,26 @@ function renderActivity(players) {
       </div>
       <div class="feed-time">${fmtTime(a.date)}</div>
     </div>`;
-    })
-    .join("");
+  };
+  let shown = FEED_PAGE;
+  feed.innerHTML = all.slice(0, shown).map(renderItem).join("")
+    + (all.length > shown ? `<button class="pill feed-more" style="display:block;margin:10px auto;padding:6px 20px">${currentLang === "pt" ? "Mostrar mais" : "Show more"} (${all.length - shown})</button>` : "");
+
+  feed.addEventListener("click", function handler(e) {
+    const btn = e.target.closest(".feed-more");
+    if (!btn) return;
+    const next = Math.min(shown + FEED_PAGE, all.length);
+    const frag = all.slice(shown, next).map(renderItem).join("");
+    btn.insertAdjacentHTML("beforebegin", frag);
+    shown = next;
+    if (shown >= all.length) btn.remove();
+    else btn.textContent = `${currentLang === "pt" ? "Mostrar mais" : "Show more"} (${all.length - shown})`;
+    // Re-apply active filter
+    const activeFilter = document.querySelector("#activity-filters .pill.active");
+    if (activeFilter && activeFilter.dataset.afilter !== "all") {
+      $$(".feed-item").forEach(r => r.classList.toggle("hidden", r.dataset.atype !== activeFilter.dataset.afilter));
+    }
+  });
 }
 
 // ---- Render: Quests ----
