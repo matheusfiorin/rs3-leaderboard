@@ -1291,10 +1291,12 @@ function launchSection(page) {
   });
 
   // Update dock active states
+  // Sub-pages (goals) highlight their parent dock button
+  const dockPage = page === "goals" ? "quests" : page;
   if (dock) {
     dock.classList.add("visible");
     dock.querySelectorAll(".dock-btn").forEach((b) =>
-      b.classList.toggle("active", b.dataset.launch === page)
+      b.classList.toggle("active", b.dataset.launch === dockPage)
     );
   }
 
@@ -1577,7 +1579,7 @@ const MONEY_METHODS = [
     pt: { name: "Cozinhar Karambwan", desc: "Compre karambwan cru, cozinhe. Requer Tai Bwo Wannai Trio." },
     en: { name: "Cook Karambwan", desc: "Buy raw karambwan, cook. Requires Tai Bwo Wannai Trio quest." },
     reqs: { 7: 30 },
-    members: true,
+    members: true, quest: "Tai Bwo Wannai Trio",
     inputs: [{ id: 3142, qty: 1, name: "Raw karambwan" }],
     outputs: [{ id: 3144, qty: 1, name: "Cooked karambwan" }],
     actionsPerHour: 1400,
@@ -1710,7 +1712,7 @@ const MONEY_METHODS = [
       desc: "Altar via Abyss. Enter the Abyss miniquest required.",
     },
     reqs: { 20: 44 },
-    members: true,
+    members: true, quest: "Enter the Abyss",
     inputs: [],
     outputs: [{ id: 561, qty: 1, name: "Nature rune" }],
     actionsPerHour: 2500,
@@ -1889,12 +1891,36 @@ const MONEY_METHODS = [
 ];
 
 let gePrices = {};
+let _gePriceSource = "none";
 
 async function loadGEPrices() {
+  // Collect all unique item IDs from money methods
+  const ids = new Set();
+  for (const m of MONEY_METHODS) {
+    for (const inp of m.inputs || []) if (inp.id) ids.add(inp.id);
+    for (const out of m.outputs || []) if (out.id) ids.add(out.id);
+  }
+  // Try live Weird Gloop API first (CORS-friendly, single batch)
+  try {
+    const query = [...ids].join("|");
+    const resp = await fetch(`https://api.weirdgloop.org/exchange/history/rs/latest?id=${query}`);
+    if (resp.ok) {
+      const data = await resp.json();
+      gePrices = {};
+      for (const [key, val] of Object.entries(data)) {
+        gePrices[String(val.id)] = { name: key, price: val.price };
+      }
+      _gePriceSource = "live";
+      return;
+    }
+  } catch (_) {}
+  // Fallback to cached static file
   try {
     gePrices = await cacheFetch("data/ge_prices.json");
+    _gePriceSource = "cached";
   } catch (_) {
     gePrices = {};
+    _gePriceSource = "none";
   }
 }
 
@@ -1947,6 +1973,7 @@ function canDoMethod(player, method) {
     const sk = player.skills[Number(skillId)];
     if (!sk || sk.level < reqLevel) return false;
   }
+  if (method.quest && !hasQuest(player, method.quest)) return false;
   return true;
 }
 
@@ -2012,12 +2039,18 @@ function renderMoney(players) {
   const visible = showAll ? filtered : filtered.slice(0, MONEY_TOP_N);
   const hidden = showAll ? [] : filtered.slice(MONEY_TOP_N);
 
-  // Filter pills
+  // Filter pills + price source badge
   const grid = $("#money-grid");
-  const filtersHTML = `<div class="pill-filters" style="margin-bottom:12px">
+  const priceLabel = _gePriceSource === "live"
+    ? `<span style="font-size:0.6rem;color:var(--green);margin-left:auto">&#x25CF; ${lang === "pt" ? "Preços ao vivo" : "Live prices"}</span>`
+    : _gePriceSource === "cached"
+      ? `<span style="font-size:0.6rem;color:var(--text-3);margin-left:auto">&#x25CB; ${lang === "pt" ? "Preços em cache" : "Cached prices"}</span>`
+      : "";
+  const filtersHTML = `<div class="pill-filters" style="margin-bottom:12px;display:flex;flex-wrap:wrap;align-items:center">
     <button class="pill money-fpill ${_moneyFilter === "all" ? "active" : ""}" data-mf="all">${t("all")} (${all.length})</button>
     <button class="pill money-fpill ${_moneyFilter === "available" ? "active" : ""}" data-mf="available">\u2713 ${lang === "pt" ? "Disponíveis" : "Available"} (${all.filter(m => players.some(p => canDoMethod(p, m)) && !m.almostUnlocked).length})</button>
     <button class="pill money-fpill ${_moneyFilter === "upcoming" ? "active" : ""}" data-mf="upcoming">\u23F3 ${lang === "pt" ? "Em breve" : "Upcoming"} (${all.filter(m => m.almostUnlocked || !players.some(p => canDoMethod(p, m))).length})</button>
+    ${priceLabel}
   </div>`;
 
   grid.innerHTML = filtersHTML +

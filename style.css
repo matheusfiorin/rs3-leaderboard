@@ -593,6 +593,26 @@ body::after {
   z-index: 10; color: var(--text); pointer-events: none; box-shadow: var(--shadow-md);
 }
 .revo-slot:hover .revo-tooltip { display: block; }
+.revo-num {
+  position: absolute; bottom: 0; right: 0; font-size: 0.4rem; font-weight: 700;
+  color: var(--text-3); background: rgba(0,0,0,0.6); border-radius: 2px 0;
+  padding: 0 2px; line-height: 1.2; pointer-events: none;
+}
+.revo-fallback {
+  display: none; place-items: center; font-size: 0.45rem; font-weight: 700;
+  color: var(--text-3); text-transform: uppercase;
+}
+.revo-slot .ability-tooltip {
+  display: none; position: absolute; bottom: calc(100% + 6px); left: 50%;
+  transform: translateX(-50%); background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 4px; padding: 6px 8px; font-size: 0.6rem; white-space: nowrap;
+  z-index: 20; color: var(--text); pointer-events: none; box-shadow: var(--shadow-md);
+  min-width: 120px; text-align: center;
+}
+.revo-slot .ability-tooltip-name { font-weight: 700; color: var(--gold); }
+.revo-slot .ability-tooltip-type { font-size: 0.5rem; color: var(--text-3); margin: 2px 0; }
+.revo-slot .ability-tooltip-desc { font-size: 0.5rem; color: var(--text-2); white-space: normal; }
+.revo-slot:hover .ability-tooltip { display: block; }
 .revolution-bar { display: flex; gap: 2px; margin-top: 6px; padding: 4px; background: rgba(0,0,0,0.3); border-radius: 4px; overflow-x: auto; }
 .ability-slot {
   width: 28px; height: 28px; border-radius: 3px;
@@ -868,9 +888,11 @@ body::after {
   .combat-grid { grid-template-columns: 1fr; }
   .combat-stats-grid { grid-template-columns: repeat(3, 1fr); }
   .dps-stats { grid-template-columns: repeat(2, 1fr); }
-  .revo-bar { gap: 1px; }
-  .revo-slot { width: 26px; height: 26px; }
-  .revo-slot img { width: 22px; height: 22px; }
+  .revo-bar { gap: 1px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .revo-slot { width: 24px; height: 24px; }
+  .revo-slot img { width: 20px; height: 20px; }
+  .revo-num { font-size: 0.35rem; }
+  .revo-slot .ability-tooltip { display: none !important; }
   .ability-slot { width: 24px; height: 24px; }
   .ability-slot img { width: 20px; height: 20px; }
 }
