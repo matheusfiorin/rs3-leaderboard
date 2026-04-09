@@ -68,8 +68,8 @@ function grindRecordSnapshot(player, skillId) {
   const xp = sk.xp || 0;
   const lvl = sk.level || 1;
   const snaps = grindLoadSnapshots();
-  // If skill changed, clear old snapshots
-  if (snaps.length > 0 && snaps[0].sid !== undefined && snaps[0].sid !== skillId) {
+  // If skill changed or old format (no sid), clear snapshots
+  if (snaps.length > 0 && snaps[0].sid !== skillId) {
     snaps.length = 0;
   }
   if (snaps.length > 0 && snaps[snaps.length - 1].xp === xp) return snaps;

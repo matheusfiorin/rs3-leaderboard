@@ -15,6 +15,8 @@ function mgT(key) {
     mgPrifSub:     { pt: "Plague's End",                en: "Plague's End" },
     mgItems:       { pt: "itens completos",             en: "items complete" },
     mgComplete:    { pt: "Completo!",                   en: "Complete!" },
+    mgRitualTitle: { pt: "Ritual dos Mahjarrat",        en: "Ritual of the Mahjarrat" },
+    mgRitualSub:   { pt: "Grandmaster quest",           en: "Grandmaster quest" },
   };
   const global = typeof t === "function" ? t(key) : key;
   if (global !== key) return global;
@@ -145,6 +147,72 @@ function mgCard(cfg, players) {
   </button>`;
 }
 
+// ---- Ritual of the Mahjarrat data ----
+// Cumulative skill requirements across the entire chain
+// (ROTM + WGS + Temple at Senntisten + all sub-quests)
+const ROTM_SKILLS = [
+  { id: 16, required: 77 },  // Agility (ROTM)
+  { id: 12, required: 76 },  // Crafting (ROTM)
+  { id: 14, required: 76 },  // Mining (ROTM)
+  { id: 6,  required: 75 },  // Magic (WGS)
+  { id: 19, required: 65 },  // Farming (WGS)
+  { id: 15, required: 65 },  // Herblore (WGS)
+  { id: 17, required: 66 },  // Thieving (Curse of Arrav)
+  { id: 4,  required: 64 },  // Ranged (Curse of Arrav)
+  { id: 2,  required: 64 },  // Strength (Curse of Arrav)
+  { id: 21, required: 55 },  // Hunter (WGS)
+  { id: 13, required: 65 },  // Smithing (Devious Minds)
+  { id: 5,  required: 50 },  // Prayer (Temple at Senntisten)
+  { id: 20, required: 50 },  // Runecrafting (Devious Minds)
+  { id: 9,  required: 50 },  // Fletching (Devious Minds)
+  { id: 11, required: 50 },  // Firemaking (Desert Treasure)
+  { id: 23, required: 41 },  // Summoning (Curse of Arrav)
+  { id: 1,  required: 40 },  // Defence (WGS)
+  { id: 22, required: 35 },  // Construction (Missing My Mummy)
+  { id: 7,  required: 35 },  // Cooking (Missing My Mummy)
+];
+
+// Full quest chain (every quest required transitively)
+const ROTM_QUESTS = [
+  // Temple at Senntisten chain
+  "Death Plateau", "Priest in Peril", "Stolen Hearts", "Diamond in the Rough",
+  "Gertrude's Cat", "Icthlarin's Little Helper", "The Golem",
+  "The Dig Site", "Troll Stronghold", "Temple of Ikov",
+  "What Lies Below", "Creature of Fenkenstrain", "The Restless Ghost",
+  "Garden of Tranquillity", "Missing My Mummy", "Family Crest",
+  "The Tale of the Muspah", "Defender of Varrock",
+  "Desert Treasure", "Devious Minds", "The Curse of Arrav",
+  "The Temple at Senntisten",
+  // While Guthix Sleeps chain (additional)
+  "Jungle Potion", "Shilo Village", "Lost City", "The Fremennik Trials",
+  "Lunar Diplomacy", "Dream Mentor",
+  "Dragon Slayer", "Heroes' Quest", "Legends' Quest",
+  "Tree Gnome Village", "The Grand Tree", "Waterfall Quest",
+  "The Eyes of Glouphrie", "The Path of Glouphrie",
+  "Tears of Guthix", "Enter the Abyss",
+  "Wanted!", "The Hunt for Surok",
+  "While Guthix Sleeps",
+  // ROTM additional
+  "Hazeel Cult", "Enakhra's Lament",
+  "Sea Slug", "The Slug Menace",
+  "A Fairy Tale I - Growing Pains", "A Fairy Tale II - Cure a Queen",
+  "Pirate's Treasure", "Rum Deal", "Cabin Fever",
+  "A Tail of Two Cats", "Fight Arena",
+  "Ritual of the Mahjarrat",
+];
+
+function mgRotmCount(player) {
+  let done = 0;
+  const total = ROTM_SKILLS.length + ROTM_QUESTS.length;
+  for (const sk of ROTM_SKILLS) {
+    if ((player.skills[sk.id] || {}).level >= sk.required) done++;
+  }
+  for (const q of ROTM_QUESTS) {
+    if (hasQuest(player, q)) done++;
+  }
+  return { done, total };
+}
+
 // ---- Main render ----
 function renderMajorGoals(players) {
   mgInjectStyles();
@@ -161,6 +229,16 @@ function renderMajorGoals(players) {
       count: mgSnCount,
     },
   ];
+
+  // Ritual of the Mahjarrat (always show — grandmaster quest goal)
+  goals.push({
+    title: mgT("mgRitualTitle"),
+    icon: "\uD83D\uDD25",  // fire emoji
+    theme: "purple",
+    tab: "goals",
+    ringColor: "#a78bfa",
+    count: mgRotmCount,
+  });
 
   // Only show Prifddinas card if its module is loaded
   if (typeof PE_SKILLS !== "undefined") {
@@ -249,6 +327,19 @@ function mgInjectStyles() {
 .mg-card-teal:hover .mg-card-glow {
   background: radial-gradient(ellipse at 20% 50%, rgba(34,211,187,0.24) 0%, transparent 70%);
 }
+.mg-card-purple {
+  background: linear-gradient(135deg, rgba(167,139,250,0.10) 0%, var(--bg-card) 60%);
+}
+.mg-card-purple:hover {
+  box-shadow: 0 8px 40px rgba(167,139,250,0.18), 0 0 60px rgba(167,139,250,0.06);
+  border-color: rgba(167,139,250,0.4);
+}
+.mg-card-purple .mg-card-glow {
+  background: radial-gradient(ellipse at 20% 50%, rgba(167,139,250,0.14) 0%, transparent 70%);
+}
+.mg-card-purple:hover .mg-card-glow {
+  background: radial-gradient(ellipse at 20% 50%, rgba(167,139,250,0.24) 0%, transparent 70%);
+}
 
 /* Inner glow layer */
 .mg-card-glow {
@@ -294,6 +385,7 @@ function mgInjectStyles() {
 }
 .mg-card-gold .mg-card-title { color: var(--gold-bright); }
 .mg-card-teal .mg-card-title { color: var(--teal-bright); }
+.mg-card-purple .mg-card-title { color: #a78bfa; }
 
 .mg-card-sub {
   font-size: 0.78rem;

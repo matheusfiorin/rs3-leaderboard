@@ -179,8 +179,11 @@ body::after {
   background: var(--bg);
   display: flex; align-items: center; justify-content: center;
   transition: opacity 0.3s ease;
+  opacity: 0; pointer-events: none;
+  animation: loader-fadein 0.01s 0.2s forwards;
 }
-.loading-overlay.hidden { opacity: 0; pointer-events: none; visibility: hidden; }
+@keyframes loader-fadein { to { opacity: 1; pointer-events: auto; } }
+.loading-overlay.hidden { opacity: 0 !important; pointer-events: none !important; visibility: hidden; animation: none; }
 .loader { text-align: center; }
 .loader-ring {
   width: 48px; height: 48px; margin: 0 auto 16px;
