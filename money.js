@@ -295,7 +295,6 @@ const MONEY_METHODS = [
   {
     id: "necro_candles",
     fixedProfit: 5000000,
-    almostUnlocked: true,
     pt: {
       name: "Ritual Candles (Necromancia)",
       desc: "Upgrade ritual candles. Precisa Necromancia 60. Fiorovizk: faltam 1 n\u00edvel!",
@@ -313,7 +312,6 @@ const MONEY_METHODS = [
   {
     id: "miasma_runes",
     fixedProfit: 23000000,
-    almostUnlocked: true,
     pt: {
       name: "Criar Runas de Miasma",
       desc: "Cria\u00e7\u00e3o de Runas 60. Fiorovizk: 10 n\u00edveis! Melhor m\u00e9todo de RC.",
@@ -331,7 +329,6 @@ const MONEY_METHODS = [
   {
     id: "necronium_bars",
     fixedProfit: 6000000,
-    almostUnlocked: true,
     pt: {
       name: "Fundir Barras de Necr\u00f4nio",
       desc: "Metalurgia 70. Fiorovizk: 5 n\u00edveis! 3000+ barras/hr com b\u00f4nus de duplica\u00e7\u00e3o.",
@@ -349,7 +346,6 @@ const MONEY_METHODS = [
   {
     id: "combo_magic_imbue",
     fixedProfit: 17000000,
-    almostUnlocked: true,
     pt: {
       name: "Runas Combinadas + Magic Imbue",
       desc: "Magia 82 = 100% sucesso sem talism\u00e3. 14-20M/hr! Ambos longe, mas vale o grind.",
@@ -366,7 +362,6 @@ const MONEY_METHODS = [
   },
   {
     id: "cut_yews",
-    almostUnlocked: true,
     pt: {
       name: "Cortar Teixos",
       desc: "Corte teixos e venda. Precisa Corte de Lenha 60. Ambos perto!",
@@ -431,7 +426,6 @@ const MONEY_METHODS = [
   },
   {
     id: "cut_magic_logs",
-    almostUnlocked: true,
     pt: {
       name: "Cortar Troncos Mágicos",
       desc: "Corte de Lenha 75. Troncos valiosos.",
@@ -507,6 +501,22 @@ function canDoMethod(player, method) {
   return true;
 }
 
+// Compute "almost unlocked" dynamically: player is within 10 levels of ALL skill reqs
+// and meets all quest reqs (or has no quest req)
+function isAlmostUnlocked(player, method) {
+  if (canDoMethod(player, method)) return false; // already unlocked
+  if (method.quest && !hasQuest(player, method.quest)) return false; // blocked by quest, not "almost"
+  let missingSkills = 0;
+  for (const [skillId, reqLevel] of Object.entries(method.reqs)) {
+    const sk = player.skills[Number(skillId)];
+    const cur = sk ? sk.level : 1;
+    const gap = reqLevel - cur;
+    if (gap > 0 && gap <= 10) continue; // within range
+    if (gap > 10) return false; // too far
+  }
+  return true;
+}
+
 const MONEY_TOP_N = 10;
 let _moneyFilter = "all"; // all | available | upcoming
 
@@ -558,7 +568,11 @@ function moneyCardHTML(m, players, lang) {
 
 function renderMoney(players) {
   const lang = currentLang;
-  const all = MONEY_METHODS.map((m) => ({ ...m, profit: calcProfit(m) })).sort((a, b) => b.profit - a.profit);
+  const all = MONEY_METHODS.map((m) => ({
+    ...m,
+    profit: calcProfit(m),
+    almostUnlocked: !players.some(p => canDoMethod(p, m)) && players.some(p => isAlmostUnlocked(p, m)),
+  })).sort((a, b) => b.profit - a.profit);
 
   // Filter
   let filtered = all;
