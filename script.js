@@ -464,7 +464,7 @@ async function directFetch(url) {
 
 async function proxyFetch(url) {
   const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-  const r = await fetchWithTimeout(proxy, {}, 12000);
+  const r = await fetchWithTimeout(proxy, {}, 8000);
   if (!r.ok) throw new Error("proxy_fail");
   const wrapper = await r.json();
   if (!wrapper.contents) throw new Error("proxy_empty");
@@ -1112,8 +1112,7 @@ function updateUIText() {
   s("easter-title", t("easterTitle"));
   s("easter-sub", "Blooming Burrow \u00b7 30 Mar - 20 " + (lang === "pt" ? "Abr" : "Apr"));
 
-  // Gains & Next Steps
-  s("gains-title", t("gainsTitle"));
+  // Next Steps
   h("nextsteps-title", "\uD83C\uDFAF " + t("nextStepsTitle"));
 
   // Money
@@ -1352,14 +1351,17 @@ async function loadVisitorStats() {
   const el = document.getElementById("visitor-stats");
   if (!el) return;
   try {
-    const resp = await fetch("https://rs3placar.goatcounter.com/counter/TOTAL.json");
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 5000);
+    const resp = await fetch("https://rs3placar.goatcounter.com/counter/TOTAL.json", { signal: ctrl.signal });
+    clearTimeout(t);
     if (!resp.ok) return;
     const json = await resp.json();
     const count = json.count || json.count_unique || 0;
     if (count > 0) {
       el.textContent = `${count} ${currentLang === "pt" ? "visitas" : "visits"}`;
     }
-  } catch (_) { /* GoatCounter not set up yet — silent fail */ }
+  } catch (_) { /* GoatCounter unavailable — silent */ }
 }
 
 // ---- Lazy tab rendering ----
@@ -1381,11 +1383,6 @@ const _renderers = {
   },
   activity: (r) => {
     renderActivity(r);
-    const mount = document.getElementById("grind-tracker-mount");
-    if (mount && typeof renderGrindTracker === "function" && r.length > 0) {
-      mount.innerHTML = "";
-      renderGrindTracker(mount, r[0]);
-    }
   },
   money: (r) => {
     if (typeof renderMoney === "function") renderMoney(r);
@@ -1525,14 +1522,13 @@ async function load() {
     cacheAge = Math.round((Date.now() - new Date(meta.timestamp)) / 60000);
   } catch (_) {}
 
-  // Step 1: Show cached data fast (non-blocking)
+  // Step 1: Show cached data fast
   let cachedResults = null;
+  setSource("loading", currentLang === "pt" ? "Carregando cache..." : "Loading cache...");
   try {
     const settled = await Promise.allSettled(PLAYERS.map(fetchCached));
     cachedResults = settled.map(r => r.status === "fulfilled" ? r.value : null);
-    // Render if we got at least one player
     if (cachedResults.some(r => r !== null)) {
-      // Fill nulls from memory cache if available
       cachedResults = cachedResults.map((r, i) => r || memCacheGet(PLAYERS[i]));
       if (cachedResults.every(r => r !== null)) {
         renderAll(cachedResults);
@@ -1544,21 +1540,32 @@ async function load() {
     }
   } catch (_) {}
 
-  // Step 2: Try live API per-player (direct → proxy fallback, graceful per-player)
+  // Step 2: Try live API per-player with granular status
   try {
-    const settled = await Promise.allSettled(PLAYERS.map(fetchLive));
-    const liveResults = settled.map((r, i) => {
-      if (r.status === "fulfilled") return r.value;
-      // Fall back to cached data for this player
-      if (cachedResults && cachedResults[i]) return cachedResults[i];
-      return memCacheGet(PLAYERS[i]);
-    });
+    const liveResults = [];
+    for (let i = 0; i < PLAYERS.length; i++) {
+      const name = PLAYERS[i];
+      setSource("loading", `${currentLang === "pt" ? "Buscando" : "Fetching"} ${name}...`);
+      let result = null;
+      try { result = await fetchLive(name); } catch (_) {}
+      if (result) {
+        liveResults.push(result);
+      } else if (cachedResults && cachedResults[i]) {
+        liveResults.push(cachedResults[i]);
+      } else {
+        const mem = memCacheGet(name);
+        liveResults.push(mem);
+      }
+    }
 
     if (liveResults.every(r => r !== null)) {
       renderAll(liveResults);
       memCacheSet(liveResults);
-      const anySrc = settled.some(r => r.status === "fulfilled") ? "live" : "cached";
-      if (anySrc === "live") {
+      const anyLive = liveResults.some((r, i) => {
+        const cached = cachedResults && cachedResults[i];
+        return !cached || r.totalXp !== cached.totalXp;
+      });
+      if (anyLive) {
         setSource("", t("live"));
         hideError();
         const now = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
@@ -1638,24 +1645,4 @@ document.addEventListener("DOMContentLoaded", () => {
     if (data.length) renderAll(data);
   });
 
-  // ---- Chart.js RS3 theming ----
-  if (typeof Chart !== "undefined") {
-    Chart.defaults.color = "#9a9488";
-    Chart.defaults.borderColor = "rgba(212,168,67,0.06)";
-    Chart.defaults.font.family = "'Sora', 'DM Sans', system-ui, sans-serif";
-    Chart.defaults.font.size = 11;
-    Chart.defaults.plugins.legend.labels.boxWidth = 10;
-    Chart.defaults.plugins.legend.labels.padding = 16;
-    Chart.defaults.plugins.tooltip.backgroundColor = "#09091a";
-    Chart.defaults.plugins.tooltip.borderColor = "rgba(212,168,67,0.15)";
-    Chart.defaults.plugins.tooltip.borderWidth = 1;
-    Chart.defaults.plugins.tooltip.titleFont = { weight: "bold", size: 12 };
-    Chart.defaults.plugins.tooltip.cornerRadius = 6;
-    Chart.defaults.plugins.tooltip.padding = 10;
-    Chart.defaults.elements.bar.borderRadius = 3;
-    Chart.defaults.elements.line.borderWidth = 2;
-    Chart.defaults.elements.point.radius = 3;
-    Chart.defaults.elements.point.hoverRadius = 5;
-    Chart.defaults.scale.grid = { color: "rgba(212,168,67,0.04)", lineWidth: 1 };
-  }
 });

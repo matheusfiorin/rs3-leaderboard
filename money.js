@@ -452,7 +452,10 @@ async function loadGEPrices() {
   // Try live Weird Gloop API first (CORS-friendly, single batch)
   try {
     const query = [...ids].join("|");
-    const resp = await fetch(`https://api.weirdgloop.org/exchange/history/rs/latest?id=${query}`);
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 8000);
+    const resp = await fetch(`https://api.weirdgloop.org/exchange/history/rs/latest?id=${query}`, { signal: ctrl.signal });
+    clearTimeout(t);
     if (resp.ok) {
       const data = await resp.json();
       gePrices = {};
@@ -460,6 +463,7 @@ async function loadGEPrices() {
         gePrices[String(val.id)] = { name: key, price: val.price };
       }
       _gePriceSource = "live";
+      _gePriceTime = new Date();
       return;
     }
   } catch (_) {}
@@ -467,11 +471,14 @@ async function loadGEPrices() {
   try {
     gePrices = await cacheFetch("data/ge_prices.json");
     _gePriceSource = "cached";
+    _gePriceTime = null;
   } catch (_) {
     gePrices = {};
     _gePriceSource = "none";
+    _gePriceTime = null;
   }
 }
+let _gePriceTime = null;
 
 function getPrice(itemId) {
   const p = gePrices[String(itemId)];

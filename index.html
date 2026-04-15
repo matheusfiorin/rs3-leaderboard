@@ -12,7 +12,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
-    <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9876;</text></svg>" />
   </head>
   <body>
@@ -93,13 +92,6 @@
             <button class="pill" data-afilter="boss" id="af-boss">Bosses</button>
           </div>
           <div class="activity-feed" id="activity-feed"></div>
-          <!-- Grind tracker (injected by senntisten.js) -->
-          <div id="grind-tracker-mount" style="margin-top:20px"></div>
-          <!-- Gains chart -->
-          <div class="section-head" style="margin-top:20px">
-            <h2 class="section-title" id="gains-title">Ganhos desde o ultimo snapshot</h2>
-          </div>
-          <div class="chart-container"><canvas id="overview-gains-chart"></canvas></div>
         </section>
 
         <!-- PAGE: MONEY -->
@@ -236,7 +228,6 @@
     <script src="i18n.js?v=25"></script>
     <script src="combat.js?v=25"></script>
     <script src="lookup.js?v=25"></script>
-    <script src="senntisten.js?v=25"></script>
     <script src="major-goals.js?v=25"></script>
     <script src="goals.js?v=25"></script>
     <script src="money.js?v=26"></script>
