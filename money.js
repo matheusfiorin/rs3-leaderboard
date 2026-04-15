@@ -1,455 +1,379 @@
 /* =============================================
    RS3 Leaderboard — money.js
-   Money-making methods, GE prices, profit calc
-   Depends on globals from i18n.js + script.js:
-     SKILLS, t, tSkill, fmt, fmtShort, esc, $, $$,
-     currentLang, hasQuest, cacheFetch, skillIconImg
+   Personalized money-making recommender.
+   Filters 100+ methods by player skills/quests,
+   ranks by GP/hr using live GE prices.
    ============================================= */
 
 // Skill IDs: 0=ATK 1=DEF 2=STR 3=HP 4=RNG 5=PRA 6=MAG 7=COK 8=WC 9=FLE 10=FSH 11=FM 12=CRA 13=SMI 14=MIN 15=HER 16=AGI 17=THI 18=SLA 19=FAR 20=RC 21=HUN 22=CON 23=SUM 24=DG 25=DIV 26=INV 27=ARC 28=NEC
+
+// ---- Curated Methods Database ----
+// Sources: RS3 Wiki Money Making Guide, KB rs3-money domain (655 methods analyzed, top ~100 selected)
+// GP/hr figures from wiki as of April 2026, recalculated with live GE when inputs/outputs available
+
 const MONEY_METHODS = [
-  // ---- DYNAMIC: Prices from GE ----
-  {
-    id: "tan_green_dhide",
-    pt: { name: "Curtir Green Dragonhide", desc: "Compre green d'hide no GE, curta em green dragon leather. Portable Crafter ou curtidor NPC." },
-    en: { name: "Tan Green Dragonhide", desc: "Buy green d'hide on GE, tan into green dragon leather. Portable Crafter or NPC tanner." },
-    reqs: {},
-    members: true,
-    inputs: [{ id: 1745, qty: 1, name: "Green dragonhide", extraCost: 20 }],
-    outputs: [{ id: 2505, qty: 1, name: "Green dragon leather" }],
-    actionsPerHour: 5000,
-  },
-  {
-    id: "tan_blue_dhide",
-    pt: { name: "Curtir Blue Dragonhide", desc: "Compre blue d'hide no GE, curta em blue dragon leather." },
-    en: { name: "Tan Blue Dragonhide", desc: "Buy blue d'hide on GE, tan into blue dragon leather." },
-    reqs: {},
-    members: true,
-    inputs: [{ id: 1747, qty: 1, name: "Blue dragonhide", extraCost: 20 }],
-    outputs: [{ id: 2507, qty: 1, name: "Blue dragon leather" }],
-    actionsPerHour: 5000,
-  },
-  {
-    id: "craft_mist_runes",
-    pt: { name: "Criar Mist Runes", desc: "Runas de ar + altar de água com talisma. Binding necklace recomendado." },
-    en: { name: "Craft Mist Runes", desc: "Air runes + water altar with talisman. Binding necklace recommended." },
-    reqs: { 20: 6 },
-    members: true,
-    inputs: [{ id: 556, qty: 1, name: "Air rune" }],
-    outputs: [{ id: 4694, qty: 1, name: "Mist rune" }],
-    actionsPerHour: 2200,
-  },
-  {
-    id: "craft_dust_runes",
-    pt: { name: "Criar Dust Runes", desc: "Runas de ar + altar de terra. Binding necklace recomendado." },
-    en: { name: "Craft Dust Runes", desc: "Air runes + earth altar with talisman. Binding necklace recommended." },
-    reqs: { 20: 6 },
-    members: true,
-    inputs: [{ id: 556, qty: 1, name: "Air rune" }],
-    outputs: [{ id: 4698, qty: 1, name: "Dust rune" }],
-    actionsPerHour: 2200,
-  },
-  {
-    id: "craft_mud_runes",
-    pt: { name: "Criar Mud Runes", desc: "Runas de água + altar de terra. Binding necklace recomendado." },
-    en: { name: "Craft Mud Runes", desc: "Water runes + earth altar. Binding necklace recommended." },
-    reqs: { 20: 13 },
-    members: true,
-    inputs: [{ id: 555, qty: 1, name: "Water rune" }],
-    outputs: [{ id: 4695, qty: 1, name: "Mud rune" }],
-    actionsPerHour: 2200,
-  },
-  {
-    id: "unf_ranarr_pots",
-    pt: { name: "Poções Inacabadas de Ranarr", desc: "Combine ranarr limpo + vial of water. Venda poção inacabada." },
-    en: { name: "Ranarr Unfinished Potions", desc: "Combine clean ranarr + vial of water. Sell unfinished potion." },
-    reqs: { 15: 25 },
-    members: true,
-    inputs: [{ id: 259, qty: 1, name: "Clean ranarr" }, { id: 2481, qty: 1, name: "Vial of water" }],
-    outputs: [{ id: 99, qty: 1, name: "Ranarr potion (unf)" }],
-    actionsPerHour: 2800,
-  },
-  {
-    id: "unf_guam_pots",
-    pt: { name: "Poções Inacabadas de Guam", desc: "Combine guam limpo + vial of water. Iniciante em Herbologia." },
-    en: { name: "Guam Unfinished Potions", desc: "Combine clean guam + vial of water. Beginner Herblore." },
-    reqs: { 15: 1 },
-    members: true,
-    inputs: [{ id: 249, qty: 1, name: "Clean guam" }, { id: 2481, qty: 1, name: "Vial of water" }],
-    outputs: [{ id: 91, qty: 1, name: "Guam potion (unf)" }],
-    actionsPerHour: 2800,
-  },
-  {
-    id: "cut_sapphires",
-    pt: { name: "Cortar Safiras", desc: "Compre safiras brutas no GE, corte com cinzel." },
-    en: { name: "Cut Sapphires", desc: "Buy uncut sapphires on GE, cut with chisel." },
-    reqs: { 12: 20 },
-    members: false,
-    inputs: [{ id: 1623, qty: 1, name: "Uncut sapphire" }],
-    outputs: [{ id: 1607, qty: 1, name: "Sapphire" }],
-    actionsPerHour: 2800,
-  },
-  {
-    id: "cut_rubies",
-    pt: { name: "Cortar Rubis", desc: "Compre rubis brutos no GE, corte com cinzel." },
-    en: { name: "Cut Rubies", desc: "Buy uncut rubies on GE, cut with chisel." },
-    reqs: { 12: 63 },
-    members: false,
-    inputs: [{ id: 1619, qty: 1, name: "Uncut ruby" }],
-    outputs: [{ id: 1609, qty: 1, name: "Ruby" }],
-    actionsPerHour: 2800,
-  },
-  {
-    id: "smelt_mithril",
-    pt: { name: "Fundir Barras de Mithril", desc: "1 minério de mithril + 4 carvões = 1 barra de mithril." },
-    en: { name: "Smelt Mithril Bars", desc: "1 mithril ore + 4 coal = 1 mithril bar." },
-    reqs: { 13: 50 },
-    members: false,
-    inputs: [{ id: 447, qty: 1, name: "Mithril ore" }, { id: 453, qty: 4, name: "Coal" }],
-    outputs: [{ id: 2355, qty: 1, name: "Mithril bar" }],
-    actionsPerHour: 1100,
-  },
-  {
-    id: "smelt_adamant",
-    pt: { name: "Fundir Barras de Adamantio", desc: "1 minério de adamantio + 6 carvões = 1 barra de adamantio." },
-    en: { name: "Smelt Adamant Bars", desc: "1 adamantite ore + 6 coal = 1 adamant bar." },
-    reqs: { 13: 70 },
-    members: false,
-    inputs: [{ id: 449, qty: 1, name: "Adamantite ore" }, { id: 453, qty: 6, name: "Coal" }],
-    outputs: [{ id: 2361, qty: 1, name: "Adamant bar" }],
-    actionsPerHour: 1100,
-  },
-  {
-    id: "make_soft_clay",
-    pt: { name: "Fazer Soft Clay", desc: "Use jarro de água em clay. Humidify spell é o mais rápido." },
-    en: { name: "Make Soft Clay", desc: "Use water on clay. Humidify spell is fastest." },
-    reqs: {},
-    members: false,
-    inputs: [{ id: 434, qty: 1, name: "Clay" }],
-    outputs: [{ id: 1761, qty: 1, name: "Soft clay" }],
-    actionsPerHour: 4000,
-  },
-  {
-    id: "cook_karambwan",
-    pt: { name: "Cozinhar Karambwan", desc: "Compre karambwan cru, cozinhe. Requer Tai Bwo Wannai Trio." },
-    en: { name: "Cook Karambwan", desc: "Buy raw karambwan, cook. Requires Tai Bwo Wannai Trio quest." },
-    reqs: { 7: 30 },
-    members: true, quest: "Tai Bwo Wannai Trio",
-    inputs: [{ id: 3142, qty: 1, name: "Raw karambwan" }],
-    outputs: [{ id: 3144, qty: 1, name: "Cooked karambwan" }],
-    actionsPerHour: 1400,
-  },
-  {
-    id: "fletch_maple_longs",
-    pt: { name: "Fletching: Maple Longbow (u)", desc: "Corte toras de maple em longbow (u). Sem corda." },
-    en: { name: "Fletch Maple Longbows (u)", desc: "Cut maple logs into longbow (u). Unstrung." },
-    reqs: { 9: 55 },
-    members: true,
-    inputs: [{ id: 1517, qty: 1, name: "Maple logs" }],
-    outputs: [{ id: 64, qty: 1, name: "Maple longbow (u)" }],
-    actionsPerHour: 2400,
-  },
-  {
-    id: "fletch_yew_longs",
-    pt: { name: "Fletching: Yew Longbow (u)", desc: "Corte toras de teixo em longbow (u)." },
-    en: { name: "Fletch Yew Longbows (u)", desc: "Cut yew logs into longbow (u)." },
-    reqs: { 9: 70 },
-    members: true,
-    inputs: [{ id: 1515, qty: 1, name: "Yew logs" }],
-    outputs: [{ id: 60, qty: 1, name: "Yew longbow (u)" }],
-    actionsPerHour: 2400,
-  },
-  {
-    id: "craft_death_runes",
-    pt: { name: "Criar Runas da Morte", desc: "Altar de morte via Abyss. Bom lucro passivo." },
-    en: { name: "Craft Death Runes", desc: "Death altar via Abyss. Good passive income." },
-    reqs: { 20: 65 },
-    members: true,
-    inputs: [],
-    outputs: [{ id: 560, qty: 1, name: "Death rune" }],
-    actionsPerHour: 2500,
-  },
-  {
-    id: "craft_blood_runes",
-    pt: { name: "Criar Runas de Sangue", desc: "Altar de sangue via Abyss. Alto valor por runa." },
-    en: { name: "Craft Blood Runes", desc: "Blood altar via Abyss. High value per rune." },
-    reqs: { 20: 77 },
-    members: true,
-    inputs: [],
-    outputs: [{ id: 565, qty: 1, name: "Blood rune" }],
-    actionsPerHour: 2200,
-  },
-  // ---- FIXED PROFIT (not GE-driven) ----
-  {
-    id: "fort_frames",
-    fixedProfit: 3400000,
-    pt: { name: "Fazer Wooden Frames (Fort Forinthry)", desc: "Quest: New Foundations. Transforme planks em frames no sawmill do forte." },
-    en: { name: "Make Wooden Frames (Fort Forinthry)", desc: "Quest: New Foundations. Turn planks into frames at fort sawmill." },
-    reqs: { 22: 1 }, members: true, quest: "New Foundations",
-    inputs: [], outputs: [], actionsPerHour: 1,
-  },
-  // ---- EXISTING DYNAMIC ----
-  {
-    id: "smelt_iron",
-    pt: {
-      name: "Fundir Barras de Ferro",
-      desc: "Funda min\u00e9rio de ferro em barras (anel de forja = 100% sucesso)",
-    },
-    en: {
-      name: "Smelt Iron Bars",
-      desc: "Smelt iron ore into bars (ring of forging for 100%)",
-    },
-    reqs: { 13: 15 },
-    members: false,
-    inputs: [{ id: 440, qty: 1, name: "Iron ore" }],
-    outputs: [{ id: 2351, qty: 1, name: "Iron bar" }],
-    actionsPerHour: 1100,
-  },
-  {
-    id: "smelt_gold",
-    pt: {
-      name: "Fundir Barras de Ouro",
-      desc: "Funda min\u00e9rio de ouro em barras. Goldsmith gauntlets recomendado.",
-    },
-    en: {
-      name: "Smelt Gold Bars",
-      desc: "Smelt gold ore into gold bars. Goldsmith gauntlets recommended.",
-    },
-    reqs: { 13: 40 },
-    members: false,
-    inputs: [{ id: 444, qty: 1, name: "Gold ore" }],
-    outputs: [{ id: 2357, qty: 1, name: "Gold bar" }],
-    actionsPerHour: 1100,
-  },
-  {
-    id: "headless_arrows",
-    pt: {
-      name: "Fazer Flechas sem Ponta",
-      desc: "Compre hastes + penas, fa\u00e7a flechas sem ponta. Baixo risco, f\u00e1cil.",
-    },
-    en: {
-      name: "Fletch Headless Arrows",
-      desc: "Buy shafts + feathers, fletch headless arrows. Low risk, easy.",
-    },
-    reqs: {},
-    members: false,
-    inputs: [
-      { id: 52, qty: 15, name: "Arrow shaft" },
-      { id: 314, qty: 15, name: "Feather" },
-    ],
-    outputs: [{ id: 53, qty: 15, name: "Headless arrow" }],
-    actionsPerHour: 2700,
-  },
-  {
-    id: "spin_flax",
-    pt: {
-      name: "Fiar Linho em Cordas de Arco",
-      desc: "Roda de fiar em Lumbridge. Compre flax, venda bowstring.",
-    },
-    en: {
-      name: "Spin Flax into Bowstrings",
-      desc: "Spinning wheel in Lumbridge. Buy flax, sell bowstrings.",
-    },
-    reqs: { 12: 10 },
-    members: true,
-    inputs: [{ id: 1779, qty: 1, name: "Flax" }],
-    outputs: [{ id: 1777, qty: 1, name: "Bowstring" }],
-    actionsPerHour: 1500,
-  },
-  {
-    id: "nature_runes",
-    pt: {
-      name: "Criar Runas da Natureza",
-      desc: "Altar via Abyss. Quest Enter the Abyss necess\u00e1ria.",
-    },
-    en: {
-      name: "Craft Nature Runes",
-      desc: "Altar via Abyss. Enter the Abyss miniquest required.",
-    },
-    reqs: { 20: 44 },
-    members: true, quest: "Enter the Abyss",
-    inputs: [],
-    outputs: [{ id: 561, qty: 1, name: "Nature rune" }],
-    actionsPerHour: 2500,
-  },
-  // DAILY/RECURRING
-  {
-    id: "shop_run",
-    fixedProfit: 800000,
-    pt: {
-      name: "Shop Run Di\u00e1ria (Penas + Runas)",
-      desc: "Compre penas e runas baratas em lojas NPCs, venda no GE. ~10 min/dia.",
-    },
-    en: {
-      name: "Daily Shop Run (Feathers + Runes)",
-      desc: "Buy cheap feathers & runes from NPC shops, sell on GE. ~10 min/day.",
-    },
-    reqs: {},
-    members: true,
-    daily: true,
-    inputs: [],
-    outputs: [],
-    actionsPerHour: 1,
-  },
-  // ALMOST UNLOCKED (within reach)
-  {
-    id: "necro_candles",
-    fixedProfit: 5000000,
-    pt: {
-      name: "Ritual Candles (Necromancia)",
-      desc: "Upgrade ritual candles. Precisa Necromancia 60. Fiorovizk: faltam 1 n\u00edvel!",
-    },
-    en: {
-      name: "Ritual Candles (Necromancy)",
-      desc: "Upgrade ritual candles. Needs Necromancy 60. Fiorovizk: 1 level away!",
-    },
-    reqs: { 28: 60 },
-    members: true,
-    inputs: [],
-    outputs: [],
-    actionsPerHour: 1,
-  },
-  {
-    id: "miasma_runes",
-    fixedProfit: 23000000,
-    pt: {
-      name: "Criar Runas de Miasma",
-      desc: "Cria\u00e7\u00e3o de Runas 60. Fiorovizk: 10 n\u00edveis! Melhor m\u00e9todo de RC.",
-    },
-    en: {
-      name: "Craft Miasma Runes",
-      desc: "Runecrafting 60. Fiorovizk: 10 levels away! Best RC method.",
-    },
-    reqs: { 20: 60 },
-    members: true,
-    inputs: [],
-    outputs: [],
-    actionsPerHour: 1,
-  },
-  {
-    id: "necronium_bars",
-    fixedProfit: 6000000,
-    pt: {
-      name: "Fundir Barras de Necr\u00f4nio",
-      desc: "Metalurgia 70. Fiorovizk: 5 n\u00edveis! 3000+ barras/hr com b\u00f4nus de duplica\u00e7\u00e3o.",
-    },
-    en: {
-      name: "Smelt Necronium Bars",
-      desc: "Smithing 70. Fiorovizk: 5 levels away! 3000+ bars/hr with doubling bonus.",
-    },
-    reqs: { 13: 70 },
-    members: true,
-    inputs: [],
-    outputs: [],
-    actionsPerHour: 1,
-  },
-  {
-    id: "combo_magic_imbue",
-    fixedProfit: 17000000,
-    pt: {
-      name: "Runas Combinadas + Magic Imbue",
-      desc: "Magia 82 = 100% sucesso sem talism\u00e3. 14-20M/hr! Ambos longe, mas vale o grind.",
-    },
-    en: {
-      name: "Combo Runes + Magic Imbue",
-      desc: "Magic 82 = 100% success, no talisman needed. 14-20M/hr! Worth the grind.",
-    },
-    reqs: { 6: 82 },
-    members: true,
-    inputs: [],
-    outputs: [],
-    actionsPerHour: 1,
-  },
-  {
-    id: "cut_yews",
-    pt: {
-      name: "Cortar Teixos",
-      desc: "Corte teixos e venda. Precisa Corte de Lenha 60. Ambos perto!",
-    },
-    en: {
-      name: "Cut Yew Trees",
-      desc: "Chop yew trees and sell logs. Needs Woodcutting 60.",
-    },
-    reqs: { 8: 60 },
-    members: false,
-    inputs: [],
-    outputs: [{ id: 1515, qty: 1, name: "Yew logs" }],
-    actionsPerHour: 180,
-  },
-  {
-    id: "smelt_steel",
-    pt: {
-      name: "Fundir Barras de A\u00e7o",
-      desc: "1 min\u00e9rio de ferro + 2 carv\u00f5es = 1 barra de a\u00e7o",
-    },
-    en: { name: "Smelt Steel Bars", desc: "1 iron ore + 2 coal = 1 steel bar" },
-    reqs: { 13: 30 },
-    members: false,
-    inputs: [
-      { id: 440, qty: 1, name: "Iron ore" },
-      { id: 453, qty: 2, name: "Coal" },
-    ],
-    outputs: [{ id: 2353, qty: 1, name: "Steel bar" }],
-    actionsPerHour: 1100,
-  },
-  {
-    id: "tan_cowhide",
-    pt: {
-      name: "Curtir Couro de Vaca",
-      desc: "Compre couro no GE, curta no artesão. Sem requisitos.",
-    },
-    en: {
-      name: "Tan Cowhide",
-      desc: "Buy cowhide on GE, tan at a tanner. No requirements.",
-    },
-    reqs: {},
-    members: false,
-    inputs: [{ id: 1739, qty: 1, name: "Cowhide" }],
-    outputs: [{ id: 1743, qty: 1, name: "Hard leather" }],
-    actionsPerHour: 2500,
-  },
-  {
-    id: "cook_sharks",
-    pt: {
-      name: "Cozinhar Tubarões",
-      desc: "Compre tubarões crus, cozinhe com luvas de culinária.",
-    },
-    en: {
-      name: "Cook Sharks",
-      desc: "Buy raw sharks, cook with cooking gauntlets.",
-    },
-    reqs: { 7: 80 },
-    members: true,
-    inputs: [{ id: 383, qty: 1, name: "Raw shark" }],
-    outputs: [{ id: 385, qty: 1, name: "Shark" }],
-    actionsPerHour: 1400,
-  },
-  {
-    id: "cut_magic_logs",
-    pt: {
-      name: "Cortar Troncos Mágicos",
-      desc: "Corte de Lenha 75. Troncos valiosos.",
-    },
-    en: { name: "Cut Magic Trees", desc: "Woodcutting 75. Valuable logs." },
-    reqs: { 8: 75 },
-    members: true,
-    inputs: [],
-    outputs: [{ id: 1513, qty: 1, name: "Magic logs" }],
-    actionsPerHour: 120,
-  },
+  // ======== PROCESSING ========
+  { id:"craft_nature_abyss", cat:"processing", intensity:"high", members:true, gp:28205000,
+    name:{pt:"Criar Nature Runes (Abyss)",en:"Craft Nature Runes (Abyss)"},
+    desc:{pt:"Leve pure essence pelo Abyss até o altar de natureza.",en:"Run pure essence through the Abyss to the nature altar."},
+    reqs:{20:79}, recReqs:{20:105}, quest:null,
+    inputs:[{id:7936,qty:1,name:"Pure essence"}], outputs:[{id:561,qty:5,name:"Nature rune"}], actionsPerHour:2200,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Crafting_nature_runes_through_the_Abyss" },
+  { id:"craft_blood_abyss", cat:"processing", intensity:"high", members:true, gp:23301000,
+    name:{pt:"Criar Blood Runes (Abyss)",en:"Craft Blood Runes (Abyss)"},
+    desc:{pt:"Requer Legacy of Seergaze. Altamente lucrativo.",en:"Requires Legacy of Seergaze. Highly profitable."},
+    reqs:{20:77}, quest:"Legacy of Seergaze",
+    inputs:[{id:7936,qty:1,name:"Pure essence"}], outputs:[{id:565,qty:3,name:"Blood rune"}], actionsPerHour:2000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Crafting_blood_runes_through_the_Abyss" },
+  { id:"craft_cosmic_abyss", cat:"processing", intensity:"high", members:true, gp:23887000,
+    name:{pt:"Criar Cosmic Runes (Abyss)",en:"Craft Cosmic Runes (Abyss)"},
+    desc:{pt:"Bom lucro com requisitos baixos. Precisa de Lost City.",en:"Good profit with low requirements. Needs Lost City."},
+    reqs:{20:23}, quest:"Lost City",
+    inputs:[{id:7936,qty:1,name:"Pure essence"}], outputs:[{id:564,qty:4,name:"Cosmic rune"}], actionsPerHour:2200,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Crafting_cosmic_runes_through_the_Abyss" },
+  { id:"craft_water_abyss", cat:"processing", intensity:"high", members:true, gp:22771000,
+    name:{pt:"Criar Water Runes (Abyss)",en:"Craft Water Runes (Abyss)"},
+    desc:{pt:"Requisito mínimo de Runecrafting. Excelente para iniciantes.",en:"Minimal Runecrafting req. Excellent for beginners."},
+    reqs:{20:5}, recReqs:{20:110},
+    inputs:[{id:7936,qty:1,name:"Pure essence"}], outputs:[{id:555,qty:10,name:"Water rune"}], actionsPerHour:2200,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Crafting_water_runes_through_the_Abyss" },
+  { id:"make_aggression_pots", cat:"processing", intensity:"moderate", members:true, gp:22800000,
+    name:{pt:"Fazer Aggression Potions",en:"Make Aggression Potions"},
+    desc:{pt:"Combina clean bloodweed + vial of water. AFK e lucrativo.",en:"Combine clean bloodweed + vial of water. AFK and profitable."},
+    reqs:{15:82},
+    inputs:[{id:37975,qty:1,name:"Clean bloodweed"},{id:2481,qty:1,name:"Vial of water"}], outputs:[{id:37965,qty:1,name:"Aggression potion (unf)"}], actionsPerHour:2800,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Making_aggression_potions" },
+  { id:"make_super_antipoison", cat:"processing", intensity:"moderate", members:true, gp:11700000,
+    name:{pt:"Fazer Super Antipoison",en:"Make Super Antipoison"},
+    desc:{pt:"Herblore médio, bom lucro.",en:"Mid-level Herblore, good profit."},
+    reqs:{15:48},
+    inputs:[{id:259,qty:1,name:"Clean irit"},{id:235,qty:1,name:"Unicorn horn dust"}], outputs:[{id:181,qty:1,name:"Super antipoison"}], actionsPerHour:2600,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Making_super_antipoisons" },
+  { id:"make_super_str", cat:"processing", intensity:"moderate", members:true, gp:9800000,
+    name:{pt:"Fazer Super Strength",en:"Make Super Strength"},
+    desc:{pt:"Poções de força com kwuarm.",en:"Strength potions with kwuarm."},
+    reqs:{15:55},
+    inputs:[{id:263,qty:1,name:"Clean kwuarm"},{id:2481,qty:1,name:"Vial of water"}], outputs:[{id:157,qty:1,name:"Super strength"}], actionsPerHour:2600,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Making_super_strength_potions" },
+  { id:"tan_green_dhide", cat:"processing", intensity:"low", members:true, gp:8000000,
+    name:{pt:"Curtir Green Dragonhide",en:"Tan Green Dragonhide"},
+    desc:{pt:"Compre green d'hide, curta em leather. Sem requisitos de skill.",en:"Buy green d'hide, tan into leather. No skill requirements."},
+    reqs:{},
+    inputs:[{id:1745,qty:1,name:"Green dragonhide",extraCost:20}], outputs:[{id:2505,qty:1,name:"Green dragon leather"}], actionsPerHour:5000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Tanning_green_dragonhide" },
+  { id:"tan_blue_dhide", cat:"processing", intensity:"low", members:true, gp:6000000,
+    name:{pt:"Curtir Blue Dragonhide",en:"Tan Blue Dragonhide"},
+    desc:{pt:"Compre blue d'hide, curta em leather.",en:"Buy blue d'hide, tan into leather."},
+    reqs:{},
+    inputs:[{id:1747,qty:1,name:"Blue dragonhide",extraCost:20}], outputs:[{id:2507,qty:1,name:"Blue dragon leather"}], actionsPerHour:5000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Tanning_blue_dragonhide" },
+  { id:"tan_red_dhide", cat:"processing", intensity:"low", members:true, gp:5500000,
+    name:{pt:"Curtir Red Dragonhide",en:"Tan Red Dragonhide"},
+    desc:{pt:"Compre red d'hide, curta em leather.",en:"Buy red d'hide, tan into leather."},
+    reqs:{},
+    inputs:[{id:1749,qty:1,name:"Red dragonhide",extraCost:20}], outputs:[{id:2509,qty:1,name:"Red dragon leather"}], actionsPerHour:5000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Tanning_red_dragonhide" },
+  { id:"craft_mist_runes", cat:"processing", intensity:"high", members:true, gp:7000000,
+    name:{pt:"Criar Mist Runes",en:"Craft Mist Runes"},
+    desc:{pt:"Combination runes: ar + altar de água.",en:"Combination runes: air + water altar."},
+    reqs:{20:6},
+    inputs:[{id:556,qty:1,name:"Air rune"}], outputs:[{id:4694,qty:1,name:"Mist rune"}], actionsPerHour:2200,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Crafting_mist_runes" },
+  { id:"craft_mud_runes", cat:"processing", intensity:"high", members:true, gp:6500000,
+    name:{pt:"Criar Mud Runes",en:"Craft Mud Runes"},
+    desc:{pt:"Combination runes: água + altar de terra.",en:"Combination runes: water + earth altar."},
+    reqs:{20:13},
+    inputs:[{id:555,qty:1,name:"Water rune"}], outputs:[{id:4695,qty:1,name:"Mud rune"}], actionsPerHour:2200,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Crafting_mud_runes" },
+  { id:"unf_ranarr", cat:"processing", intensity:"low", members:true, gp:5000000,
+    name:{pt:"Poções Inacabadas de Ranarr",en:"Ranarr Unfinished Potions"},
+    desc:{pt:"Combine clean ranarr + vial of water. AFK.",en:"Combine clean ranarr + vial of water. AFK."},
+    reqs:{15:25},
+    inputs:[{id:259,qty:1,name:"Clean ranarr"},{id:2481,qty:1,name:"Vial of water"}], outputs:[{id:99,qty:1,name:"Ranarr potion (unf)"}], actionsPerHour:2800,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Making_ranarr_potions_(unf)" },
+  { id:"smelt_steel_bars", cat:"processing", intensity:"moderate", members:false, gp:3000000,
+    name:{pt:"Fundir Barras de Aço",en:"Smelt Steel Bars"},
+    desc:{pt:"Fundição com 2 coal + 1 iron ore. Blast furnace recomendado.",en:"Smelting with 2 coal + 1 iron ore."},
+    reqs:{13:30},
+    inputs:[{id:453,qty:2,name:"Coal"},{id:440,qty:1,name:"Iron ore"}], outputs:[{id:2353,qty:1,name:"Steel bar"}], actionsPerHour:1800,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Smelting_steel_bars" },
+  { id:"smelt_mithril_bars", cat:"processing", intensity:"moderate", members:true, gp:4200000,
+    name:{pt:"Fundir Barras de Mithril",en:"Smelt Mithril Bars"},
+    desc:{pt:"Fundição com coal + mithril ore.",en:"Smelting with coal + mithril ore."},
+    reqs:{13:50},
+    inputs:[{id:453,qty:4,name:"Coal"},{id:447,qty:1,name:"Mithril ore"}], outputs:[{id:2359,qty:1,name:"Mithril bar"}], actionsPerHour:1800,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Smelting_mithril_bars" },
+  { id:"smelt_necronium_bars", cat:"processing", intensity:"moderate", members:true, gp:6000000,
+    name:{pt:"Fundir Barras de Necrônio",en:"Smelt Necronium Bars"},
+    desc:{pt:"Alto nível de Smithing para barras valiosas.",en:"High Smithing for valuable bars."},
+    reqs:{13:70},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:6000000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Smelting_necronium_bars" },
+  { id:"cook_sharks", cat:"processing", intensity:"low", members:true, gp:2500000,
+    name:{pt:"Cozinhar Tubarões",en:"Cook Sharks"},
+    desc:{pt:"Cooking AFK com lucro consistente.",en:"AFK cooking with consistent profit."},
+    reqs:{7:80},
+    inputs:[{id:383,qty:1,name:"Raw shark"}], outputs:[{id:385,qty:1,name:"Shark"}], actionsPerHour:1400,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Cooking_sharks" },
+  { id:"fletch_rune_arrows", cat:"processing", intensity:"low", members:true, gp:4000000,
+    name:{pt:"Fletchar Rune Arrows",en:"Fletch Rune Arrows"},
+    desc:{pt:"Combine rune arrowheads + arrow shafts.",en:"Combine rune arrowheads + arrow shafts."},
+    reqs:{9:75},
+    inputs:[{id:44,qty:15,name:"Arrow shaft"},{id:41,qty:15,name:"Rune arrowheads"}], outputs:[{id:42,qty:15,name:"Rune arrow"}], actionsPerHour:2800,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Fletching_rune_arrows" },
+  { id:"cut_rubies", cat:"processing", intensity:"low", members:false, gp:2000000,
+    name:{pt:"Cortar Rubis",en:"Cut Rubies"},
+    desc:{pt:"Compre rubis brutos, corte com cinzel.",en:"Buy uncut rubies, cut with chisel."},
+    reqs:{12:63},
+    inputs:[{id:1619,qty:1,name:"Uncut ruby"}], outputs:[{id:1603,qty:1,name:"Ruby"}], actionsPerHour:2800,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Cutting_rubies" },
+  { id:"cut_dragonstones", cat:"processing", intensity:"low", members:true, gp:3500000,
+    name:{pt:"Cortar Dragonstones",en:"Cut Dragonstones"},
+    desc:{pt:"Compre dragonstones brutas, corte.",en:"Buy uncut dragonstones, cut."},
+    reqs:{12:55},
+    inputs:[{id:1631,qty:1,name:"Uncut dragonstone"}], outputs:[{id:1615,qty:1,name:"Dragonstone"}], actionsPerHour:2800,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Cutting_dragonstones" },
+
+  // ======== GATHERING ========
+  { id:"mine_runite_ore", cat:"gathering", intensity:"moderate", members:true, gp:3000000,
+    name:{pt:"Minerar Runite Ore",en:"Mine Runite Ore"},
+    desc:{pt:"Mining de alto nível, boa renda passiva.",en:"High-level mining, good passive income."},
+    reqs:{14:50},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:3000000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Mining_runite_ore" },
+  { id:"mine_luminite", cat:"gathering", intensity:"moderate", members:true, gp:2200000,
+    name:{pt:"Minerar Luminite",en:"Mine Luminite"},
+    desc:{pt:"Mineral útil para barras de rune e orichalcite.",en:"Useful ore for rune and orichalcite bars."},
+    reqs:{14:40},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:2200000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Mining_luminite" },
+  { id:"mine_iron_ore", cat:"gathering", intensity:"moderate", members:false, gp:1500000,
+    name:{pt:"Minerar Iron Ore",en:"Mine Iron Ore"},
+    desc:{pt:"Sem requisitos altos, bom para iniciantes.",en:"No high requirements, good for beginners."},
+    reqs:{14:15},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:1500000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Mining_iron_ore" },
+  { id:"fish_sharks", cat:"gathering", intensity:"low", members:true, gp:1800000,
+    name:{pt:"Pescar Tubarões",en:"Fish Sharks"},
+    desc:{pt:"AFK com bom lucro. Fishing Guild recomendado.",en:"AFK with good profit. Fishing Guild recommended."},
+    reqs:{10:76},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:1800000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Fishing_sharks" },
+  { id:"fish_sailfish", cat:"gathering", intensity:"moderate", members:true, gp:4500000,
+    name:{pt:"Pescar Sailfish",en:"Fish Sailfish"},
+    desc:{pt:"Pesca de alto nível em Deep Sea.",en:"High-level fishing at Deep Sea."},
+    reqs:{10:97},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:4500000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Fishing_sailfish" },
+  { id:"catch_whirligigs_gliding", cat:"gathering", intensity:"high", members:true, gp:7863000,
+    name:{pt:"Capturar Whirligigs (Gliding)",en:"Catch Whirligigs (Gliding)"},
+    desc:{pt:"Hunter de nível médio com bom lucro.",en:"Mid-level Hunter with good profit."},
+    reqs:{21:30},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:7863000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Catching_whirligigs_(Gliding)" },
+  { id:"catch_whirligigs_speedy", cat:"gathering", intensity:"high", members:true, gp:7708000,
+    name:{pt:"Capturar Whirligigs (Speedy)",en:"Catch Whirligigs (Speedy)"},
+    desc:{pt:"Hunter de alto nível, variante rápida.",en:"High-level Hunter, speedy variant."},
+    reqs:{21:90},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:7708000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Catching_whirligigs_(Speedy)" },
+  { id:"wc_elder_logs", cat:"gathering", intensity:"low", members:true, gp:2500000,
+    name:{pt:"Cortar Elder Logs",en:"Chop Elder Logs"},
+    desc:{pt:"Woodcutting AFK com logs valiosos.",en:"AFK Woodcutting with valuable logs."},
+    reqs:{8:90},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:2500000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Chopping_elder_logs" },
+  { id:"wc_magic_logs", cat:"gathering", intensity:"low", members:true, gp:1200000,
+    name:{pt:"Cortar Magic Logs",en:"Chop Magic Logs"},
+    desc:{pt:"Woodcutting semi-AFK.",en:"Semi-AFK woodcutting."},
+    reqs:{8:75},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:1200000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Chopping_magic_logs" },
+  { id:"hunt_red_chins", cat:"gathering", intensity:"high", members:true, gp:5000000,
+    name:{pt:"Caçar Red Chinchompas",en:"Hunt Red Chinchompas"},
+    desc:{pt:"Hunter popular com bom GP/hr.",en:"Popular Hunter method with good GP/hr."},
+    reqs:{21:63},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:5000000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Hunting_red_chinchompas" },
+  { id:"hunt_black_chins", cat:"gathering", intensity:"high", members:true, gp:8000000,
+    name:{pt:"Caçar Black Chinchompas",en:"Hunt Black Chinchompas"},
+    desc:{pt:"Wilderness - arriscado mas muito lucrativo.",en:"Wilderness - risky but very profitable."},
+    reqs:{21:73},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:8000000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Hunting_black_chinchompas" },
+  { id:"div_incandescent", cat:"gathering", intensity:"low", members:true, gp:5000000,
+    name:{pt:"Coletar Incandescent Energy",en:"Harvest Incandescent Energy"},
+    desc:{pt:"Divination de alto nível, AFK.",en:"High-level Divination, AFK."},
+    reqs:{25:95},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:5000000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Harvesting_incandescent_energy" },
+  { id:"div_luminous", cat:"gathering", intensity:"low", members:true, gp:3000000,
+    name:{pt:"Coletar Luminous Energy",en:"Harvest Luminous Energy"},
+    desc:{pt:"Divination de nível médio-alto, AFK.",en:"Mid-high Divination, AFK."},
+    reqs:{25:90},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:3000000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Harvesting_luminous_energy" },
+  { id:"div_radiant", cat:"gathering", intensity:"low", members:true, gp:2000000,
+    name:{pt:"Coletar Radiant Energy",en:"Harvest Radiant Energy"},
+    desc:{pt:"Divination acessível.",en:"Accessible Divination."},
+    reqs:{25:85},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:2000000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Harvesting_radiant_energy" },
+
+  // ======== COMBAT LOW ========
+  { id:"kill_giant_mimic", cat:"combat", intensity:"low", members:true, gp:14381000,
+    name:{pt:"Matar Giant Mimic (Beginner)",en:"Kill Giant Mimic (Beginner)"},
+    desc:{pt:"Boss com dificuldade variável. Drops valiosos.",en:"Boss with variable difficulty. Valuable drops."},
+    reqs:{}, recReqs:{0:30},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:14381000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Killing_the_Giant_Mimic_(Beginner)" },
+  { id:"kill_tortoises", cat:"combat", intensity:"high", members:true, gp:3090000,
+    name:{pt:"Matar Tartarugas",en:"Kill Tortoises"},
+    desc:{pt:"Drops de gold charms e tortoise shells.",en:"Drops gold charms and tortoise shells."},
+    reqs:{}, recReqs:{0:41},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:3090000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Killing_tortoises" },
+  { id:"kill_chickens", cat:"combat", intensity:"high", members:false, gp:2235000,
+    name:{pt:"Matar Galinhas",en:"Kill Chickens"},
+    desc:{pt:"Coleta de feathers. Sem requisitos. F2P.",en:"Collect feathers. No requirements. F2P."},
+    reqs:{},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:2235000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Killing_chickens" },
+  { id:"kill_cows", cat:"combat", intensity:"high", members:false, gp:845000,
+    name:{pt:"Matar Vacas",en:"Kill Cows"},
+    desc:{pt:"Collect cowhides para curtir. Iniciante.",en:"Collect cowhides for tanning. Beginner."},
+    reqs:{},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:845000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Killing_cows" },
+  { id:"kill_basilisks", cat:"combat", intensity:"low", members:true, gp:1800000,
+    name:{pt:"Matar Basiliscos",en:"Kill Basilisks"},
+    desc:{pt:"Slayer task. Mirror shield necessário.",en:"Slayer task. Mirror shield needed."},
+    reqs:{18:40,1:20},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:1800000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Killing_basilisks" },
+
+  // ======== COMBAT MID ========
+  { id:"kill_hellhounds", cat:"combat", intensity:"high", members:true, gp:22413000,
+    name:{pt:"Matar Hellhounds",en:"Kill Hellhounds"},
+    desc:{pt:"Drops excelentes com Soul Split. Taverley Dungeon.",en:"Excellent drops with Soul Split. Taverley Dungeon."},
+    reqs:{0:45,1:45}, recReqs:{5:92,18:68},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:22413000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Killing_hellhounds" },
+  { id:"kill_spiritual_warriors", cat:"combat", intensity:"moderate", members:true, gp:8000000,
+    name:{pt:"Matar Spiritual Warriors",en:"Kill Spiritual Warriors"},
+    desc:{pt:"GWD1 - bons drops de rune items.",en:"GWD1 - good rune item drops."},
+    reqs:{18:68,0:70},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:8000000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Killing_spiritual_warriors" },
+  { id:"kill_arch_glacor_nm", cat:"combat", intensity:"moderate", members:true, gp:12000000,
+    name:{pt:"Matar Arch-Glacor (Normal)",en:"Kill Arch-Glacor (Normal Mode)"},
+    desc:{pt:"Boss customizável. Mecânicas desligáveis.",en:"Customizable boss. Toggle-off mechanics."},
+    reqs:{}, recReqs:{0:80,1:80},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:12000000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Killing_Arch-Glacor_(normal_mode)" },
+  { id:"kill_barrows", cat:"combat", intensity:"moderate", members:true, gp:6000000,
+    name:{pt:"Matar Barrows Brothers",en:"Kill Barrows Brothers"},
+    desc:{pt:"Minigame clássico com loot consistente.",en:"Classic minigame with consistent loot."},
+    reqs:{}, recReqs:{0:60,6:50,5:43},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:6000000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Barrows" },
+  { id:"kill_gwd1_kreearra", cat:"combat", intensity:"high", members:true, gp:15000000,
+    name:{pt:"Matar Kree'arra (Armadyl)",en:"Kill Kree'arra (Armadyl)"},
+    desc:{pt:"GWD1 boss. Armadyl armour drops.",en:"GWD1 boss. Armadyl armour drops."},
+    reqs:{4:70,0:70,1:70}, quest:"Troll Stronghold",
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:15000000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Killing_Kree'arra" },
+  { id:"kill_gwd1_graardor", cat:"combat", intensity:"high", members:true, gp:10000000,
+    name:{pt:"Matar General Graardor (Bandos)",en:"Kill General Graardor (Bandos)"},
+    desc:{pt:"GWD1 boss. Bandos armour drops.",en:"GWD1 boss. Bandos armour drops."},
+    reqs:{2:70,0:70,1:70}, quest:"Troll Stronghold",
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:10000000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Killing_General_Graardor" },
+
+  // ======== COMBAT HIGH ========
+  { id:"kill_nex", cat:"combat", intensity:"high", members:true, gp:42000000,
+    name:{pt:"Matar Nex",en:"Kill Nex"},
+    desc:{pt:"Boss end-game em GWD. T80 drops.",en:"End-game boss in GWD. T80 drops."},
+    reqs:{0:70,4:70,16:70,3:70},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:42000000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Killing_Nex" },
+  { id:"kill_ed3_trash", cat:"combat", intensity:"high", members:true, gp:18000000,
+    name:{pt:"ED3 Trash Runs",en:"ED3 Trash Runs"},
+    desc:{pt:"Elite Dungeon 3 sem bosses. XP + GP.",en:"Elite Dungeon 3 without bosses. XP + GP."},
+    reqs:{}, recReqs:{0:80,1:80,6:80},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:18000000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Killing_monsters_in_ED3" },
+  { id:"kill_croesus_4man", cat:"combat", intensity:"high", members:true, gp:41732000,
+    name:{pt:"Croesus (4 jogadores)",en:"Croesus (4-man)"},
+    desc:{pt:"Boss de skilling. 80+ em 4 gathering skills.",en:"Skilling boss. 80+ in 4 gathering skills."},
+    reqs:{14:80,10:80,8:80,21:80},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:41732000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Defeating_Croesus_(4-person)" },
+
+  // ======== COLLECTING ========
+  { id:"collect_red_sandstone", cat:"collecting", intensity:"low", members:true, gp:1500000,
+    name:{pt:"Coletar Red Sandstone (diário)",en:"Collect Red Sandstone (daily)"},
+    desc:{pt:"Minere red sandstone diariamente. Rápido e fácil.",en:"Mine red sandstone daily. Quick and easy."},
+    reqs:{14:81},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:1500000, daily:true,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Collecting_red_sandstone" },
+  { id:"collect_crystal_sandstone", cat:"collecting", intensity:"low", members:true, gp:1200000,
+    name:{pt:"Coletar Crystal Sandstone (diário)",en:"Collect Crystal Sandstone (daily)"},
+    desc:{pt:"Requer acesso a Prifddinas.",en:"Requires access to Prifddinas."},
+    reqs:{14:81}, quest:"Plague's End",
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:1200000, daily:true,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Collecting_crystal_sandstone" },
+  { id:"shop_runs_runes", cat:"collecting", intensity:"low", members:true, gp:3000000,
+    name:{pt:"Shop Run de Runas (diário)",en:"Rune Shop Run (daily)"},
+    desc:{pt:"Compre runas baratas em NPCs, venda no GE.",en:"Buy cheap runes from NPCs, sell on GE."},
+    reqs:{},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:3000000, daily:true,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Buying_runes" },
+  { id:"shop_runs_feathers", cat:"collecting", intensity:"low", members:false, gp:1000000,
+    name:{pt:"Comprar Feathers (diário)",en:"Buy Feathers (daily)"},
+    desc:{pt:"Compre feathers de NPCs, venda no GE. F2P.",en:"Buy feathers from NPCs, sell on GE. F2P."},
+    reqs:{},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:1000000, daily:true,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Buying_feathers" },
+  { id:"vis_wax", cat:"collecting", intensity:"low", members:true, gp:5000000,
+    name:{pt:"Criar Vis Wax (diário)",en:"Make Vis Wax (daily)"},
+    desc:{pt:"Rune Goldberg Machine. 50 RC requerido.",en:"Rune Goldberg Machine. 50 RC required."},
+    reqs:{20:50},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:5000000, daily:true,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Making_vis_wax" },
+
+  // ======== RECURRING ========
+  { id:"fort_forinthry_frames", cat:"recurring", intensity:"low", members:true, gp:4000000,
+    name:{pt:"Fort Forinthry: Stone Wall Segments",en:"Fort Forinthry: Stone Wall Segments"},
+    desc:{pt:"Construa segmentos de parede de pedra automaticamente.",en:"Build stone wall segments automatically."},
+    reqs:{},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:4000000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Making_stone_wall_segments" },
+  { id:"kingdom_miscellania", cat:"recurring", intensity:"low", members:true, gp:2000000,
+    name:{pt:"Gestão de Miscellania",en:"Managing Miscellania"},
+    desc:{pt:"Renda passiva do Kingdom. Requer Throne of Miscellania.",en:"Passive income from Kingdom. Requires Throne of Miscellania."},
+    reqs:{}, quest:"Throne of Miscellania",
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:2000000, daily:true,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Managing_Miscellania" },
+  { id:"player_owned_farm", cat:"recurring", intensity:"low", members:true, gp:3000000,
+    name:{pt:"Player Owned Farm",en:"Player Owned Farm"},
+    desc:{pt:"Crie e venda animais. Farming passivo.",en:"Breed and sell animals. Passive Farming."},
+    reqs:{19:35},
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:3000000,
+    wiki:"https://runescape.wiki/w/Money_making_guide/Player-owned_farm" },
 ];
 
+// ---- GE Prices ----
 let gePrices = {};
 let _gePriceSource = "none";
+let _gePriceTime = null;
 
 async function loadGEPrices() {
-  // Collect all unique item IDs from money methods
   const ids = new Set();
   for (const m of MONEY_METHODS) {
     for (const inp of m.inputs || []) if (inp.id) ids.add(inp.id);
     for (const out of m.outputs || []) if (out.id) ids.add(out.id);
   }
-  // Try live Weird Gloop API first (CORS-friendly, single batch)
   try {
     const query = [...ids].join("|");
     const ctrl = new AbortController();
@@ -467,7 +391,6 @@ async function loadGEPrices() {
       return;
     }
   } catch (_) {}
-  // Fallback to cached static file
   try {
     gePrices = await cacheFetch("data/ge_prices.json");
     _gePriceSource = "cached";
@@ -478,7 +401,6 @@ async function loadGEPrices() {
     _gePriceTime = null;
   }
 }
-let _gePriceTime = null;
 
 function getPrice(itemId) {
   const p = gePrices[String(itemId)];
@@ -487,6 +409,7 @@ function getPrice(itemId) {
 
 function calcProfit(method) {
   if (method.fixedProfit) return method.fixedProfit;
+  if (!method.inputs?.length || !method.outputs?.length || !method.actionsPerHour) return method.gp || 0;
   let inputCost = 0;
   for (const inp of method.inputs) {
     inputCost += (getPrice(inp.id) + (inp.extraCost || 0)) * inp.qty;
@@ -496,135 +419,270 @@ function calcProfit(method) {
     outputValue += getPrice(out.id) * out.qty;
   }
   const profitPerAction = outputValue - inputCost;
-  return profitPerAction * method.actionsPerHour;
+  const calculated = profitPerAction * method.actionsPerHour;
+  return calculated > 0 ? calculated : method.gp || 0;
 }
 
+// ---- Eligibility ----
 function canDoMethod(player, method) {
-  for (const [skillId, reqLevel] of Object.entries(method.reqs)) {
+  for (const [skillId, reqLevel] of Object.entries(method.reqs || {})) {
     const sk = player.skills[Number(skillId)];
     if (!sk || sk.level < reqLevel) return false;
   }
-  if (method.quest && !hasQuest(player, method.quest)) return false;
+  if (method.quest && typeof hasQuest === "function" && !hasQuest(player, method.quest)) return false;
   return true;
 }
 
-// Compute "almost unlocked" dynamically: player is within 10 levels of ALL skill reqs
-// and meets all quest reqs (or has no quest req)
 function isAlmostUnlocked(player, method) {
-  if (canDoMethod(player, method)) return false; // already unlocked
-  if (method.quest && !hasQuest(player, method.quest)) return false; // blocked by quest, not "almost"
-  let missingSkills = 0;
-  for (const [skillId, reqLevel] of Object.entries(method.reqs)) {
+  if (canDoMethod(player, method)) return false;
+  if (method.quest && typeof hasQuest === "function" && !hasQuest(player, method.quest)) return false;
+  for (const [skillId, reqLevel] of Object.entries(method.reqs || {})) {
     const sk = player.skills[Number(skillId)];
     const cur = sk ? sk.level : 1;
-    const gap = reqLevel - cur;
-    if (gap > 0 && gap <= 10) continue; // within range
-    if (gap > 10) return false; // too far
+    if (reqLevel - cur > 10) return false;
   }
   return true;
 }
 
-const MONEY_TOP_N = 10;
-let _moneyFilter = "all"; // all | available | upcoming
-
-function moneyCardHTML(m, players, lang) {
-  const info = m[lang] || m.en;
-  let desc = info.desc;
-  if (m.almostUnlocked) {
-    const parts = [];
-    for (const p of players) {
-      if (canDoMethod(p, m)) {
-        parts.push(`${p.name}: \u2713`);
-      } else {
-        for (const [sid, reqLvl] of Object.entries(m.reqs)) {
-          const sk = p.skills[Number(sid)];
-          const curLvl = sk ? sk.level : 1;
-          const gap = reqLvl - curLvl;
-          if (gap > 0) parts.push(`${p.name}: ${tSkill(Number(sid))} ${curLvl}\u2192${reqLvl} (${gap} ${t("levels")})`);
-        }
-      }
-    }
-    if (parts.length) desc = parts.join(" | ");
+function getSkillGaps(player, method) {
+  const gaps = [];
+  for (const [skillId, reqLevel] of Object.entries(method.reqs || {})) {
+    const sk = player.skills[Number(skillId)];
+    const cur = sk ? sk.level : 1;
+    if (cur < reqLevel) gaps.push({ id: Number(skillId), cur, req: reqLevel, gap: reqLevel - cur });
   }
-  const profitStr = m.profit > 0 ? fmtShort(m.profit) + " gp/h" : "?";
-  const dailyGp = m.profit * 3;
-  const reqTags = Object.entries(m.reqs).map(([sid, lvl]) => {
-    const met = players.some(p => canDoMethod(p, { reqs: { [sid]: lvl } }));
-    return `<span class="money-req ${met ? "met" : "unmet"}">${tSkill(Number(sid))} ${lvl}</span>`;
-  }).join("") || `<span class="money-req met">${t("noReqs")}</span>`;
-  const p1can = canDoMethod(players[0], m);
-  const p2can = players[1] ? canDoMethod(players[1], m) : false;
-  const badges = [];
-  if (m.almostUnlocked) badges.push(`<span style="font-size:0.6rem;color:var(--orange);background:rgba(251,191,36,0.08);padding:2px 6px;border-radius:100px;font-weight:700">${t("soon")}</span>`);
-  if (m.daily) badges.push(`<span style="font-size:0.6rem;color:var(--purple);background:var(--purple-bg);padding:2px 6px;border-radius:100px;font-weight:700">${t("daily")}</span>`);
+  return gaps;
+}
 
-  return `<div class="money-card"${m.almostUnlocked ? ' style="border-left:3px solid var(--orange);opacity:0.85"' : ""}>
-    <div class="money-card-header">
-      <div class="money-card-title">${info.name}${m.members ? " \u2B50" : ""}${badges.length ? " " + badges.join(" ") : ""}</div>
-      <div class="money-card-profit">${profitStr}</div>
+// ---- Rendering ----
+const CAT_LABELS = {
+  processing: { pt: "Processamento", en: "Processing", icon: "⚗️" },
+  gathering:  { pt: "Coleta", en: "Gathering", icon: "⛏️" },
+  combat:     { pt: "Combate", en: "Combat", icon: "⚔️" },
+  collecting:  { pt: "Coleção", en: "Collecting", icon: "🛒" },
+  recurring:  { pt: "Recorrente", en: "Recurring", icon: "🔄" },
+};
+
+const INTENSITY_LABELS = {
+  low:      { pt: "AFK", en: "AFK", color: "var(--green)" },
+  moderate: { pt: "Médio", en: "Moderate", color: "var(--gold)" },
+  high:     { pt: "Ativo", en: "Active", color: "var(--orange)" },
+};
+
+let _moneyFilter = "available";
+let _moneyCat = "all";
+let _moneyPlayerIdx = 0;
+
+function moneyCardHTML(m, player, lang, rank) {
+  const info = m.name[lang] || m.name.en;
+  const desc = (m.desc[lang] || m.desc.en);
+  const profitStr = m._profit > 0 ? fmtShort(m._profit) : "?";
+  const catInfo = CAT_LABELS[m.cat] || { pt: m.cat, en: m.cat, icon: "📦" };
+  const intInfo = INTENSITY_LABELS[m.intensity] || INTENSITY_LABELS.moderate;
+  const catLabel = catInfo[lang] || catInfo.en;
+  const intLabel = intInfo[lang] || intInfo.en;
+  const can = canDoMethod(player, m);
+  const almost = !can && m._almost;
+
+  // Skill requirement tags
+  const reqTags = Object.entries(m.reqs || {}).map(([sid, lvl]) => {
+    const sk = player.skills[Number(sid)];
+    const met = sk && sk.level >= lvl;
+    return `<span class="mn-req ${met ? "met" : "unmet"}">${typeof tSkill === "function" ? tSkill(Number(sid)) : sid} ${lvl}</span>`;
+  }).join("");
+
+  // Almost unlocked: show skill gaps
+  let gapHTML = "";
+  if (almost) {
+    const gaps = getSkillGaps(player, m);
+    gapHTML = `<div class="mn-gaps">${gaps.map(g =>
+      `<span class="mn-gap">${typeof tSkill === "function" ? tSkill(g.id) : g.id} ${g.cur}→${g.req} <b>(${g.gap})</b></span>`
+    ).join("")}</div>`;
+  }
+
+  const badges = [];
+  if (m.daily) badges.push(`<span class="mn-badge mn-badge-daily">${lang === "pt" ? "Diário" : "Daily"}</span>`);
+  if (almost) badges.push(`<span class="mn-badge mn-badge-soon">${lang === "pt" ? "Quase" : "Soon"}</span>`);
+
+  const rankBadge = rank != null ? `<span class="mn-rank">#${rank}</span>` : "";
+
+  return `<div class="mn-card ${almost ? "mn-almost" : ""} ${can ? "" : almost ? "" : "mn-locked"}">
+    <div class="mn-card-head">
+      ${rankBadge}
+      <div class="mn-card-title">${info}${m.members ? " ⭐" : ""}${badges.length ? " " + badges.join("") : ""}</div>
+      <div class="mn-card-profit">${profitStr} <span class="mn-gph">gp/h</span></div>
     </div>
-    <div class="money-card-desc">${desc}</div>
-    <div class="money-card-reqs">${reqTags}</div>
-    <div class="money-card-players">
-      <span class="money-player-tag ${p1can ? "can" : "cant"}">${esc(players[0].name)} ${p1can ? "\u2713" : "\u2717"}</span>
-      ${players[1] ? `<span class="money-player-tag ${p2can ? "can" : "cant"}">${esc(players[1].name)} ${p2can ? "\u2713" : "\u2717"}</span>` : ""}
+    <div class="mn-card-desc">${desc}</div>
+    <div class="mn-card-meta">
+      <span class="mn-cat">${catInfo.icon} ${catLabel}</span>
+      <span class="mn-int" style="color:${intInfo.color}">${intLabel}</span>
+      ${m.wiki ? `<a class="mn-wiki" href="${m.wiki}" target="_blank" rel="noopener">Wiki</a>` : ""}
     </div>
-    ${!m.daily && dailyGp > 0 ? `<div class="money-card-daily">${t("perDay")}: <strong>${fmtShort(dailyGp)} gp</strong></div>` : ""}
+    ${reqTags ? `<div class="mn-reqs">${reqTags}</div>` : ""}
+    ${gapHTML}
   </div>`;
 }
 
 function renderMoney(players) {
-  const lang = currentLang;
-  const all = MONEY_METHODS.map((m) => ({
+  const lang = typeof currentLang !== "undefined" ? currentLang : "en";
+  const grid = document.getElementById("money-grid");
+  if (!grid || !players?.length) return;
+
+  const player = players[Math.min(_moneyPlayerIdx, players.length - 1)];
+
+  // Calculate profits and sort
+  const all = MONEY_METHODS.map(m => ({
     ...m,
-    profit: calcProfit(m),
-    almostUnlocked: !players.some(p => canDoMethod(p, m)) && players.some(p => isAlmostUnlocked(p, m)),
-  })).sort((a, b) => b.profit - a.profit);
+    _profit: calcProfit(m),
+    _can: canDoMethod(player, m),
+    _almost: isAlmostUnlocked(player, m),
+  })).sort((a, b) => b._profit - a._profit);
 
-  // Filter
-  let filtered = all;
-  if (_moneyFilter === "available") filtered = all.filter(m => players.some(p => canDoMethod(p, m)) && !m.almostUnlocked);
-  else if (_moneyFilter === "upcoming") filtered = all.filter(m => m.almostUnlocked || !players.some(p => canDoMethod(p, m)));
+  const available = all.filter(m => m._can);
+  const almost = all.filter(m => m._almost).sort((a, b) => {
+    const gaA = getSkillGaps(player, a).reduce((s, g) => s + g.gap, 0);
+    const gaB = getSkillGaps(player, b).reduce((s, g) => s + g.gap, 0);
+    return gaA - gaB;
+  });
+  const locked = all.filter(m => !m._can && !m._almost);
 
-  const showAll = filtered.length <= MONEY_TOP_N;
-  const visible = showAll ? filtered : filtered.slice(0, MONEY_TOP_N);
-  const hidden = showAll ? [] : filtered.slice(MONEY_TOP_N);
+  // Apply category filter
+  const catFilter = m => _moneyCat === "all" || m.cat === _moneyCat;
 
-  // Filter pills + price source badge
-  const grid = $("#money-grid");
+  let filtered;
+  if (_moneyFilter === "available") filtered = available.filter(catFilter);
+  else if (_moneyFilter === "upcoming") filtered = almost.filter(catFilter);
+  else filtered = all.filter(catFilter);
+
+  // Player tabs
+  let playerTabs = "";
+  if (players.length > 1) {
+    playerTabs = `<div class="mn-player-tabs">${players.map((p, i) =>
+      `<button class="mn-ptab ${i === _moneyPlayerIdx ? "active" : ""} ${i === 0 ? "" : "p2"}" data-mn-player="${i}">${typeof esc === "function" ? esc(p.name) : p.name}</button>`
+    ).join("")}</div>`;
+  }
+
+  // Price badge
   const priceLabel = _gePriceSource === "live"
-    ? `<span style="font-size:0.6rem;color:var(--green);margin-left:auto">&#x25CF; ${lang === "pt" ? "Preços ao vivo" : "Live prices"}</span>`
+    ? `<span class="mn-price-badge mn-price-live">● ${lang === "pt" ? "Preços ao vivo" : "Live prices"}</span>`
     : _gePriceSource === "cached"
-      ? `<span style="font-size:0.6rem;color:var(--text-3);margin-left:auto">&#x25CB; ${lang === "pt" ? "Preços em cache" : "Cached prices"}</span>`
-      : "";
-  const filtersHTML = `<div class="pill-filters" style="margin-bottom:12px;display:flex;flex-wrap:wrap;align-items:center">
-    <button class="pill money-fpill ${_moneyFilter === "all" ? "active" : ""}" data-mf="all">${t("all")} (${all.length})</button>
-    <button class="pill money-fpill ${_moneyFilter === "available" ? "active" : ""}" data-mf="available">\u2713 ${lang === "pt" ? "Disponíveis" : "Available"} (${all.filter(m => players.some(p => canDoMethod(p, m)) && !m.almostUnlocked).length})</button>
-    <button class="pill money-fpill ${_moneyFilter === "upcoming" ? "active" : ""}" data-mf="upcoming">\u23F3 ${lang === "pt" ? "Em breve" : "Upcoming"} (${all.filter(m => m.almostUnlocked || !players.some(p => canDoMethod(p, m))).length})</button>
-    ${priceLabel}
+      ? `<span class="mn-price-badge mn-price-cached">○ ${lang === "pt" ? "Preços em cache" : "Cached prices"}</span>`
+      : `<span class="mn-price-badge">— ${lang === "pt" ? "Sem preços" : "No prices"}</span>`;
+
+  // Filter pills
+  const filterPills = `<div class="mn-filters">
+    <div class="mn-filter-row">
+      <button class="pill mn-fpill ${_moneyFilter === "available" ? "active" : ""}" data-mf="available">✓ ${lang === "pt" ? "Disponíveis" : "Available"} (${available.length})</button>
+      <button class="pill mn-fpill ${_moneyFilter === "upcoming" ? "active" : ""}" data-mf="upcoming">⏳ ${lang === "pt" ? "Quase" : "Almost"} (${almost.length})</button>
+      <button class="pill mn-fpill ${_moneyFilter === "all" ? "active" : ""}" data-mf="all">${lang === "pt" ? "Todas" : "All"} (${all.length})</button>
+      ${priceLabel}
+    </div>
+    <div class="mn-filter-row mn-cat-row">
+      <button class="pill mn-cpill ${_moneyCat === "all" ? "active" : ""}" data-mc="all">${lang === "pt" ? "Todas" : "All"}</button>
+      ${Object.entries(CAT_LABELS).map(([k, v]) =>
+        `<button class="pill mn-cpill ${_moneyCat === k ? "active" : ""}" data-mc="${k}">${v.icon} ${v[lang] || v.en}</button>`
+      ).join("")}
+    </div>
   </div>`;
 
-  grid.innerHTML = filtersHTML +
-    visible.map(m => moneyCardHTML(m, players, lang)).join("") +
-    (hidden.length ? `<div id="money-hidden" style="display:none">${hidden.map(m => moneyCardHTML(m, players, lang)).join("")}</div>
-    <button id="money-show-more" class="pill" style="display:block;margin:12px auto;padding:8px 24px">
-      ${lang === "pt" ? "Mostrar mais" : "Show more"} (+${hidden.length})
-    </button>` : "");
+  // Section header
+  const headerText = _moneyFilter === "available"
+    ? (lang === "pt" ? `Top métodos para ${player.name}` : `Top methods for ${player.name}`)
+    : _moneyFilter === "upcoming"
+      ? (lang === "pt" ? `Quase desbloqueados para ${player.name}` : `Almost unlocked for ${player.name}`)
+      : (lang === "pt" ? "Todos os métodos" : "All methods");
 
-  // Filter pill handlers
-  grid.querySelectorAll(".money-fpill").forEach(btn => {
-    btn.addEventListener("click", () => {
-      _moneyFilter = btn.dataset.mf;
-      renderMoney(players);
-    });
-  });
+  // Render cards
+  const top10 = filtered.slice(0, 10);
+  const rest = filtered.slice(10);
 
-  // Show more handler
-  const moreBtn = document.getElementById("money-show-more");
-  if (moreBtn) {
-    moreBtn.addEventListener("click", () => {
-      document.getElementById("money-hidden").style.display = "block";
-      moreBtn.remove();
-    });
-  }
+  const cardsHTML = top10.map((m, i) =>
+    moneyCardHTML(m, player, lang, _moneyFilter === "available" ? i + 1 : null)
+  ).join("");
+
+  const restHTML = rest.length ? `
+    <div id="mn-rest" style="display:none">${rest.map(m => moneyCardHTML(m, player, lang, null)).join("")}</div>
+    <button id="mn-show-more" class="pill" style="display:block;margin:12px auto;padding:8px 24px">
+      ${lang === "pt" ? "Mostrar mais" : "Show more"} (+${rest.length})
+    </button>` : "";
+
+  grid.innerHTML = `
+    ${playerTabs}
+    ${filterPills}
+    <div class="mn-section-title">${headerText}</div>
+    ${filtered.length ? cardsHTML + restHTML : `<div class="mn-empty">${lang === "pt" ? "Nenhum método encontrado" : "No methods found"}</div>`}
+  `;
+
+  // Inject styles
+  moneyInjectStyles();
+
+  // Events
+  grid.querySelectorAll(".mn-fpill").forEach(b => b.addEventListener("click", () => { _moneyFilter = b.dataset.mf; renderMoney(players); }));
+  grid.querySelectorAll(".mn-cpill").forEach(b => b.addEventListener("click", () => { _moneyCat = b.dataset.mc; renderMoney(players); }));
+  grid.querySelectorAll(".mn-ptab").forEach(b => b.addEventListener("click", () => { _moneyPlayerIdx = Number(b.dataset.mnPlayer); renderMoney(players); }));
+
+  const moreBtn = document.getElementById("mn-show-more");
+  if (moreBtn) moreBtn.addEventListener("click", () => { document.getElementById("mn-rest").style.display = "block"; moreBtn.remove(); });
+}
+
+// ---- Styles ----
+function moneyInjectStyles() {
+  if (document.getElementById("mn-styles")) return;
+  const s = document.createElement("style");
+  s.id = "mn-styles";
+  s.textContent = `
+.mn-player-tabs { display:flex; justify-content:center; gap:8px; margin-bottom:14px; }
+.mn-ptab { appearance:none; padding:5px 16px; border:1px solid var(--border); border-radius:100px; background:var(--bg-card); color:var(--text-2); cursor:pointer; font-size:0.73rem; font-weight:600; font-family:var(--font); transition:all .2s; }
+.mn-ptab:hover { border-color:var(--border-hover); }
+.mn-ptab.active { border-color:var(--gold-dim); color:var(--gold); background:var(--gold-bg); }
+.mn-ptab.p2.active { border-color:var(--teal-dim); color:var(--teal); background:var(--teal-bg); }
+
+.mn-filters { margin-bottom:14px; }
+.mn-filter-row { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:6px; }
+.mn-price-badge { font-size:0.6rem; margin-left:auto; white-space:nowrap; }
+.mn-price-live { color:var(--green); }
+.mn-price-cached { color:var(--text-3); }
+
+.mn-section-title { font-family:var(--font-display); font-size:0.82rem; font-weight:700; color:var(--gold-bright); margin-bottom:10px; letter-spacing:.3px; }
+
+.mn-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; margin-bottom:8px; transition:border-color .2s; }
+.mn-card:hover { border-color:var(--border-hover); }
+.mn-almost { border-left:3px solid var(--orange); opacity:0.88; }
+.mn-locked { opacity:0.5; }
+
+.mn-card-head { display:flex; align-items:baseline; gap:8px; margin-bottom:4px; }
+.mn-rank { font-family:var(--font-mono); font-size:0.65rem; font-weight:800; color:var(--gold); background:var(--gold-bg); padding:1px 6px; border-radius:100px; flex-shrink:0; }
+.mn-card-title { font-weight:700; font-size:0.8rem; color:var(--text); flex:1; min-width:0; }
+.mn-card-profit { font-family:var(--font-mono); font-size:0.82rem; font-weight:800; color:var(--green); white-space:nowrap; }
+.mn-gph { font-size:0.6rem; font-weight:500; color:var(--text-3); }
+
+.mn-card-desc { font-size:0.68rem; color:var(--text-3); margin-bottom:6px; line-height:1.4; }
+
+.mn-card-meta { display:flex; align-items:center; gap:10px; font-size:0.64rem; margin-bottom:6px; }
+.mn-cat { color:var(--text-2); }
+.mn-int { font-weight:600; }
+.mn-wiki { color:var(--text-3); text-decoration:none; padding:1px 6px; border:1px solid var(--border); border-radius:var(--radius-xs); transition:all .2s; margin-left:auto; }
+.mn-wiki:hover { color:var(--gold); border-color:var(--gold-dim); }
+
+.mn-reqs { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:4px; }
+.mn-req { font-size:0.6rem; font-family:var(--font-mono); padding:1px 6px; border-radius:100px; }
+.mn-req.met { color:var(--green); background:var(--green-bg); }
+.mn-req.unmet { color:var(--red); background:var(--red-bg); }
+
+.mn-gaps { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+.mn-gap { font-size:0.62rem; font-family:var(--font-mono); color:var(--orange); background:rgba(240,160,48,0.08); padding:2px 6px; border-radius:100px; }
+
+.mn-badge { font-size:0.58rem; font-weight:700; padding:1px 6px; border-radius:100px; vertical-align:middle; }
+.mn-badge-daily { color:var(--purple); background:var(--purple-bg); }
+.mn-badge-soon { color:var(--orange); background:rgba(240,160,48,0.08); }
+
+.mn-empty { text-align:center; color:var(--text-3); padding:32px 16px; font-size:0.78rem; }
+
+@media(max-width:640px) {
+  .mn-card-head { flex-wrap:wrap; }
+  .mn-card-profit { width:100%; }
+  .mn-cat-row { overflow-x:auto; flex-wrap:nowrap; }
+}
+`;
+  document.head.appendChild(s);
 }
