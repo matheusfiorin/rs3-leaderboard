@@ -104,7 +104,7 @@ function mgCard(cfg, players) {
     ? mgT("mgComplete")
     : `${totalDone}/${totalAll} ${mgT("mgItems")}`;
 
-  return `<button class="mg-card mg-card-${cfg.theme}" onclick="mgGoTab('${cfg.tab}')" aria-label="${cfg.title}">
+  return `<button class="mg-card mg-card-${cfg.theme}" data-mg-tab="${cfg.tab}" aria-label="${cfg.title}">
     <div class="mg-card-glow"></div>
     <div class="mg-card-body">
       <div class="mg-card-left">
@@ -229,6 +229,10 @@ function renderMajorGoals(players) {
       <h2 class="section-title">${mgT("mgTitle")}</h2>
     </div>
     <div class="mg-grid">${goals.map((g) => mgCard(g, players)).join("")}</div>`;
+
+  el.querySelectorAll(".mg-card[data-mg-tab]").forEach((btn) => {
+    btn.addEventListener("click", () => mgGoTab(btn.dataset.mgTab));
+  });
 }
 
 // ---- Inject scoped CSS (idempotent) ----

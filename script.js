@@ -1367,6 +1367,7 @@ async function loadVisitorStats() {
 // ---- Lazy tab rendering ----
 const _renderers = {
   dashboard: (r) => {
+    if (typeof renderSessionSpotlight === "function") renderSessionSpotlight(r);
     if (typeof renderMajorGoals === "function") renderMajorGoals(r);
     renderCards(r);
     renderH2H(r);
@@ -1395,6 +1396,9 @@ const _renderers = {
   },
   lookup: () => {
     if (typeof renderLookupPage === "function") renderLookupPage();
+  },
+  session: (r) => {
+    if (typeof renderSession === "function") renderSession(r);
   },
 };
 const _rendered = new Set();
