@@ -19,14 +19,14 @@ const SESSION_PLAN = {
     en: "The Ancient Altar",
   },
   tagline: {
-    pt: "Uma aposta: Fiorovizk destrava o Soul Split, Decxus abate Elvarg.",
-    en: "One bet: Fiorovizk unlocks Soul Split, Decxus slays Elvarg.",
+    pt: "Primeiro os Kudos, depois o Soul Split. Decxus abate Elvarg no meio.",
+    en: "Kudos first, then Soul Split. Decxus slays Elvarg in between.",
   },
   briefing: {
-    pt: "O corredor para Senntisten está quase aberto. Fiorovizk terminou Desert Treasure ontem e falta apenas uma missão para acessar a oração mais cobiçada do jogo. Enquanto isso, Decxus precisa sair de Lumbridge — hoje ele ganha a Capa de Caça-Dragões, sua primeira verdadeira marca de aventura.",
-    en: "The corridor to Senntisten is nearly open. Fiorovizk wrapped Desert Treasure yesterday and stands one quest from the game's most coveted prayer. Meanwhile, Decxus needs to leave Lumbridge behind — today he earns the Dragon Slayer cape, his first real badge of adventure.",
+    pt: "O corredor para Senntisten está quase aberto — mas falta o último portão: 125 Kudos no Museu de Varrock. Fiorovizk tem ~60 dos quests já feitos; precisamos caçar os outros em exibições + escavações. Com isso na bolsa, The Temple at Senntisten libera a oração mais cobiçada do jogo. Em paralelo, Decxus larga Lumbridge e ganha sua primeira capa real: Caça-Dragões.",
+    en: "The corridor to Senntisten is nearly open — one last gate remains: 125 Museum Kudos in Varrock. Fiorovizk has ~60 banked from quests already; we hunt the rest across displays + excavations. With that cleared, The Temple at Senntisten unlocks the game's most coveted prayer. In parallel, Decxus leaves Lumbridge behind and earns his first real cape: Dragon Slayer.",
   },
-  duration: "3h 30m",
+  duration: "4h",
   difficulty: 4, // 1-5
 
   phases: [
@@ -65,8 +65,54 @@ const SESSION_PLAN = {
     {
       i: 2,
       roman: "II",
-      key: "senntisten",
+      key: "kudos",
       time: "45m",
+      players: ["Fiorovizk"],
+      title: { pt: "A Peregrinação dos Kudos", en: "The Kudos Pilgrimage" },
+      subtitle: {
+        pt: "Museu de Varrock — chegar a 125 Kudos",
+        en: "Varrock Museum — reach 125 Kudos",
+      },
+      location: { pt: "Varrock Museum + Dig Site", en: "Varrock Museum + Dig Site" },
+      what: {
+        pt: "ATENÇÃO: Temple at Senntisten exige 125 Kudos e Fio ainda não tem. Prioridade máxima: limpar o andar de baixo do Museu (11 exibições do Dean = 22 Kudos) + escavar Dig Site até dropar Strange Rocks + entregar achados ao Orlando Smith. Falta ~65 Kudos — alcançável em 40 min.",
+        en: "HEADS UP: Temple at Senntisten requires 125 Kudos and Fio isn't there yet. Top priority: clear the ground floor Natural History quiz (11 displays = 22 Kudos) + excavate the Dig Site for Strange Rocks + hand finds to Orlando Smith. ~65 Kudos to go — doable in 40 min.",
+      },
+      steps: [
+        {
+          pt: "Varrock Museum térreo: responder todos os quiz displays (~22 Kudos)",
+          en: "Varrock Museum ground floor: answer every display quiz (~22 Kudos)",
+        },
+        {
+          pt: "Dig Site: escavar até dropar 4 achados raros → Simon Templeton",
+          en: "Dig Site: excavate until 4 rare finds drop → Simon Templeton",
+        },
+        {
+          pt: "Limpar achados no aparelho e entregar a Orlando Smith",
+          en: "Clean finds at the apparatus, deliver to Orlando Smith",
+        },
+        {
+          pt: "Checar contador: 125 Kudos no canto superior direito do Museu",
+          en: "Check tally: 125 Kudos in the top-right of the Museum UI",
+        },
+      ],
+      reward: {
+        xp: "+6k Archaeology, +2k Mining",
+        gp: "-",
+        note: {
+          pt: "🗝️ Destrava Temple at Senntisten (125 Kudos)",
+          en: "🗝️ Unlocks Temple at Senntisten (125 Kudos gate)",
+        },
+      },
+      xpScore: 2,
+      funScore: 3,
+      wiki: "https://runescape.wiki/w/Kudos",
+    },
+    {
+      i: 3,
+      roman: "III",
+      key: "senntisten",
+      time: "30m",
       players: ["Fiorovizk"],
       title: { pt: "Portal para Senntisten", en: "Portal to Senntisten" },
       subtitle: {
@@ -75,8 +121,8 @@ const SESSION_PLAN = {
       },
       location: { pt: "Digsite → Varrock Museum", en: "Digsite → Varrock Museum" },
       what: {
-        pt: "Fiorovizk já tem TODOS os requisitos: 50 Prayer ✓ (tem 93!), 50 Magic ✓ (61), e a cadeia de missões está pronta. Falar com Azzanadra e Dr. Nabanik. Ao fim: Altar de Senntisten (2k+ Prayer XP/h a curto prazo), Soul Split, Wrath.",
-        en: "Fiorovizk meets every requirement: 50 Prayer ✓ (has 93!), 50 Magic ✓ (61), and the prerequisite chain is complete. Speak with Azzanadra and Dr. Nabanik. Reward: Senntisten Altar (2k+ Prayer XP/h short-term), Soul Split, Wrath.",
+        pt: "Com 125 Kudos na mochila + 50 Prayer ✓ (tem 93!) + 50 Magic ✓ (61), e a cadeia de missões completa, Fiorovizk está pronto. Falar com Dr. Nabanik (alias Azzanadra disfarçado) no Dig Site, entregar mensagens aos deuses, consagrar o altar. Ao fim: Altar de Senntisten (~2k Prayer XP/h de ossos), Soul Split, Wrath.",
+        en: "With 125 Kudos banked + 50 Prayer ✓ (has 93!) + 50 Magic ✓ (61) + full quest chain done, Fiorovizk is ready. Speak with Dr. Nabanik (Azzanadra in disguise) at the Dig Site, deliver god messages, consecrate the altar. Reward: Senntisten Altar (~2k Prayer XP/h on bones), Soul Split, Wrath.",
       },
       steps: [
         {
@@ -105,8 +151,8 @@ const SESSION_PLAN = {
       wiki: "https://runescape.wiki/w/The_Temple_at_Senntisten",
     },
     {
-      i: 3,
-      roman: "III",
+      i: 4,
+      roman: "IV",
       key: "dragonslayer",
       time: "60m",
       players: ["Decxus"],
@@ -147,8 +193,8 @@ const SESSION_PLAN = {
       wiki: "https://runescape.wiki/w/Dragon_Slayer",
     },
     {
-      i: 4,
-      roman: "IV",
+      i: 5,
+      roman: "V",
       key: "dungeoneering",
       time: "60m",
       players: ["both"],
@@ -189,8 +235,8 @@ const SESSION_PLAN = {
       wiki: "https://runescape.wiki/w/Dungeoneering",
     },
     {
-      i: 5,
-      roman: "V",
+      i: 6,
+      roman: "VI",
       key: "barrows",
       time: "30m",
       players: ["both"],
@@ -231,8 +277,8 @@ const SESSION_PLAN = {
       wiki: "https://runescape.wiki/w/Barrows",
     },
     {
-      i: 6,
-      roman: "VI",
+      i: 7,
+      roman: "VII",
       key: "cooldown",
       time: "15m",
       players: ["both"],
@@ -296,12 +342,14 @@ const SESSION_PLAN = {
         { skill: 5, amount: 60000 }, // Prayer
         { skill: 6, amount: 4000 }, // Magic
         { skill: 24, amount: 60000 }, // Dungeoneering
+        { skill: 27, amount: 6000 }, // Archaeology (Kudos run)
         { skill: 4, amount: 15000 }, // Ranged
         { skill: 28, amount: 20000 }, // Necromancy
         { skill: 19, amount: 4000 }, // Farming
       ],
       qp: 3,
       unlocks: [
+        { pt: "125 Museum Kudos", en: "125 Museum Kudos", epic: false },
         { pt: "Soul Split (Ancient Curse)", en: "Soul Split (Ancient Curse)", epic: true },
         { pt: "Altar de Senntisten", en: "Senntisten Altar", epic: false },
         { pt: "Wrath (Ancient Curse)", en: "Wrath (Ancient Curse)", epic: false },
@@ -606,7 +654,7 @@ function renderSessionSpotlight(players) {
   const tag = sL(SESSION_PLAN.tagline);
   const liveLabel = lang === "pt" ? "AO VIVO" : "LIVE";
   const cta = lang === "pt" ? "Ver briefing" : "Open briefing";
-  const heroPhase = SESSION_PLAN.phases.find((p) => p.key === "senntisten") || SESSION_PLAN.phases[0];
+  const heroPhase = SESSION_PLAN.phases.find((p) => p.key === "kudos") || SESSION_PLAN.phases[0];
   const heroTitle = sL(heroPhase.title);
   const heroHook = lang === "pt" ? "Destaque:" : "Highlight:";
 
