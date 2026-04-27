@@ -6,58 +6,59 @@
    and personalized XP/fun projections.
    ============================================= */
 
-// ---- Static session plan for 2026-04-21 ----
+// ---- Static session plan for 2026-04-27 ----
 // Built from live hiscores + quest status at time of writing.
-// Fiorovizk: cb 96, total 1423, xp 13.86M, just finished Desert Treasure + Devious Minds.
-// Decxus: cb 67, total 929, xp 1.88M, big room for catch-up.
+// Fiorovizk: cb 98, total 1443, xp 15.77M, Soul Split unlocked, Necromancy 72, Prayer 95.
+// Decxus: cb 67, total 979, xp 1.98M, Prayer 66, Herblore 64, Necromancy 53, 41 quests done.
 
 const SESSION_PLAN = {
-  id: "2026-04-21-senntisten",
-  date: "2026-04-21",
+  id: "2026-04-27-rotm-prep",
+  date: "2026-04-27",
+  heroPhaseKey: "lunar",
   codename: {
-    pt: "O Templo Ancião",
-    en: "The Ancient Altar",
+    pt: "Sonhos de Lua",
+    en: "Moonlit Dreams",
   },
   tagline: {
-    pt: "Primeiro os Kudos, depois o Soul Split. Decxus abate Elvarg no meio.",
-    en: "Kudos first, then Soul Split. Decxus slays Elvarg in between.",
+    pt: "Soul Split conquistado. Agora Fio sonha em Lunar Isle, Decxus rachando o crânio do dragão Elvarg.",
+    en: "Soul Split is in the bag. Fio dreams his way to Lunar Isle while Decxus cracks Elvarg's skull.",
   },
   briefing: {
-    pt: "O corredor para Senntisten está quase aberto — mas falta o último portão: 125 Kudos no Museu de Varrock. Fiorovizk tem ~60 dos quests já feitos; precisamos caçar os outros em exibições + escavações. Com isso na bolsa, The Temple at Senntisten libera a oração mais cobiçada do jogo. Em paralelo, Decxus larga Lumbridge e ganha sua primeira capa real: Caça-Dragões.",
-    en: "The corridor to Senntisten is nearly open — one last gate remains: 125 Museum Kudos in Varrock. Fiorovizk has ~60 banked from quests already; we hunt the rest across displays + excavations. With that cleared, The Temple at Senntisten unlocks the game's most coveted prayer. In parallel, Decxus leaves Lumbridge behind and earns his first real cape: Dragon Slayer.",
+    pt: "Senntisten caiu (Soul Split desbloqueado, Wrath ativada, altar pessoal a 2k Prayer XP/h). O próximo grande arco é o Ritual dos Mahjarrat — mas ele exige Lunar Diplomacy + While Guthix Sleeps antes. Esta sessão prepara essa cadeia: Fiorovizk treina Cooking até 40 (gating de Lunar) e mergulha no Fremennik Trials. Em paralelo, Decxus fecha Dragon Slayer (capa, plate, +9.65k XP em 2 skills) e empilha Necromancy contra carniçais para colar no resto da dupla.",
+    en: "Senntisten fell — Soul Split unlocked, Wrath active, personal altar humming at 2k Prayer XP/h. The next big arc is Ritual of the Mahjarrat — but it gates behind Lunar Diplomacy + While Guthix Sleeps. Tonight preps that chain: Fiorovizk pushes Cooking to 40 (Lunar gate) and dives into the Fremennik Trials. Meanwhile Decxus puts down Elvarg for the Dragon Slayer cape (+9.65k XP across 2 skills) and farms Necromancy on ghouls to close the dupla gap.",
   },
   duration: "4h",
-  difficulty: 4, // 1-5
+  difficulty: 3, // 1-5
 
   phases: [
     {
       i: 1,
       roman: "I",
       key: "prep",
-      time: "20m",
+      time: "15m",
       players: ["both"],
       title: { pt: "Quartel-General", en: "Muster" },
       subtitle: { pt: "Varrock GE, 20h BRT", en: "Varrock GE, 8pm BRT" },
       location: { pt: "Grand Exchange", en: "Grand Exchange" },
       what: {
-        pt: "Encontro no pilar oeste do GE em Varrock. Checagem de suprimentos, troca de barras, e inscrição no Familiar Pool da Taverley para buff. Lodestone world 84.",
-        en: "Meet at the west pillar of Varrock GE. Supply check, bar trades, and a quick Taverley Familiar Pool buff. Lodestone world 84.",
+        pt: "Encontro no pilar oeste do GE. Fio passa no Senntisten Altar para empilhar 50 Prayer XP em 2 min e equipa Soul Split — primeira sessão usando-o em campo. Decxus puxa Anti-dragon shield + Prayer pots para Elvarg.",
+        en: "Meet at the west pillar of GE. Fio detours to the Senntisten Altar for a 50k Prayer XP top-up (2 min) and equips Soul Split — first field run with it. Decxus stocks Anti-dragon shield + Prayer pots for Elvarg.",
       },
       steps: [
+        {
+          pt: "Fio: 5 min de ossos no Altar de Senntisten (~2k Prayer XP/h)",
+          en: "Fio: 5 min bone burning at Senntisten Altar (~2k Prayer XP/h)",
+        },
         {
           pt: "Comprar loadout da lista de compras abaixo",
           en: "Buy the loadout from the shopping manifest below",
         },
         {
-          pt: "Banco: presets de \"combate\" e \"quest\" configurados",
-          en: "Bank: set up \"combat\" and \"quest\" presets",
-        },
-        {
-          pt: "Ativar Overloads do War's Retreat, se disponível",
-          en: "Grab overloads from War's Retreat if available",
+          pt: "Banco: presets \"combate-soulsplit\" e \"quest-lunar\" configurados",
+          en: "Bank: set up \"combat-soulsplit\" and \"quest-lunar\" presets",
         },
       ],
-      reward: { xp: 0, gp: "-2.5M", note: { pt: "Gasto em suprimentos", en: "Supplies spend" } },
+      reward: { xp: "+10k Prayer (Fio)", gp: "-1.2M", note: { pt: "Suprimentos + leilão de surplus", en: "Supplies + surplus auction" } },
       xpScore: 1,
       funScore: 2,
       wiki: "https://runescape.wiki/w/Grand_Exchange",
@@ -65,127 +66,43 @@ const SESSION_PLAN = {
     {
       i: 2,
       roman: "II",
-      key: "kudos",
-      time: "45m",
-      players: ["Fiorovizk"],
-      title: { pt: "A Peregrinação dos Kudos", en: "The Kudos Pilgrimage" },
-      subtitle: {
-        pt: "Museu de Varrock — chegar a 125 Kudos",
-        en: "Varrock Museum — reach 125 Kudos",
-      },
-      location: { pt: "Varrock Museum + Dig Site", en: "Varrock Museum + Dig Site" },
-      what: {
-        pt: "ATENÇÃO: Temple at Senntisten exige 125 Kudos e Fio ainda não tem. Prioridade máxima: limpar o andar de baixo do Museu (11 exibições do Dean = 22 Kudos) + escavar Dig Site até dropar Strange Rocks + entregar achados ao Orlando Smith. Falta ~65 Kudos — alcançável em 40 min.",
-        en: "HEADS UP: Temple at Senntisten requires 125 Kudos and Fio isn't there yet. Top priority: clear the ground floor Natural History quiz (11 displays = 22 Kudos) + excavate the Dig Site for Strange Rocks + hand finds to Orlando Smith. ~65 Kudos to go — doable in 40 min.",
-      },
-      steps: [
-        {
-          pt: "Varrock Museum térreo: responder todos os quiz displays (~22 Kudos)",
-          en: "Varrock Museum ground floor: answer every display quiz (~22 Kudos)",
-        },
-        {
-          pt: "Dig Site: escavar até dropar 4 achados raros → Simon Templeton",
-          en: "Dig Site: excavate until 4 rare finds drop → Simon Templeton",
-        },
-        {
-          pt: "Limpar achados no aparelho e entregar a Orlando Smith",
-          en: "Clean finds at the apparatus, deliver to Orlando Smith",
-        },
-        {
-          pt: "Checar contador: 125 Kudos no canto superior direito do Museu",
-          en: "Check tally: 125 Kudos in the top-right of the Museum UI",
-        },
-      ],
-      reward: {
-        xp: "+6k Archaeology, +2k Mining",
-        gp: "-",
-        note: {
-          pt: "🗝️ Destrava Temple at Senntisten (125 Kudos)",
-          en: "🗝️ Unlocks Temple at Senntisten (125 Kudos gate)",
-        },
-      },
-      xpScore: 2,
-      funScore: 3,
-      wiki: "https://runescape.wiki/w/Kudos",
-    },
-    {
-      i: 3,
-      roman: "III",
-      key: "senntisten",
-      time: "30m",
-      players: ["Fiorovizk"],
-      title: { pt: "Portal para Senntisten", en: "Portal to Senntisten" },
-      subtitle: {
-        pt: "The Temple at Senntisten — libera Soul Split",
-        en: "The Temple at Senntisten — unlocks Soul Split",
-      },
-      location: { pt: "Digsite → Varrock Museum", en: "Digsite → Varrock Museum" },
-      what: {
-        pt: "Com 125 Kudos na mochila + 50 Prayer ✓ (tem 93!) + 50 Magic ✓ (61), e a cadeia de missões completa, Fiorovizk está pronto. Falar com Dr. Nabanik (alias Azzanadra disfarçado) no Dig Site, entregar mensagens aos deuses, consagrar o altar. Ao fim: Altar de Senntisten (~2k Prayer XP/h de ossos), Soul Split, Wrath.",
-        en: "With 125 Kudos banked + 50 Prayer ✓ (has 93!) + 50 Magic ✓ (61) + full quest chain done, Fiorovizk is ready. Speak with Dr. Nabanik (Azzanadra in disguise) at the Dig Site, deliver god messages, consecrate the altar. Reward: Senntisten Altar (~2k Prayer XP/h on bones), Soul Split, Wrath.",
-      },
-      steps: [
-        {
-          pt: "Falar com Dr. Nabanik no Varrock Dig Site",
-          en: "Speak with Dr. Nabanik at the Varrock Dig Site",
-        },
-        {
-          pt: "Trocar mensagens: Zamorak, Saradomin, Armadyl",
-          en: "Exchange messages: Zamorak, Saradomin, Armadyl",
-        },
-        {
-          pt: "Terminar no altar restaurado — consagrar + equipar Soul Split",
-          en: "Finish at the restored altar — consecrate + equip Soul Split",
-        },
-      ],
-      reward: {
-        xp: "+18k Prayer, +2k Magic",
-        gp: "N/A",
-        note: {
-          pt: "🌟 Soul Split, Wrath, acesso ao Altar de Senntisten",
-          en: "🌟 Soul Split, Wrath, access to Senntisten Altar",
-        },
-      },
-      xpScore: 3,
-      funScore: 5,
-      wiki: "https://runescape.wiki/w/The_Temple_at_Senntisten",
-    },
-    {
-      i: 4,
-      roman: "IV",
       key: "dragonslayer",
-      time: "60m",
+      time: "55m",
       players: ["Decxus"],
       title: { pt: "Sangue de Dragão", en: "Dragonblood" },
       subtitle: {
-        pt: "Dragon Slayer — Matar Elvarg",
-        en: "Dragon Slayer — Slay Elvarg",
+        pt: "Dragon Slayer — Elvarg cai hoje",
+        en: "Dragon Slayer — Elvarg falls tonight",
       },
       location: { pt: "Ilha de Crandor", en: "Isle of Crandor" },
       what: {
-        pt: "Clássico: falar com Guild Master em Champions' Guild, montar o mapa, barco até Crandor, enfrentar Elvarg. Decxus (cb 67, 51 Defense, 46 HP) consegue com anti-dragon shield + prayer potions. Fiorovizk escolta até a Melzar's Maze pela primeira metade para não solo tudo.",
-        en: "The classic: talk to the Guild Master at Champions' Guild, build the map, board the ship to Crandor, face Elvarg. Decxus (cb 67, 51 Defense, 46 HP) can do it with an anti-dragon shield + prayer potions. Fiorovizk escorts through Melzar's Maze for the first half to co-op the setup.",
+        pt: "Decxus já fez Priest in Peril ✓ e Demon Slayer ✓. Pré-requisitos? 32 QP — ele tem 59. Hora da capa: falar com Guild Master, juntar 3 mapas, barco até Crandor. Stats atuais (cb 67, 51 Def, 46 HP, Prayer 66) cobrem com folga. Fio escolta o início e usa Soul Split nas mobs do labirinto.",
+        en: "Decxus already cleared Priest in Peril ✓ and Demon Slayer ✓. Gate is 32 QP — he has 59. Time for the cape: talk to the Guild Master, grab the 3 map pieces, sail to Crandor. Stats (cb 67, 51 Def, 46 HP, Prayer 66) cover comfortably. Fio escorts the maze and Soul-Splits through the trash.",
       },
       steps: [
         {
-          pt: "Pegar as 3 peças do mapa (Melzar's Maze, Thurgo, Lozar)",
-          en: "Grab the 3 map pieces (Melzar's Maze, Thurgo, Lozar)",
+          pt: "Champions' Guild → falar com Guild Master",
+          en: "Champions' Guild → talk to the Guild Master",
         },
         {
-          pt: "Comprar Anti-dragon shield + montar barco em Port Sarim",
-          en: "Buy Anti-dragon shield + commission the ship in Port Sarim",
+          pt: "Mapas: Melzar's Maze (Fio tanka) → Thurgo (Asgarnia) → Lozar (Oziach)",
+          en: "Map pieces: Melzar's Maze (Fio tanks) → Thurgo (Asgarnia) → Lozar (Oziach)",
         },
         {
-          pt: "Elvarg: ativar Protect from Magic, manter HP > 40",
-          en: "Elvarg: Protect from Magic on, keep HP above 40",
+          pt: "Port Sarim: anti-dragon shield + barco para Crandor",
+          en: "Port Sarim: anti-dragon shield + commission ship to Crandor",
+        },
+        {
+          pt: "Elvarg: Protect from Magic, manter HP > 40, Necromancy ultimate",
+          en: "Elvarg: Protect from Magic, HP > 40, Necromancy ultimate",
         },
       ],
       reward: {
         xp: "+18.65k em 2 skills à escolha",
         gp: "~300k loot",
         note: {
-          pt: "🗡️ Capa de Caça-Dragões, 2 QP, acesso a rune platebody",
-          en: "🗡️ Dragon Slayer cape, 2 QP, rune platebody unlock",
+          pt: "🗡️ Capa de Caça-Dragões, 2 QP, rune platebody desbloqueado",
+          en: "🗡️ Dragon Slayer cape, 2 QP, rune platebody unlocked",
         },
       },
       xpScore: 4,
@@ -193,41 +110,129 @@ const SESSION_PLAN = {
       wiki: "https://runescape.wiki/w/Dragon_Slayer",
     },
     {
-      i: 5,
-      roman: "V",
-      key: "dungeoneering",
-      time: "60m",
-      players: ["both"],
-      title: { pt: "Duo em Daemonheim", en: "Daemonheim Duo" },
+      i: 3,
+      roman: "III",
+      key: "lunar",
+      time: "55m",
+      players: ["Fiorovizk"],
+      title: { pt: "Tribunal Fremennik", en: "Fremennik Trials" },
       subtitle: {
-        pt: "Floors 21-30 complexidade 5",
-        en: "Floors 21-30, complexity 5",
+        pt: "Sete provas — porta de entrada para Lunar Isle",
+        en: "Seven trials — gateway to Lunar Isle",
       },
-      location: { pt: "Daemonheim (Fremennik)", en: "Daemonheim (Fremennik)" },
+      location: { pt: "Rellekka", en: "Rellekka" },
       what: {
-        pt: "Ambos já estão no Floor 20. Próximo: subir até 30 em party de 2. Complexidade 5 destravada em F27. Rotação: Fiorovizk aggro boss, Decxus skiller+DPS backup. Fartarem tokens para Scroll of Rigour e Scroll of Augury (grandes upgrades de DPS).",
-        en: "Both just cleared Floor 20. Next: push to 30 as a duo. Complexity 5 unlocks at F27. Rotation: Fiorovizk boss tanks, Decxus skiller + DPS backup. Farm tokens for Scroll of Rigour and Scroll of Augury (big DPS upgrades).",
+        pt: "Bloqueador de Lunar Diplomacy. Fio cumpre os requisitos (Crafting 65 ✓, Fletching 51 ✓, etc.). As 7 provas variam de tedioso a duro: poesia, prova de força (Strength 64 ajuda), corte de yew tree, navio mecânico, Khazard fight, e o Council Speaker. Cada uma feita marca progresso na cadeia ROTM.",
+        en: "Hard gate for Lunar Diplomacy. Fio meets the floor (Crafting 65 ✓, Fletching 51 ✓, etc.). The 7 trials swing from tedious to tough: poetry, strength duel (Strength 64 helps), yew chop, ship-mechanic, Khazard fight, Council Speaker. Each one ticks the ROTM chain forward.",
       },
       steps: [
         {
-          pt: "Selecionar Floor 21, Medium dungeon, complexidade 4",
-          en: "Select Floor 21, Medium dungeon, complexity 4",
+          pt: "Falar com Brundt no Longhall de Rellekka",
+          en: "Talk to Brundt in Rellekka's Longhall",
         },
         {
-          pt: "Fiorovizk: tank + Necromancy ultimate on bosses",
-          en: "Fiorovizk: tank + Necromancy ultimate on bosses",
+          pt: "Provas 1-4: Sigli, Manni, Thorvald, Olaf (lógica + skill checks)",
+          en: "Trials 1-4: Sigli, Manni, Thorvald, Olaf (logic + skill checks)",
         },
         {
-          pt: "Decxus: coletar GD tier 9, cozinhar peixes, apoio ranged",
-          en: "Decxus: harvest GD tier 9, cook fish, ranged support",
+          pt: "Provas 5-7: Asleif, Swensen, Council Speaker (combate + retórica)",
+          en: "Trials 5-7: Asleif, Swensen, Council Speaker (combat + rhetoric)",
+        },
+        {
+          pt: "Reward: ouro Helm of Neitiznot disponível, acesso a Fremennik Province",
+          en: "Reward: golden Helm of Neitiznot route opens, Fremennik Province access",
         },
       ],
       reward: {
-        xp: "+60k Dungeoneering cada",
-        gp: "15k tokens",
+        xp: "+12.65k em 5 skills à escolha",
+        gp: "~50k em mat sobrando",
         note: {
-          pt: "Unlock: Scroll of Rigour (54 DG)",
-          en: "Unlock: Scroll of Rigour (54 DG)",
+          pt: "🗝️ Destrava Lunar Diplomacy → Dream Mentor → ROTM",
+          en: "🗝️ Unlocks Lunar Diplomacy → Dream Mentor → ROTM",
+        },
+      },
+      xpScore: 3,
+      funScore: 3,
+      wiki: "https://runescape.wiki/w/The_Fremennik_Trials",
+    },
+    {
+      i: 4,
+      roman: "IV",
+      key: "cooking",
+      time: "30m",
+      players: ["Fiorovizk"],
+      title: { pt: "Pirralho da Panela", en: "Sous-Chef Sprint" },
+      subtitle: {
+        pt: "Cooking 38 → 40 (gate de Lunar)",
+        en: "Cooking 38 → 40 (Lunar gate)",
+      },
+      location: { pt: "Cozinha do Castelo de Lumbridge", en: "Lumbridge Castle kitchen" },
+      what: {
+        pt: "Lunar Diplomacy exige 40 Cooking — Fio está em 38. ~5k XP separa do desbloqueio. Pizza-loop em Catherby ou trout/salmon assados em Rogue's Den dá 40 em 30 min. Pequeno gargalo, grande retorno: trava a cadeia ROTM inteira.",
+        en: "Lunar Diplomacy needs 40 Cooking — Fio is at 38. ~5k XP separates him from the unlock. Pizza-loop in Catherby or trout/salmon at Rogue's Den hits 40 in 30 min. Small bottleneck, huge unlock: gates the entire ROTM chain.",
+      },
+      steps: [
+        {
+          pt: "Comprar 200 raw trout + 200 raw salmon no GE",
+          en: "Buy 200 raw trout + 200 raw salmon at the GE",
+        },
+        {
+          pt: "Rogue's Den fire (sem queimas) ou Lumbridge stove",
+          en: "Rogue's Den fire (no burns) or Lumbridge stove",
+        },
+        {
+          pt: "Confirmar 40 Cooking → falar com Lokar Searunner em Rellekka",
+          en: "Confirm 40 Cooking → talk to Lokar Searunner in Rellekka",
+        },
+      ],
+      reward: {
+        xp: "+5k Cooking",
+        gp: "~80k venda dos cozinhados",
+        note: {
+          pt: "🗝️ Lunar Diplomacy desbloqueada (próxima sessão)",
+          en: "🗝️ Lunar Diplomacy unlocked (next session)",
+        },
+      },
+      xpScore: 1,
+      funScore: 2,
+      wiki: "https://runescape.wiki/w/Cooking_training",
+    },
+    {
+      i: 5,
+      roman: "V",
+      key: "dungeoneering",
+      time: "55m",
+      players: ["both"],
+      title: { pt: "Duo em Daemonheim", en: "Daemonheim Duo" },
+      subtitle: {
+        pt: "Fio DG 48 → 54 · Decxus 47 → 52",
+        en: "Fio DG 48 → 54 · Decxus 47 → 52",
+      },
+      location: { pt: "Daemonheim (Fremennik)", en: "Daemonheim (Fremennik)" },
+      what: {
+        pt: "Fio em 48 DG, Decxus em 47 — quase pareados. Alvo: Fio passa de 54 para destravar Scroll of Rigour (Ranged DPS perm). Floors 22-28 em complexidade 4-5, party de 2 com Fio tankando boss e Necromancy ultimate. Decxus farma skill XP secundário no caminho.",
+        en: "Fio at DG 48, Decxus at 47 — almost matched. Target: push Fio past 54 to unlock Scroll of Rigour (perm Ranged DPS). Floors 22-28 at complexity 4-5, two-man party with Fio boss-tanking + Necromancy ultimate. Decxus farms secondary skill XP en route.",
+      },
+      steps: [
+        {
+          pt: "Selecionar Floor 22, Medium dungeon, complexidade 4",
+          en: "Select Floor 22, Medium dungeon, complexity 4",
+        },
+        {
+          pt: "Fio: tank + Necromancy ultimate em bosses, Soul Split ligado",
+          en: "Fio: tank + Necromancy ultimate on bosses, Soul Split on",
+        },
+        {
+          pt: "Decxus: skill stations + apoio Ranged, cozinhar peixes do floor",
+          en: "Decxus: skill stations + Ranged support, cook fish from the floor",
+        },
+      ],
+      reward: {
+        xp: "+45k DG (Fio), +35k DG (Dec)",
+        gp: "12k tokens",
+        note: {
+          pt: "🎯 Scroll of Rigour quando Fio bater 54 DG",
+          en: "🎯 Scroll of Rigour when Fio hits 54 DG",
         },
       },
       xpScore: 5,
@@ -242,30 +247,30 @@ const SESSION_PLAN = {
       players: ["both"],
       title: { pt: "Irmãos das Lápides", en: "The Barrows Brothers" },
       subtitle: {
-        pt: "Morytania — Rush de 3 runs",
-        en: "Morytania — 3-run rush",
+        pt: "Morytania — Rush de 3 runs com Soul Split",
+        en: "Morytania — 3-run rush with Soul Split",
       },
       location: { pt: "Barrows, Morytania", en: "Barrows, Morytania" },
       what: {
-        pt: "Decxus precisa terminar Priest in Peril antes (10 min) — Fiorovizk já tem. Com 43+ Prayer (ambos têm!), Barrows fica viável. Matar os 6 irmãos alternadamente, cada um imune a um estilo. Chance de loot único de Barrows por run. Prayer flicking para economizar pontos.",
-        en: "Decxus needs to finish Priest in Peril first (10 min) — Fiorovizk has it. With 43+ Prayer (both do!), Barrows is doable. Kill the 6 brothers in rotation; each is immune to a style. Chance at unique Barrows loot per run. Prayer flicking saves points.",
+        pt: "Ambos já têm Priest in Peril ✓. Com Soul Split equipado (Fio) e 43+ Prayer dos dois (Fio 95, Decxus 66), Barrows fica MUITO mais barato em supplies — Soul Split sustenta HP enquanto dano. Matar os 6 irmãos alternadamente. Run 1 = Fio carrega, run 2-3 = Decxus aprende rotação.",
+        en: "Both have Priest in Peril ✓. With Soul Split on Fio and 43+ Prayer for both (Fio 95, Dec 66), Barrows costs WAY less in supplies — Soul Split heals on damage. Kill the 6 brothers in rotation. Run 1 = Fio carries, runs 2-3 = Decxus learns the loop.",
       },
       steps: [
-        {
-          pt: "Decxus: Priest in Peril completa (pré-Morytania)",
-          en: "Decxus: finish Priest in Peril (Morytania gate)",
-        },
         {
           pt: "Teleporte Canifis → fast travel para Barrows",
           en: "Canifis teleport → fast travel to Barrows",
         },
         {
-          pt: "Dividir os irmãos: Fio leva Karil+Ahrim, Dec leva Guthan+Torag",
-          en: "Split brothers: Fio takes Karil+Ahrim, Dec takes Guthan+Torag",
+          pt: "Fio: ativar Soul Split, dividir irmãos: Karil+Ahrim",
+          en: "Fio: Soul Split on, take Karil+Ahrim",
+        },
+        {
+          pt: "Decxus: Guthan+Torag (estilo melee), Verac/Dharok por último em equipe",
+          en: "Decxus: Guthan+Torag (melee), Verac/Dharok last together",
         },
       ],
       reward: {
-        xp: "+25k combat XP cada",
+        xp: "+30k combat XP cada",
         gp: "~120k × 3 runs = 360k",
         note: {
           pt: "🎲 RNG: Barrows armor drop (1/400)",
@@ -286,8 +291,8 @@ const SESSION_PLAN = {
       subtitle: { pt: "Plantar, colher, desconectar", en: "Plant, harvest, log off" },
       location: { pt: "Catherby → Ardougne → Canifis", en: "Catherby → Ardougne → Canifis" },
       what: {
-        pt: "Rotação padrão de 5 patches. Fiorovizk (30 Farming): Ranarr-compliant, usar marrentill/tarromin. Decxus (20 Farming): guam/marrentill. XP passivo que cresce enquanto dormem. Setup para amanhã.",
-        en: "Standard 5-patch herb run. Fiorovizk (30 Farming): Ranarr-capable, plant marrentill/tarromin. Decxus (20 Farming): guam/marrentill. Passive XP ticks while you sleep. Setup for tomorrow.",
+        pt: "Rotação de 5 patches. Fio (Farming 32): marrentill/tarromin garantidos, ranarr começa a render. Decxus (Farming ~25): guam/marrentill seguros. Setup que continua rendendo XP passivo nas próximas 24h. Em paralelo, lembrar do Vis Wax e do shop run de runas.",
+        en: "5-patch rotation. Fio (Farming 32): marrentill/tarromin solid, ranarr starts paying. Decxus (Farming ~25): guam/marrentill safe. Setup keeps ticking passive XP for the next 24h. While at it, daily reminder for Vis Wax + rune shop run.",
       },
       steps: [
         {
@@ -319,71 +324,70 @@ const SESSION_PLAN = {
 
   shopping: {
     Fiorovizk: [
-      { pt: "Prayer flask (6) × 10", en: "Prayer flask (6) × 10", gp: "1.1M", icon: "🧪" },
-      { pt: "Sharks × 500", en: "Sharks × 500", gp: "850k", icon: "🐟" },
-      { pt: "Super restore (4) × 20", en: "Super restore (4) × 20", gp: "300k", icon: "💊" },
-      { pt: "Anti-dragon shield (empréstimo)", en: "Anti-dragon shield (borrow)", gp: "200gp", icon: "🛡️" },
+      { pt: "Sharks × 600", en: "Sharks × 600", gp: "1.1M", icon: "🐟" },
+      { pt: "Super restore (4) × 25", en: "Super restore (4) × 25", gp: "375k", icon: "💊" },
+      { pt: "Raw trout/salmon × 400 (Cooking)", en: "Raw trout/salmon × 400 (Cooking)", gp: "120k", icon: "🍳" },
+      { pt: "Yew log bow stock × 60", en: "Yew log + bow stock × 60", gp: "65k", icon: "🏹" },
       { pt: "Ring of Wealth (i)", en: "Ring of Wealth (i)", gp: "150k", icon: "💍" },
-      { pt: "Bones to Peaches tabs × 20", en: "Bones to Peaches tabs × 20", gp: "60k", icon: "🍑" },
+      { pt: "Stamina potion (4) × 10", en: "Stamina potion (4) × 10", gp: "180k", icon: "⚡" },
     ],
     Decxus: [
-      { pt: "Mithril armor set", en: "Mithril armor set", gp: "45k", icon: "⚔️" },
-      { pt: "Swordfish × 200", en: "Swordfish × 200", gp: "80k", icon: "🐟" },
+      { pt: "Rune armor set (lent by Fio)", en: "Rune armor set (lent by Fio)", gp: "0gp", icon: "⚔️" },
+      { pt: "Swordfish × 250", en: "Swordfish × 250", gp: "100k", icon: "🐟" },
       { pt: "Prayer potion (4) × 30", en: "Prayer potion (4) × 30", gp: "270k", icon: "🧪" },
-      { pt: "Anti-dragon shield", en: "Anti-dragon shield", gp: "200gp", icon: "🛡️" },
+      { pt: "Anti-dragon shield", en: "Anti-dragon shield", gp: "12k", icon: "🛡️" },
       { pt: "Rune scimitar", en: "Rune scimitar", gp: "15k", icon: "🗡️" },
-      { pt: "Wizard robes + staff of air", en: "Wizard robes + staff of air", gp: "8k", icon: "🪄" },
+      { pt: "Antifire (4) × 6", en: "Antifire (4) × 6", gp: "20k", icon: "🪄" },
     ],
   },
 
   rewards: {
     Fiorovizk: {
       xp: [
-        { skill: 5, amount: 60000 }, // Prayer
-        { skill: 6, amount: 4000 }, // Magic
-        { skill: 24, amount: 60000 }, // Dungeoneering
-        { skill: 27, amount: 6000 }, // Archaeology (Kudos run)
-        { skill: 4, amount: 15000 }, // Ranged
-        { skill: 28, amount: 20000 }, // Necromancy
+        { skill: 7, amount: 5500 }, // Cooking (Lunar gate)
+        { skill: 24, amount: 45000 }, // Dungeoneering
+        { skill: 5, amount: 12000 }, // Prayer (Senntisten altar warmup)
+        { skill: 28, amount: 25000 }, // Necromancy (Barrows + DG)
+        { skill: 4, amount: 14000 }, // Ranged
         { skill: 19, amount: 4000 }, // Farming
+        { skill: 12, amount: 4000 }, // Crafting (Trials)
       ],
       qp: 3,
       unlocks: [
-        { pt: "125 Museum Kudos", en: "125 Museum Kudos", epic: false },
-        { pt: "Soul Split (Ancient Curse)", en: "Soul Split (Ancient Curse)", epic: true },
-        { pt: "Altar de Senntisten", en: "Senntisten Altar", epic: false },
-        { pt: "Wrath (Ancient Curse)", en: "Wrath (Ancient Curse)", epic: false },
+        { pt: "Fremennik Trials concluídas", en: "Fremennik Trials cleared", epic: true },
+        { pt: "Cooking 40 — gate Lunar OK", en: "Cooking 40 — Lunar gate OK", epic: false },
+        { pt: "Scroll of Rigour (se DG ≥ 54)", en: "Scroll of Rigour (if DG ≥ 54)", epic: false },
       ],
     },
     Decxus: {
       xp: [
-        { skill: 24, amount: 55000 }, // Dungeoneering
-        { skill: 0, amount: 8000 }, // Attack
-        { skill: 2, amount: 8000 }, // Strength
-        { skill: 3, amount: 6000 }, // HP
-        { skill: 15, amount: 12000 }, // Herblore
+        { skill: 24, amount: 35000 }, // Dungeoneering
+        { skill: 0, amount: 9000 }, // Attack (Elvarg + Barrows)
+        { skill: 2, amount: 9000 }, // Strength
+        { skill: 3, amount: 6500 }, // HP
+        { skill: 28, amount: 18000 }, // Necromancy
         { skill: 19, amount: 3500 }, // Farming
       ],
-      qp: 3,
+      qp: 2,
       unlocks: [
         { pt: "Capa de Caça-Dragões", en: "Dragon Slayer cape", epic: true },
-        { pt: "Rune Platebody wearable", en: "Rune Platebody wearable", epic: false },
-        { pt: "Acesso a Morytania", en: "Morytania access", epic: false },
+        { pt: "Rune Platebody equipável", en: "Rune Platebody wearable", epic: false },
+        { pt: "Crandor + Karamja teleport", en: "Crandor + Karamja teleport", epic: false },
       ],
     },
   },
 
   hooks: {
-    pt: "Próximo encontro: Ritual of the Mahjarrat — mas antes Fiorovizk precisa de Lunar Diplomacy + While Guthix Sleeps. Decxus mira Family Crest em seguida.",
-    en: "Next session: Ritual of the Mahjarrat — but first Fiorovizk needs Lunar Diplomacy + While Guthix Sleeps. Decxus targets Family Crest next.",
+    pt: "Próxima sessão: Lunar Diplomacy → Dream Mentor → While Guthix Sleeps (porta final do Ritual dos Mahjarrat). Decxus mira Family Crest + Lost City para destrancar membership de elfos.",
+    en: "Next session: Lunar Diplomacy → Dream Mentor → While Guthix Sleeps (the last gate before Ritual of the Mahjarrat). Decxus targets Family Crest + Lost City for the elf membership unlock.",
   },
 };
 
 // ---- i18n helper ----
 function sT(key) {
   const map = {
-    sessionTitle: { pt: "Sessão de Hoje", en: "Today's Session" },
-    sessionDate: { pt: "21 de Abril, 2026", en: "April 21, 2026" },
+    sessionTitle: { pt: "Próxima Sessão", en: "Next Session" },
+    sessionDate: { pt: "27 de Abril, 2026", en: "April 27, 2026" },
     briefing: { pt: "Briefing", en: "Briefing" },
     phases: { pt: "Fases", en: "Phases" },
     shopping: { pt: "Manifesto de Compras", en: "Shopping Manifest" },
@@ -598,7 +602,7 @@ function sHero(players) {
   return `<section class="ss-hero ss-stagger" style="--si:0">
     <div class="ss-hero-grain"></div>
     <div class="ss-hero-kicker">
-      <span class="ss-kicker-dot"></span>
+      <span class="ss-kicker-mark">⚜</span>
       <span class="ss-kicker-label">${sT("sessionTitle")}</span>
       <span class="ss-kicker-sep">·</span>
       <span class="ss-kicker-date">${sT("sessionDate")}</span>
@@ -652,19 +656,19 @@ function renderSessionSpotlight(players) {
   const lang = typeof currentLang !== "undefined" ? currentLang : "en";
   const code = sL(SESSION_PLAN.codename);
   const tag = sL(SESSION_PLAN.tagline);
-  const liveLabel = lang === "pt" ? "AO VIVO" : "LIVE";
   const cta = lang === "pt" ? "Ver briefing" : "Open briefing";
-  const heroPhase = SESSION_PLAN.phases.find((p) => p.key === "kudos") || SESSION_PLAN.phases[0];
+  const heroPhase = SESSION_PLAN.phases.find((p) => p.key === SESSION_PLAN.heroPhaseKey) || SESSION_PLAN.phases[0];
   const heroTitle = sL(heroPhase.title);
   const heroHook = lang === "pt" ? "Destaque:" : "Highlight:";
+  const kicker = lang === "pt" ? "PRÓXIMA SESSÃO" : "NEXT SESSION";
 
   el.innerHTML = `
     <button class="ss-spotlight" type="button" aria-label="${cta}">
       <div class="ss-spotlight-grain"></div>
       <div class="ss-spotlight-body">
         <div class="ss-spotlight-kicker">
-          <span class="ss-spotlight-dot"></span>
-          <span>${liveLabel}</span>
+          <span class="ss-spotlight-mark">⚜</span>
+          <span>${kicker}</span>
           <span class="ss-spotlight-sep">·</span>
           <span>${sT("sessionDate")}</span>
           <span class="ss-spotlight-sep">·</span>
@@ -751,11 +755,13 @@ function sInjectSpotlightStyles() {
   color: var(--gold);
   margin-bottom: 4px;
 }
-.ss-spotlight-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--gold);
-  box-shadow: 0 0 10px var(--gold);
-  animation: ssPulse 1.8s ease-in-out infinite;
+.ss-spotlight-mark {
+  display: inline-block;
+  font-size: 0.85rem;
+  line-height: 1;
+  color: var(--gold);
+  text-shadow: 0 0 12px rgba(212, 168, 67, 0.6);
+  transform: translateY(-1px);
 }
 .ss-spotlight-sep { color: var(--text-3); }
 .ss-spotlight-title {
@@ -950,13 +956,13 @@ function sInjectStyles() {
   color: var(--gold);
   margin-bottom: 20px;
 }
-.ss-kicker-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--gold);
-  box-shadow: 0 0 12px var(--gold);
-  animation: ssPulse 2s ease-in-out infinite;
+.ss-kicker-mark {
+  display: inline-block;
+  font-size: 0.95rem; line-height: 1;
+  color: var(--gold);
+  text-shadow: 0 0 14px rgba(212, 168, 67, 0.55);
+  transform: translateY(-1px);
 }
-@keyframes ssPulse { 0%,100% { opacity:1; } 50% { opacity:0.45; } }
 .ss-kicker-sep { color: var(--text-3); }
 .ss-kicker-date { color: var(--text-2); letter-spacing: 0.18em; }
 

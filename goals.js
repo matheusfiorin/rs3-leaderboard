@@ -15,6 +15,7 @@ const GOALS = [
     label_en: "Road to Soul Split",
     sub_pt: "Temple at Senntisten — Desbloquear Ancient Curses",
     sub_en: "Temple at Senntisten — Unlock Ancient Curses",
+    capstone: "The Temple at Senntisten",
     skills: [
       // Combat & gathering (from Curse of Arrav chain)
       { id: 16, required: 61, reason: "The Curse of Arrav" },
@@ -64,6 +65,7 @@ const GOALS = [
     label_en: "Road to Prifddinas",
     sub_pt: "Plague's End — Desbloquear a cidade dos elfos",
     sub_en: "Plague's End — Unlock the elf city",
+    capstone: "Plague's End",
     skills: [
       { id: 16, required: 75, reason: "Plague's End" },
       { id: 22, required: 75, reason: "Plague's End" },
@@ -99,6 +101,7 @@ const GOALS = [
     label_en: "The World Wakes",
     sub_pt: "Desbloquear Sunshine & Death's Swiftness",
     sub_en: "Unlock Sunshine & Death's Swiftness",
+    capstone: "The World Wakes",
     skills: [
       { id: 6,  required: 76, reason: "Sunshine" },
       { id: 4,  required: 76, reason: "Death's Swiftness" },
@@ -160,8 +163,13 @@ function goalProgress(goal, player) {
     if (manual[`${m.id}_${player.name}`]) manualDone++;
   }
   const total = goal.skills.length + goal.quests.length + goal.manual.length;
-  const done = skillsDone + questsDone + manualDone;
-  return { skillsDone, questsDone, manualDone, done, total, pct: total ? Math.round((done / total) * 100) : 0 };
+  let done = skillsDone + questsDone + manualDone;
+  // Capstone override: if the capstone quest is completed, the goal is achieved.
+  // Stale skill prereqs (e.g. Magic 62 for a sub-quest already finished) are
+  // backfilled, since clearing the capstone proves they were met at some point.
+  const capstoneDone = goal.capstone && typeof hasQuest === "function" && hasQuest(player, goal.capstone);
+  if (capstoneDone) done = total;
+  return { skillsDone, questsDone, manualDone, done, total, capstoneDone, pct: total ? Math.round((done / total) * 100) : 0 };
 }
 
 // ---- Skill gap computation ----
@@ -359,7 +367,7 @@ function goalCard(goal, player, playerIdx, staggerIdx) {
   const lang = typeof currentLang !== "undefined" ? currentLang : "en";
   const label = lang === "pt" ? goal.label_pt : goal.label_en;
   const sub = lang === "pt" ? goal.sub_pt : goal.sub_en;
-  const allDone = prog.pct >= 100;
+  const allDone = prog.pct >= 100 || prog.capstoneDone;
   const manual = goalsLoadManual();
 
   // Compute gaps for all skills
@@ -381,7 +389,10 @@ function goalCard(goal, player, playerIdx, staggerIdx) {
   let body = "";
 
   if (allDone) {
-    body = `<div class="gl-celebration">${lang === "pt" ? "🎉 Objetivo Completo!" : "🎉 Goal Complete!"}</div>`;
+    const capLabel = prog.capstoneDone && goal.capstone
+      ? `<div class="gl-celebration-sub">${lang === "pt" ? "Capstone:" : "Capstone:"} <strong>${esc(goal.capstone)}</strong> ✓</div>`
+      : "";
+    body = `<div class="gl-celebration">${lang === "pt" ? "🎉 Objetivo Completo!" : "🎉 Goal Complete!"}${capLabel}</div>`;
   } else {
     // ---- MISSING ZONE ----
     const missingLabel = lang === "pt" ? "O que falta" : "What's Missing";
@@ -633,6 +644,8 @@ function goalsInjectStyles() {
 
 /* ---- Celebration ---- */
 .gl-celebration { text-align:center; padding:16px; font-size:0.88rem; font-weight:700; color:var(--green); background:var(--green-bg); border-radius:var(--radius-xs); }
+.gl-celebration-sub { font-size:0.65rem; color:var(--text-2); font-weight:500; margin-top:6px; }
+.gl-celebration-sub strong { color:var(--gold-bright); font-family:var(--font-mono); }
 
 /* ---- Mobile ---- */
 @media(max-width:640px) {
