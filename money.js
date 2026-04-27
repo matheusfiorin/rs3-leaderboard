@@ -468,12 +468,6 @@ const MONEY_METHODS = [
     reqs:{},
     inputs:[], outputs:[], actionsPerHour:0, fixedProfit:1000000, daily:true,
     wiki:"https://runescape.wiki/w/Money_making_guide/Buying_feathers" },
-  { id:"vis_wax", cat:"collecting", intensity:"low", members:true, gp:5000000,
-    name:{pt:"Criar Vis Wax (diário)",en:"Make Vis Wax (daily)"},
-    desc:{pt:"Rune Goldberg Machine. 50 RC requerido.",en:"Rune Goldberg Machine. 50 RC required."},
-    reqs:{20:50},
-    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:5000000, daily:true,
-    wiki:"https://runescape.wiki/w/Money_making_guide/Making_vis_wax" },
   // NEW: Wines of Zamorak (Decxus-friendly: low-mid Magic + Telegrab)
   { id:"steal_wines_zamorak", cat:"collecting", intensity:"moderate", members:true, gp:2200000,
     name:{pt:"Roubar Wines of Zamorak (Telegrab)",en:"Steal Wines of Zamorak (Telegrab)"},
@@ -671,12 +665,6 @@ const POWER_LOOPS = [
     name:{ pt:"Caçar Red Chins + Curtir Red D'hide", en:"Hunt Red Chins + Tan Red D'hide" },
     desc:{ pt:"Hunter ativo + flip passivo de couros para variar a tarefa.", en:"Active Hunter + passive hide flip for task variety." },
     members:true, methodIds:["hunt_red_chins","tan_red_dhide"], synergyMult:1.08,
-  },
-  {
-    id:"runes_combo",
-    name:{ pt:"Vis Wax + Nature Abyss", en:"Vis Wax + Nature Abyss" },
-    desc:{ pt:"Pegue Vis Wax todo dia, depois Nature Abyss em sequência.", en:"Daily Vis Wax then Nature Abyss runs in flow." },
-    members:true, methodIds:["vis_wax","craft_nature_abyss"], synergyMult:1.05,
   },
 ];
 

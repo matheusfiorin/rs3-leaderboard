@@ -104,9 +104,6 @@ function nsDailyMoves(player) {
   const lvl = (id) => (player.skills[id] || {}).level || 1;
   const has = (q) => typeof hasQuest === "function" && hasQuest(player, q);
 
-  if (lvl(20) >= 50) {
-    out.push({ ic: "🧪", pt: "Vis Wax (Rune Goldberg)", en: "Vis Wax (Rune Goldberg)", min: 2, gp: "5M/dia" });
-  }
   if (lvl(19) >= 12) {
     out.push({ ic: "🌿", pt: "Herb run (5 patches)", en: "Herb run (5 patches)", min: 12, gp: "150-400k" });
   }
