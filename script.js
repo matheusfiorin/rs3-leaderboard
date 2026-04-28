@@ -447,7 +447,11 @@ const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
 
 // ---- Fetch ----
-// ---- Fetch helpers with proper timeout cleanup ----
+// On GitHub Pages, direct fetch to runescape.com is always CORS-blocked, so
+// we skip it entirely in the browser and race multiple CORS proxies. Local
+// dev (file:// or localhost) where direct fetch works falls back gracefully.
+const IS_LOCAL = typeof location !== "undefined" && /^(localhost|127\.|file)/.test(location.hostname || location.protocol);
+
 function fetchWithTimeout(url, opts, ms) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), ms || 10000);
@@ -456,29 +460,54 @@ function fetchWithTimeout(url, opts, ms) {
     .catch(e => { clearTimeout(timer); throw e; });
 }
 
-async function directFetch(url) {
-  const r = await fetchWithTimeout(url, {}, 10000);
-  if (!r.ok) throw new Error("fetch_fail");
-  return r.json();
-}
+// CORS proxy adapters. Each takes the original URL and returns a promise of
+// the parsed JSON. We race them in parallel so the first success wins —
+// this masks transient slowness/outages on any single provider.
+const PROXIES = [
+  // CodeTabs — body passthrough, currently the most reliable.
+  async (url, ms) => {
+    const r = await fetchWithTimeout(`https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(url)}`, {}, ms);
+    if (!r.ok) throw new Error("codetabs_fail");
+    return r.json();
+  },
+  // AllOrigins — wraps response in {contents: stringJSON}. Sometimes slow / rate-limited.
+  async (url, ms) => {
+    const r = await fetchWithTimeout(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, {}, ms);
+    if (!r.ok) throw new Error("allorigins_fail");
+    const w = await r.json();
+    if (!w.contents) throw new Error("allorigins_empty");
+    return JSON.parse(w.contents);
+  },
+];
 
-async function proxyFetch(url) {
-  const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-  const r = await fetchWithTimeout(proxy, {}, 8000);
-  if (!r.ok) throw new Error("proxy_fail");
-  const wrapper = await r.json();
-  if (!wrapper.contents) throw new Error("proxy_empty");
-  return JSON.parse(wrapper.contents);
+// Race all proxies in parallel, take first success.
+function raceProxies(url, ms) {
+  return new Promise((resolve, reject) => {
+    let pending = PROXIES.length, done = false;
+    for (const fn of PROXIES) {
+      fn(url, ms).then(v => {
+        if (!done) { done = true; resolve(v); }
+      }, () => {
+        pending--;
+        if (pending === 0 && !done) reject(new Error("all_proxies_failed"));
+      });
+    }
+  });
 }
 
 async function liveFetch(url) {
-  // Try direct first (works locally), fall back to proxy (works on GitHub Pages)
-  try { return await directFetch(url); }
-  catch { return await proxyFetch(url); }
+  if (IS_LOCAL) {
+    // Localhost: direct works, skip proxy round-trip.
+    try {
+      const r = await fetchWithTimeout(url, {}, 5000);
+      if (r.ok) return await r.json();
+    } catch (_) { /* fall through to proxies */ }
+  }
+  return raceProxies(url, 7000);
 }
 
 async function cacheFetch(path) {
-  const r = await fetchWithTimeout(path, {}, 6000);
+  const r = await fetchWithTimeout(path, {}, 3000);
   if (!r.ok) throw new Error("cache_miss");
   return r.json();
 }
@@ -1497,96 +1526,96 @@ function renderAll(results) {
   $("#main-content").classList.add("visible");
 }
 
-// ---- Per-player resilient fetch (cache → live, per player) ----
-async function fetchPlayerResilient(name) {
-  // Tier 1: Memory cache (instant, no network)
-  const mem = memCacheGet(name);
-  if (mem) return { data: mem, src: "memory" };
+// ---- Main: cache-first load. Live is a quiet background enhancement. ----
+//
+// Flow:
+//   1. Render cache instantly (preloaded by <link rel=preload>) - usually <300ms.
+//   2. If cache is fresh enough (cron runs every 30m, so <25m = trust it) -> done.
+//   3. Otherwise quietly try live in parallel (both players, racing 3 proxies).
+//      If it succeeds, silently update; if it fails, the cache is still there.
+//
+// User clicking the refresh button passes forceLive=true to bypass the gate.
+const CACHE_FRESH_MS = 25 * 60 * 1000;
 
-  // Tier 2: Static file cache (GitHub Actions JSON)
-  let cached = null;
-  try { cached = await fetchCached(name); } catch (_) {}
-  // Don't return cached yet — try live in parallel but show cached immediately
-
-  // Tier 3: Live API (direct → allorigins proxy fallback)
-  let live = null;
-  try { live = await fetchLive(name); } catch (_) {}
-
-  if (live) return { data: live, src: "live" };
-  if (cached) return { data: cached, src: "cached" };
-  return { data: null, src: "fail" };
-}
-
-// ---- Main: resilient load with per-player fallback ----
-async function load() {
+async function load(forceLive) {
   const btn = $("#btn-refresh");
   btn.classList.add("spinning");
-  setSource("loading", t("refreshing"));
   hideError();
 
-  let cacheAge = null;
-  try {
-    const meta = await cacheFetch(CACHE.meta);
-    cacheAge = Math.round((Date.now() - new Date(meta.timestamp)) / 60000);
-  } catch (_) {}
+  // ---- Step 1: read meta + every cache file in parallel
+  const [metaR, ...cacheRs] = await Promise.allSettled([
+    cacheFetch(CACHE.meta),
+    ...PLAYERS.flatMap(n => [cacheFetch(CACHE.profile(n)), cacheFetch(CACHE.hiscores(n)), cacheFetch(CACHE.quests(n))]),
+  ]);
 
-  // Step 1: Show cached data fast
-  let cachedResults = null;
-  setSource("loading", currentLang === "pt" ? "Carregando cache..." : "Loading cache...");
-  try {
-    const settled = await Promise.allSettled(PLAYERS.map(fetchCached));
-    cachedResults = settled.map(r => r.status === "fulfilled" ? r.value : null);
-    if (cachedResults.some(r => r !== null)) {
-      cachedResults = cachedResults.map((r, i) => r || memCacheGet(PLAYERS[i]));
-      if (cachedResults.every(r => r !== null)) {
-        renderAll(cachedResults);
-        memCacheSet(cachedResults);
-      }
-      const ageStr = cacheAge != null ? ` (${cacheAge}${t("agoMin")})` : "";
-      setSource("loading", `${t("cached")}${ageStr} \u2014 ${t("updatingLive")}`);
-      if (cacheAge > 120) showError(`\u26A0\uFE0F ${t("errOutdated").replace("{n}", cacheAge)}`);
-    }
-  } catch (_) {}
+  const meta = metaR.status === "fulfilled" ? metaR.value : null;
+  const cacheAgeMs = meta ? Date.now() - new Date(meta.timestamp).getTime() : null;
+  const cacheAgeMin = cacheAgeMs != null ? Math.max(0, Math.round(cacheAgeMs / 60000)) : null;
 
-  // Step 2: Try live API per-player with granular status
-  try {
-    const liveResults = [];
-    for (let i = 0; i < PLAYERS.length; i++) {
-      const name = PLAYERS[i];
-      setSource("loading", `${currentLang === "pt" ? "Buscando" : "Fetching"} ${name}...`);
-      let result = null;
-      try { result = await fetchLive(name); } catch (_) {}
-      if (result) {
-        liveResults.push(result);
-      } else if (cachedResults && cachedResults[i]) {
-        liveResults.push(cachedResults[i]);
-      } else {
-        const mem = memCacheGet(name);
-        liveResults.push(mem);
-      }
-    }
+  const cachedResults = PLAYERS.map((_, i) => {
+    const off = i * 3;
+    const p = cacheRs[off].status === "fulfilled" ? cacheRs[off].value : null;
+    const h = cacheRs[off + 1].status === "fulfilled" ? cacheRs[off + 1].value : null;
+    const q = cacheRs[off + 2].status === "fulfilled" ? cacheRs[off + 2].value : null;
+    if (!p || p.error) return memCacheGet(PLAYERS[i]);
+    try { return parse(p, h, q); } catch (_) { return memCacheGet(PLAYERS[i]); }
+  });
 
-    if (liveResults.every(r => r !== null)) {
-      renderAll(liveResults);
-      memCacheSet(liveResults);
-      // Live fetch succeeded for both players — the data is verified current,
-      // regardless of whether totalXp differs from the file cache.
+  const haveAllCache = cachedResults.every(r => r !== null);
+  if (haveAllCache) {
+    renderAll(cachedResults);
+    memCacheSet(cachedResults);
+    const ageStr = cacheAgeMin != null ? ` (${cacheAgeMin}${t("agoMin")})` : "";
+    setSource("", `${t("cached")}${ageStr}`);
+    $("#last-updated").textContent = cacheAgeMin != null
+      ? `${t("cached")} ${cacheAgeMin}${t("agoMin")}`
+      : t("cachedData");
+  }
+
+  // ---- Step 2: smart-skip live when cache is cron-fresh
+  const cacheIsFresh = cacheAgeMs != null && cacheAgeMs < CACHE_FRESH_MS;
+  if (haveAllCache && cacheIsFresh && !forceLive) {
+    btn.classList.remove("spinning");
+    return;
+  }
+
+  // ---- Step 3: try live in parallel (both players, racing proxies)
+  if (haveAllCache) {
+    setSource("loading", t("updatingLive"));
+  } else {
+    setSource("loading", t("refreshing"));
+  }
+
+  const liveSettled = await Promise.allSettled(PLAYERS.map(fetchLive));
+  const liveResults = liveSettled.map((r, i) =>
+    r.status === "fulfilled" ? r.value : (cachedResults[i] || memCacheGet(PLAYERS[i]))
+  );
+
+  if (liveResults.every(r => r !== null)) {
+    const anyFromLive = liveSettled.some(r => r.status === "fulfilled");
+    renderAll(liveResults);
+    memCacheSet(liveResults);
+    if (anyFromLive) {
       setSource("", t("live"));
       hideError();
       const now = new Date().toLocaleTimeString(currentLang === "pt" ? "pt-BR" : "en-US", { hour: "2-digit", minute: "2-digit" });
       $("#last-updated").textContent = `${t("updated")} ${now}`;
-      btn.classList.remove("spinning");
-      return;
+    } else if (cacheAgeMin != null) {
+      const ageStr = ` (${cacheAgeMin}${t("agoMin")})`;
+      setSource("", `${t("cached")}${ageStr}`);
+      if (cacheAgeMin > 120) showError(`⚠️ ${t("errOutdated").replace("{n}", cacheAgeMin)}`);
     }
-  } catch (_) {}
+    btn.classList.remove("spinning");
+    return;
+  }
 
-  // Step 3: Finalize with whatever we have
-  if (cachedResults && cachedResults.every(r => r !== null)) {
-    const ageStr = cacheAge != null ? ` (${cacheAge}${t("agoMin")})` : "";
+  // ---- Step 4: nothing worked - show what we have
+  if (haveAllCache) {
+    const ageStr = cacheAgeMin != null ? ` (${cacheAgeMin}${t("agoMin")})` : "";
     setSource("", `${t("cached")}${ageStr}`);
-    $("#last-updated").textContent = cacheAge != null
-      ? `${t("cached")} ${cacheAge}${t("agoMin")}`
-      : t("cachedData");
+    if (cacheAgeMin != null && cacheAgeMin > 120) {
+      showError(`⚠️ ${t("errOutdated").replace("{n}", cacheAgeMin)}`);
+    }
   } else {
     setSource("error", t("offline"));
     showError(t("errFailed"));
@@ -1600,11 +1629,11 @@ async function load() {
 
 // ---- Scheduled load with guard ----
 let _loading = false;
-async function scheduledLoad() {
+async function scheduledLoad(forceLive) {
   if (_loading) return;
   _loading = true;
   try {
-    await load();
+    await load(forceLive);
   } finally {
     _loading = false;
   }
@@ -1637,7 +1666,7 @@ document.addEventListener("DOMContentLoaded", () => {
   ]).then(() => { scheduledLoad(); loadVisitorStats(); });
   $("#btn-refresh").addEventListener("click", () => {
     clearTimeout(timer);
-    scheduledLoad();
+    scheduledLoad(true); // force-live: bypass the cache-fresh skip
   });
   $("#btn-dismiss-error").addEventListener("click", hideError);
   $("#lang-toggle").addEventListener("click", () => {
