@@ -538,17 +538,24 @@ function parse(profile, hiscores, quests) {
   };
 }
 async function fetchLive(n) {
-  const [p, h, q] = await Promise.allSettled([
+  // Fetch all three live AND read cache in parallel; fall back to cached
+  // pieces when individual live calls fail (e.g. quests endpoint timing
+  // out via proxy while profile succeeds).
+  const [p, h, q, cp, ch, cq] = await Promise.allSettled([
     liveFetch(API.profile(n)),
     liveFetch(API.hiscores(n)),
     liveFetch(API.quests(n)),
+    cacheFetch(CACHE.profile(n)),
+    cacheFetch(CACHE.hiscores(n)),
+    cacheFetch(CACHE.quests(n)),
   ]);
+  // Profile is the load-bearing piece. If live profile fails, signal failure
+  // so the outer flow can try cache-only.
   if (p.status === "rejected") throw new Error("live_fail");
-  return parse(
-    p.value,
-    h.status === "fulfilled" ? h.value : null,
-    q.status === "fulfilled" ? q.value : null,
-  );
+  const profile = p.value;
+  const hiscores = h.status === "fulfilled" ? h.value : (ch.status === "fulfilled" ? ch.value : null);
+  const quests   = q.status === "fulfilled" ? q.value   : (cq.status === "fulfilled" ? cq.value : null);
+  return parse(profile, hiscores, quests);
 }
 async function fetchCached(n) {
   const [p, h, q] = await Promise.allSettled([
