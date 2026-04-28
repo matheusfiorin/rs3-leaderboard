@@ -1562,19 +1562,12 @@ async function load() {
     if (liveResults.every(r => r !== null)) {
       renderAll(liveResults);
       memCacheSet(liveResults);
-      const anyLive = liveResults.some((r, i) => {
-        const cached = cachedResults && cachedResults[i];
-        return !cached || r.totalXp !== cached.totalXp;
-      });
-      if (anyLive) {
-        setSource("", t("live"));
-        hideError();
-        const now = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-        $("#last-updated").textContent = `${t("updated")} ${now}`;
-      } else {
-        const ageStr = cacheAge != null ? ` (${cacheAge}${t("agoMin")})` : "";
-        setSource("", `${t("cached")}${ageStr}`);
-      }
+      // Live fetch succeeded for both players — the data is verified current,
+      // regardless of whether totalXp differs from the file cache.
+      setSource("", t("live"));
+      hideError();
+      const now = new Date().toLocaleTimeString(currentLang === "pt" ? "pt-BR" : "en-US", { hour: "2-digit", minute: "2-digit" });
+      $("#last-updated").textContent = `${t("updated")} ${now}`;
       btn.classList.remove("spinning");
       return;
     }

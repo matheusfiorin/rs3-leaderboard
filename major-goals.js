@@ -104,7 +104,8 @@ function mgCard(cfg, players) {
     ? mgT("mgComplete")
     : `${totalDone}/${totalAll} ${mgT("mgItems")}`;
 
-  return `<button class="mg-card mg-card-${cfg.theme}" data-mg-tab="${cfg.tab}" aria-label="${cfg.title}">
+  const targetAttr = cfg.targetGoalId ? ` data-mg-goal-id="${cfg.targetGoalId}"` : "";
+  return `<button class="mg-card mg-card-${cfg.theme}" data-mg-tab="${cfg.tab}"${targetAttr} aria-label="${cfg.title}">
     <div class="mg-card-glow"></div>
     <div class="mg-card-body">
       <div class="mg-card-left">
@@ -201,28 +202,19 @@ function renderMajorGoals(players) {
 
   if (typeof GOALS !== "undefined") {
     for (const g of GOALS) {
-      const theme = themeMap[g.id] || "gold";
+      const theme = themeMap[g.id] || (g.color === "teal" ? "teal" : g.color === "purple" ? "purple" : "gold");
       const lang = typeof currentLang !== "undefined" ? currentLang : "en";
       goals.push({
         title: lang === "pt" ? g.label_pt : g.label_en,
         icon: g.icon || "\u2694\uFE0F",
         theme,
         tab: "goals",
+        targetGoalId: g.id,
         ringColor: ringMap[theme] || "var(--gold-bright)",
         count: mgGoalCount(g.id),
       });
     }
   }
-
-  // ROTM (defined locally since it's not in goals.js)
-  goals.push({
-    title: mgT("mgRitualTitle"),
-    icon: "\uD83D\uDD25",
-    theme: "purple",
-    tab: "goals",
-    ringColor: "#a78bfa",
-    count: mgRotmCount,
-  });
 
   el.innerHTML = `
     <div class="section-head" style="margin-top:24px">
@@ -231,7 +223,22 @@ function renderMajorGoals(players) {
     <div class="mg-grid">${goals.map((g) => mgCard(g, players)).join("")}</div>`;
 
   el.querySelectorAll(".mg-card[data-mg-tab]").forEach((btn) => {
-    btn.addEventListener("click", () => mgGoTab(btn.dataset.mgTab));
+    btn.addEventListener("click", () => {
+      const goalId = btn.dataset.mgGoalId;
+      mgGoTab(btn.dataset.mgTab);
+      if (goalId) {
+        // Scroll the goals page to the targeted goal card after it renders
+        setTimeout(() => {
+          const target = document.querySelector(`.gl-card[data-goal-id="${goalId}"]`);
+          if (target) {
+            target.setAttribute("open", "");
+            target.scrollIntoView({ behavior: "smooth", block: "start" });
+            target.classList.add("gl-card-flash");
+            setTimeout(() => target.classList.remove("gl-card-flash"), 1800);
+          }
+        }, 250);
+      }
+    });
   });
 }
 

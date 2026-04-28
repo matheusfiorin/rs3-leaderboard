@@ -138,7 +138,107 @@ const GOALS = [
       { id: "inv_gizmo", label_pt: "Primeiro gizmo com perk", label_en: "First gizmo with a perk" },
     ],
   },
+  {
+    id: "rotm",
+    icon: `<img src="https://runescape.wiki/images/Mahjarrat_Memories_emote_icon.png" width="28" height="28" alt="Mahjarrat" loading="lazy" onerror="this.outerHTML='🔥'">`,
+    color: "purple",
+    label_pt: "Ritual dos Mahjarrat",
+    label_en: "Ritual of the Mahjarrat",
+    sub_pt: "Grandmaster — capstone do arco zariyte/Zaros",
+    sub_en: "Grandmaster — capstone of the Zaros/Mahjarrat arc",
+    capstone: "Ritual of the Mahjarrat",
+    // Chain map for the dedicated guide visualization
+    phases: [
+      {
+        id: "p1",
+        title_pt: "Cadeia do Senntisten",
+        title_en: "Senntisten Chain",
+        quests: [
+          "Death Plateau", "Priest in Peril", "Stolen Hearts",
+          "Diamond in the Rough", "Gertrude's Cat", "Icthlarin's Little Helper",
+          "The Golem", "The Dig Site", "Troll Stronghold", "Temple of Ikov",
+          "What Lies Below", "Creature of Fenkenstrain", "The Restless Ghost",
+          "Garden of Tranquillity", "Missing My Mummy", "Family Crest",
+          "The Tale of the Muspah", "Defender of Varrock",
+          "Desert Treasure", "Devious Minds", "The Curse of Arrav",
+          "The Temple at Senntisten",
+        ],
+      },
+      {
+        id: "p2",
+        title_pt: "Cadeia Lunar / WGS",
+        title_en: "Lunar / WGS Chain",
+        quests: [
+          "Jungle Potion", "Shilo Village", "Lost City", "The Fremennik Trials",
+          "Lunar Diplomacy", "Dream Mentor",
+          "Dragon Slayer", "Heroes' Quest", "Legends' Quest",
+          "Tree Gnome Village", "The Grand Tree", "Waterfall Quest",
+          "The Eyes of Glouphrie", "The Path of Glouphrie",
+          "Tears of Guthix", "Enter the Abyss",
+          "Wanted!", "The Hunt for Surok",
+          "While Guthix Sleeps",
+        ],
+      },
+      {
+        id: "p3",
+        title_pt: "Pré-Ritual",
+        title_en: "Pre-Ritual",
+        quests: [
+          "Hazeel Cult", "Enakhra's Lament",
+          "Sea Slug", "The Slug Menace",
+          "A Fairy Tale I - Growing Pains", "A Fairy Tale II - Cure a Queen",
+          "Pirate's Treasure", "Rum Deal", "Cabin Fever",
+          "A Tail of Two Cats", "Fight Arena",
+        ],
+      },
+      {
+        id: "p4",
+        title_pt: "O Ritual",
+        title_en: "The Ritual",
+        quests: ["Ritual of the Mahjarrat"],
+      },
+    ],
+    // Aggregate skills (highest required across the chain)
+    skills: [
+      { id: 16, required: 77, reason: "ROTM" },
+      { id: 12, required: 76, reason: "ROTM" },
+      { id: 14, required: 76, reason: "ROTM" },
+      { id: 6,  required: 75, reason: "While Guthix Sleeps" },
+      { id: 19, required: 65, reason: "While Guthix Sleeps" },
+      { id: 15, required: 65, reason: "While Guthix Sleeps" },
+      { id: 17, required: 66, reason: "Curse of Arrav" },
+      { id: 4,  required: 64, reason: "Curse of Arrav" },
+      { id: 2,  required: 64, reason: "Curse of Arrav" },
+      { id: 21, required: 55, reason: "While Guthix Sleeps" },
+      { id: 13, required: 65, reason: "Devious Minds" },
+      { id: 5,  required: 50, reason: "Temple at Senntisten" },
+      { id: 20, required: 50, reason: "Devious Minds" },
+      { id: 9,  required: 50, reason: "Devious Minds" },
+      { id: 11, required: 50, reason: "Desert Treasure" },
+      { id: 23, required: 41, reason: "Curse of Arrav" },
+      { id: 1,  required: 40, reason: "While Guthix Sleeps" },
+      { id: 22, required: 35, reason: "Missing My Mummy" },
+      { id: 7,  required: 35, reason: "Missing My Mummy" },
+    ],
+    // Will be flattened from phases below
+    quests: [],
+    manual: [
+      { id: "rotm_combat", label_pt: "Combate 100+ recomendado", label_en: "Combat 100+ recommended" },
+      { id: "rotm_supplies", label_pt: "Inventário pronto: brews, restores, food T70+", label_en: "Loadout: brews, restores, T70+ food" },
+      { id: "rotm_aviantese", label_pt: "Aviantese e Glacors estudados", label_en: "Aviantese & Glacors studied" },
+    ],
+  },
 ];
+
+// Flatten ROTM phases into the .quests array for goalProgress() compatibility
+(function () {
+  const rotm = GOALS.find(g => g.id === "rotm");
+  if (rotm && rotm.phases) {
+    const all = [];
+    for (const p of rotm.phases) for (const q of p.quests) if (!all.includes(q)) all.push(q);
+    rotm.quests = all;
+  }
+})();
 
 // ---- Storage ----
 const GOALS_STORAGE = "rs3lb-goals";
@@ -361,6 +461,53 @@ function goalManualRow(player, item, isDone) {
   </div>`;
 }
 
+// ---- Phase Tree (ROTM-style guide) ----
+function goalPhaseTree(goal, player) {
+  if (!goal.phases || !goal.phases.length) return "";
+  const lang = typeof currentLang !== "undefined" ? currentLang : "en";
+  const isDone = (q) => typeof hasQuest === "function" && hasQuest(player, q);
+
+  let nextPickedGlobal = false;
+  let html = `<div class="gl-phase-tree">`;
+  goal.phases.forEach((phase, pi) => {
+    const title = lang === "pt" ? phase.title_pt : phase.title_en;
+    const phaseDone = phase.quests.filter(isDone).length;
+    const phaseTotal = phase.quests.length;
+    const phasePct = phaseTotal ? Math.round(phaseDone / phaseTotal * 100) : 0;
+    const phaseClass = phaseDone === phaseTotal ? "gl-phase-done" : phaseDone === 0 ? "gl-phase-pending" : "gl-phase-partial";
+
+    html += `<div class="gl-phase ${phaseClass}">
+      <div class="gl-phase-rail">
+        <div class="gl-phase-marker">${pi + 1}</div>
+        <div class="gl-phase-line"></div>
+      </div>
+      <div class="gl-phase-content">
+        <div class="gl-phase-head">
+          <span class="gl-phase-title">${typeof esc === "function" ? esc(title) : title}</span>
+          <span class="gl-phase-stat">${phaseDone}/${phaseTotal}</span>
+          <span class="gl-phase-pct">${phasePct}%</span>
+        </div>
+        <div class="gl-phase-bar"><div class="gl-phase-bar-fill" style="width:${phasePct}%"></div></div>
+        <div class="gl-phase-quests">`;
+
+    for (const q of phase.quests) {
+      const done = isDone(q);
+      const isNext = !done && !nextPickedGlobal;
+      if (isNext) nextPickedGlobal = true;
+      const cls = done ? "gl-pq-done" : isNext ? "gl-pq-next" : "gl-pq-todo";
+      const wikiUrl = `https://runescape.wiki/w/${encodeURIComponent(q.replace(/ /g, "_"))}`;
+      const icon = done ? "✓" : isNext ? "→" : "○";
+      html += `<a href="${wikiUrl}" target="_blank" rel="noopener" class="gl-pq ${cls}">
+        <span class="gl-pq-icon">${icon}</span>
+        <span class="gl-pq-name">${typeof esc === "function" ? esc(q) : q}</span>
+      </a>`;
+    }
+    html += `</div></div></div>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
 // ---- Goal Card (restructured) ----
 function goalCard(goal, player, playerIdx, staggerIdx) {
   const prog = goalProgress(goal, player);
@@ -393,6 +540,34 @@ function goalCard(goal, player, playerIdx, staggerIdx) {
       ? `<div class="gl-celebration-sub">${lang === "pt" ? "Capstone:" : "Capstone:"} <strong>${esc(goal.capstone)}</strong> ✓</div>`
       : "";
     body = `<div class="gl-celebration">${lang === "pt" ? "🎉 Objetivo Completo!" : "🎉 Goal Complete!"}${capLabel}</div>`;
+  } else if (goal.phases && goal.phases.length) {
+    // ROTM-style phase tree guide
+    const missingLabel = lang === "pt" ? "O Caminho" : "The Path";
+    body += `<div class="gl-missing">`;
+    body += `<div class="gl-missing-header">${missingLabel} <span class="gl-missing-count">${totalMissing}</span></div>`;
+    body += goalPhaseTree(goal, player);
+    if (missingSkills.length) {
+      const skillLabel = lang === "pt" ? "Habilidades para treinar" : "Skills to train";
+      body += `<div class="gl-section gl-section-skills"><div class="gl-section-title">${skillLabel} (${missingSkills.length})</div>`;
+      body += missingSkills.map(g => goalSkillRowMissing(player, g.sk)).join("");
+      body += `</div>`;
+    }
+    if (missingManual.length) {
+      const manLabel = lang === "pt" ? "Itens pendentes" : "Pending items";
+      body += `<div class="gl-section"><div class="gl-section-title">${manLabel} (${missingManual.length})</div>`;
+      body += missingManual.map(m => goalManualRow(player, m, false)).join("");
+      body += `</div>`;
+    }
+    body += `</div>`;
+    if (totalCompleted > 0) {
+      const doneLabel = lang === "pt" ? "skills/manual já feitos" : "skills/manual already done";
+      body += `<details class="gl-done-zone">
+        <summary class="gl-done-summary"><span class="gl-done-check-icon">✓</span> ${doneSkills.length + doneManual.length} ${doneLabel}</summary>
+        <div class="gl-done-body">`;
+      body += doneSkills.map(g => goalSkillRowDone(player, g.sk)).join("");
+      body += doneManual.map(m => goalManualRow(player, m, true)).join("");
+      body += `</div></details>`;
+    }
   } else {
     // ---- MISSING ZONE ----
     const missingLabel = lang === "pt" ? "O que falta" : "What's Missing";
@@ -437,7 +612,7 @@ function goalCard(goal, player, playerIdx, staggerIdx) {
     }
   }
 
-  return `<details class="gl-card gl-card-${goal.color} gl-stagger" style="--si:${staggerIdx}" ${allDone ? "" : "open"}>
+  return `<details class="gl-card gl-card-${goal.color} gl-stagger" style="--si:${staggerIdx}" data-goal-id="${goal.id}" ${allDone ? "" : "open"}>
     <summary class="gl-card-header">
       <span class="gl-card-icon">${goal.icon}</span>
       <div class="gl-card-info">
@@ -644,8 +819,180 @@ function goalsInjectStyles() {
 
 /* ---- Celebration ---- */
 .gl-celebration { text-align:center; padding:16px; font-size:0.88rem; font-weight:700; color:var(--green); background:var(--green-bg); border-radius:var(--radius-xs); }
+
+/* ---- Card flash (deep-link from dashboard) ---- */
+.gl-card-flash {
+  animation: glCardFlash 1.8s cubic-bezier(0.22,1,0.36,1) 1;
+}
+@keyframes glCardFlash {
+  0% { box-shadow: 0 0 0 2px transparent; }
+  20% { box-shadow: 0 0 0 2px var(--gold-bright), 0 0 30px rgba(240,199,94,0.4); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.gl-card-purple.gl-card-flash {
+  animation-name: glCardFlashPurple;
+}
+@keyframes glCardFlashPurple {
+  0% { box-shadow: 0 0 0 2px transparent; }
+  20% { box-shadow: 0 0 0 2px var(--purple), 0 0 30px rgba(167,139,250,0.45); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
 .gl-celebration-sub { font-size:0.65rem; color:var(--text-2); font-weight:500; margin-top:6px; }
 .gl-celebration-sub strong { color:var(--gold-bright); font-family:var(--font-mono); }
+
+/* ---- Phase Tree (ROTM guide) ---- */
+.gl-phase-tree {
+  display:flex; flex-direction:column;
+  gap: 0;
+  padding: 4px 0 8px;
+}
+.gl-phase {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: 12px;
+  padding: 8px 0;
+  position: relative;
+}
+.gl-phase-rail {
+  display: flex; flex-direction: column; align-items: center;
+  position: relative;
+}
+.gl-phase-marker {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.75rem;
+  color: var(--text-3);
+  flex-shrink: 0;
+  z-index: 1;
+}
+.gl-phase-done .gl-phase-marker {
+  background: var(--green-bg);
+  border-color: var(--green);
+  color: var(--green);
+}
+.gl-phase-partial .gl-phase-marker {
+  background: rgba(167,139,250,0.10);
+  border-color: rgba(167,139,250,0.45);
+  color: var(--purple);
+  box-shadow: 0 0 12px rgba(167,139,250,0.20);
+}
+.gl-phase-line {
+  flex: 1;
+  width: 2px;
+  background: linear-gradient(180deg, var(--border) 0%, transparent 100%);
+  margin-top: 4px;
+}
+.gl-phase:last-child .gl-phase-line { display: none; }
+
+.gl-phase-content {
+  padding-bottom: 8px;
+}
+.gl-phase-head {
+  display: flex; align-items: baseline; gap: 8px;
+  margin-bottom: 6px;
+}
+.gl-phase-title {
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  flex: 1;
+}
+.gl-phase-done .gl-phase-title { color: var(--green); }
+.gl-phase-partial .gl-phase-title { color: var(--purple); }
+.gl-phase-stat {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--text-2);
+}
+.gl-phase-pct {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: var(--text-3);
+  letter-spacing: 0.02em;
+}
+.gl-phase-done .gl-phase-pct { color: var(--green); }
+.gl-phase-partial .gl-phase-pct { color: var(--purple); }
+
+.gl-phase-bar {
+  height: 3px;
+  background: rgba(0,0,0,0.4);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.gl-phase-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--purple-dim), var(--purple));
+  border-radius: 2px;
+  transition: width 0.7s cubic-bezier(0.22,1,0.36,1);
+}
+.gl-phase-done .gl-phase-bar-fill {
+  background: linear-gradient(90deg, var(--green), var(--green));
+}
+
+.gl-phase-quests {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 4px 8px;
+}
+.gl-pq {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 8px;
+  border-radius: var(--radius-xs);
+  font-size: 0.7rem;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+}
+.gl-pq:hover { border-color: var(--border-hover); background: var(--bg-raised); }
+.gl-pq-icon {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  width: 14px; text-align: center;
+  flex-shrink: 0;
+}
+.gl-pq-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gl-pq-done {
+  color: var(--text-3);
+  opacity: 0.6;
+}
+.gl-pq-done .gl-pq-icon { color: var(--green); opacity: 1; }
+.gl-pq-todo {
+  color: var(--text-2);
+}
+.gl-pq-todo .gl-pq-icon { color: var(--text-3); }
+.gl-pq-next {
+  background: rgba(167,139,250,0.07);
+  border-color: rgba(167,139,250,0.30);
+  color: var(--purple);
+  font-weight: 600;
+  position: relative;
+}
+.gl-pq-next .gl-pq-icon {
+  color: var(--purple);
+  font-weight: 800;
+  animation: glPqPulse 1.4s ease-in-out infinite;
+}
+@keyframes glPqPulse {
+  0%,100% { transform: translateX(0); }
+  50% { transform: translateX(2px); }
+}
+.gl-pq-next:hover {
+  background: rgba(167,139,250,0.12);
+  border-color: rgba(167,139,250,0.55);
+  box-shadow: 0 0 14px rgba(167,139,250,0.18);
+}
+
+/* Card-level treatment for ROTM */
+.gl-card-purple .gl-phase-marker { font-family: var(--font-display); }
 
 /* ---- Mobile ---- */
 @media(max-width:640px) {
@@ -655,6 +1002,10 @@ function goalsInjectStyles() {
   .gl-na-goal { display:none; }
   .gl-done-body { columns:1; }
   .gl-seg-labels { font-size:0.52rem; }
+  .gl-phase { grid-template-columns: 24px 1fr; gap: 10px; }
+  .gl-phase-marker { width: 22px; height: 22px; font-size: 0.65rem; }
+  .gl-phase-quests { grid-template-columns: 1fr; }
+  .gl-phase-title { font-size: 0.72rem; }
 }
 @media(max-width:400px) {
   .gl-sk-gap { font-size:0.55rem; padding:1px 4px; }
