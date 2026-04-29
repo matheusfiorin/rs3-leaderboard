@@ -1660,10 +1660,13 @@ document.addEventListener("DOMContentLoaded", () => {
     _navFromPop = false;
   });
   initFilters();
-  Promise.all([
-    loadGEPrices(),
-    Promise.resolve(),
-  ]).then(() => { scheduledLoad(); loadVisitorStats(); });
+  // Render the dashboard from cache IMMEDIATELY — don't wait for the GE
+  // price API. GE prices are only needed by the money page; loading them
+  // first added ~1.5s to first paint for no benefit on dashboard.
+  scheduledLoad();
+  // Background tasks: GE prices (used by money page) + visitor counter.
+  loadGEPrices();
+  loadVisitorStats();
   $("#btn-refresh").addEventListener("click", () => {
     clearTimeout(timer);
     scheduledLoad(true); // force-live: bypass the cache-fresh skip
