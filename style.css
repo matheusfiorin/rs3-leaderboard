@@ -165,26 +165,52 @@ body::before {
 .btn-refresh.spinning svg { animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ===== LOADING ===== */
+/* ===== LOADING =====
+   Smooth fade-in (only visible if load takes >250ms) and fade-out.
+   The cache-first load() typically hides within ~200ms so most users
+   never see this — but on slow connections it appears smoothly. */
 .loading-overlay {
   position: fixed; inset: 0; z-index: 200;
   background: var(--bg);
   display: flex; align-items: center; justify-content: center;
-  transition: opacity 0.3s ease;
-  opacity: 0; pointer-events: none;
-  animation: loader-fadein 0.01s 0.2s forwards;
+  opacity: 0;
+  pointer-events: none;
+  animation: loader-appear 0.4s ease 0.25s forwards;
 }
-@keyframes loader-fadein { to { opacity: 1; pointer-events: auto; } }
-.loading-overlay.hidden { opacity: 0 !important; pointer-events: none !important; visibility: hidden; animation: none; }
+.loading-overlay.hidden {
+  animation: none;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+@keyframes loader-appear {
+  to { opacity: 1; pointer-events: auto; }
+}
 .loader { text-align: center; }
 .loader-ring {
-  width: 48px; height: 48px; margin: 0 auto 16px;
-  border: 3px solid var(--bg-raised);
+  width: 44px; height: 44px; margin: 0 auto 14px;
+  border: 2px solid var(--bg-raised);
   border-top-color: var(--gold);
-  border-radius: 50%; animation: spin 0.8s linear infinite;
+  border-right-color: var(--gold-dim);
+  border-radius: 50%;
+  animation: spin 1.1s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
 }
-.loader-swords { font-size: 1.5rem; margin-bottom: 8px; }
-.loader-text { color: var(--text-3); font-size: 0.75rem; }
+.loader-swords {
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+  color: var(--gold-bright);
+  filter: drop-shadow(0 0 8px rgba(212,168,67,0.4));
+  animation: loader-pulse 2.4s ease-in-out infinite;
+}
+.loader-text {
+  color: var(--text-3);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+}
+@keyframes loader-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
 
 /* ===== ERROR ===== */
 .error-banner {
@@ -658,7 +684,11 @@ body::before {
 #major-goals { margin-bottom: var(--sp-4); }
 
 /* ===== LOOKUP ===== */
-.lk-search { display: flex; gap: 8px; margin-bottom: var(--sp-4); }
+.lk-search,
+.lk-search-box {
+  display: flex; gap: 8px;
+  margin-bottom: var(--sp-3);
+}
 .lk-input {
   flex: 1; background: var(--bg-card); border: 1px solid var(--border);
   border-radius: var(--radius-sm); padding: 10px 14px;
@@ -682,7 +712,106 @@ body::before {
 }
 .lk-history-item:hover { border-color: var(--gold-dim); color: var(--gold); }
 .lk-results { margin-top: var(--sp-3); }
-.lk-skills-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; margin-top: var(--sp-3); }
+.lk-skills-grid,
+.lk-skill-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; margin-top: var(--sp-3); }
+@media (max-width: 640px) { .lk-skill-grid { grid-template-columns: 1fr; } }
+
+/* ── Lookup spinner & error ── */
+.lk-spinner {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  padding: 24px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-2);
+  font-size: 0.78rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.06em;
+  position: relative;
+}
+.lk-spinner::before {
+  content: "";
+  width: 18px; height: 18px;
+  border: 2px solid rgba(212,168,67,0.18);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.lk-error {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px;
+  background: var(--red-bg);
+  border: 1px solid rgba(248,113,113,0.30);
+  border-left: 3px solid var(--red);
+  border-radius: var(--radius);
+  color: var(--red);
+  font-size: 0.78rem;
+}
+
+/* ── Lookup result sections ── */
+.lk-result-section {
+  margin-top: 18px;
+}
+.lk-result-section h3 {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  margin: 0 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 6px;
+}
+.lk-result-section h3::before {
+  content: "◆";
+  color: var(--gold-dim);
+  font-size: 0.5rem;
+}
+.lk-profile { margin-top: 12px; }
+.lk-profile .p-card-rank {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--text-3);
+  margin-top: 2px;
+  letter-spacing: 0.04em;
+}
+
+/* ── Activity list inside lookup ── */
+.act-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-left: 2px solid transparent;
+  border-radius: var(--radius-xs);
+  margin-bottom: 3px;
+  font-size: 0.72rem;
+  transition: border-color 0.15s, background 0.15s;
+}
+.act-item:hover {
+  background: var(--bg-hover);
+  border-left-color: var(--gold-dim);
+}
+.act-dot {
+  font-size: 0.95rem;
+  line-height: 1;
+  align-self: center;
+}
+.act-body { min-width: 0; }
+.act-text { color: var(--text); font-weight: 500; line-height: 1.4; }
+.act-detail { color: var(--text-3); font-size: 0.62rem; margin-top: 3px; }
+.act-time {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  color: var(--text-3);
+  white-space: nowrap;
+  align-self: center;
+  letter-spacing: 0.04em;
+}
+
 .lk-skill-row {
   display: flex; align-items: center; gap: 6px;
   padding: 4px 8px; background: var(--bg-card);
@@ -754,15 +883,34 @@ body::before {
 .goals-hero-sub { font-size: 0.68rem; color: var(--text-3); }
 .goals-tabs { display: flex; justify-content: center; gap: 8px; margin-bottom: var(--sp-4); }
 
-/* ===== BACK BUTTON ===== */
-.back-btn {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 4px 10px; background: var(--bg-card);
-  border: 1px solid var(--border); border-radius: 12px;
-  color: var(--text-3); font-size: 0.62rem; cursor: pointer;
-  margin-bottom: var(--sp-3); transition: all 0.15s;
+/* ===== BACK BUTTON (unified styling for all variants) ===== */
+.back-btn,
+.section-back,
+.lk-back-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  color: var(--text-3);
+  font-family: var(--font);
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: var(--sp-3);
+  transition: all 0.18s;
+  text-decoration: none;
 }
-.back-btn:hover { border-color: var(--border-hover); color: var(--text-2); }
+.back-btn:hover,
+.section-back:hover,
+.lk-back-btn:hover {
+  border-color: var(--gold-dim);
+  color: var(--gold-bright);
+  background: var(--gold-bg);
+}
+.back-btn:active,
+.section-back:active,
+.lk-back-btn:active { transform: translateX(-2px); }
 
 /* ===== RESPONSIVE ===== */
 

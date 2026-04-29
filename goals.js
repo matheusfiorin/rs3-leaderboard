@@ -140,7 +140,7 @@ const GOALS = [
   },
   {
     id: "rotm",
-    icon: `<img src="https://runescape.wiki/images/Mahjarrat_Memories_emote_icon.png" width="28" height="28" alt="Mahjarrat" loading="lazy" onerror="this.outerHTML='🔥'">`,
+    icon: `<img src="https://runescape.wiki/images/Ritual_of_the_Mahjarrat.png" width="28" height="28" alt="Ritual of the Mahjarrat" loading="lazy" onerror="this.outerHTML='🔥'">`,
     color: "purple",
     label_pt: "Ritual dos Mahjarrat",
     label_en: "Ritual of the Mahjarrat",

@@ -63,32 +63,60 @@ function lkTriggerSearch(rsn) {
 }
 
 /* ── CORS proxy for fetching arbitrary RSNs from browser ─────────── */
-// RuneMetrics/Hiscores APIs don't send CORS headers, so browser fetch
-// from github.io fails. We proxy through allorigins for lookup only.
-const LK_CORS_PROXY = "https://api.allorigins.win/get?url=";
+// On localhost, direct fetch works; on github.io, browser CORS blocks the
+// runescape APIs so we race multiple proxies in parallel and take the
+// first to respond. AllOrigins is intermittently slow; CodeTabs is currently
+// the most reliable.
+const LK_IS_LOCAL = typeof location !== "undefined" && /^(localhost|127\.|file)/.test(location.hostname || location.protocol);
 
-async function lkFetchJSON(url, retries) {
-  const maxRetries = retries || 2;
-  let lastErr;
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
+const LK_PROXIES = [
+  async (url, ms) => {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), ms);
     try {
-      const proxied = LK_CORS_PROXY + encodeURIComponent(url);
+      const r = await fetch(`https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(url)}`, { signal: ctrl.signal });
+      clearTimeout(t);
+      if (!r.ok) throw new Error("codetabs_" + r.status);
+      return r.json();
+    } finally { clearTimeout(t); }
+  },
+  async (url, ms) => {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), ms);
+    try {
+      const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, { signal: ctrl.signal });
+      clearTimeout(t);
+      if (!r.ok) throw new Error("allorigins_" + r.status);
+      const w = await r.json();
+      if (!w.contents) throw new Error("allorigins_empty");
+      return JSON.parse(w.contents);
+    } finally { clearTimeout(t); }
+  },
+];
+
+async function lkFetchJSON(url) {
+  // On localhost, try direct first (fast, no proxy needed)
+  if (LK_IS_LOCAL) {
+    try {
       const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 12000);
-      const r = await fetch(proxied, { signal: ctrl.signal });
-      clearTimeout(timer);
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      const text = await r.text();
-      if (!text) throw new Error("empty");
-      const wrapper = JSON.parse(text);
-      if (!wrapper.contents) throw new Error("no contents");
-      return JSON.parse(wrapper.contents);
-    } catch (err) {
-      lastErr = err;
-      if (attempt < maxRetries - 1) await new Promise(r => setTimeout(r, 1000));
-    }
+      const t = setTimeout(() => ctrl.abort(), 5000);
+      const r = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(t);
+      if (r.ok) return await r.json();
+    } catch (_) { /* fall through to proxies */ }
   }
-  throw lastErr;
+  // Race all proxies in parallel; first success wins. ~7s timeout each.
+  return new Promise((resolve, reject) => {
+    let pending = LK_PROXIES.length, done = false;
+    for (const fn of LK_PROXIES) {
+      fn(url, 7000).then(v => {
+        if (!done) { done = true; resolve(v); }
+      }, () => {
+        pending--;
+        if (pending === 0 && !done) reject(new Error("all_proxies_failed"));
+      });
+    }
+  });
 }
 
 async function lkFetchPlayer(rsn) {
