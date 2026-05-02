@@ -12,7 +12,7 @@ function mnItemIcon(name, size) {
   if (!name) return "";
   const s = size || 16;
   const n = String(name).replace(/\s+/g, "_");
-  return `<img class="mn-iicon" src="https://runescape.wiki/images/${n}.png" width="${s}" height="${s}" alt="" loading="lazy" data-fallback="hide">`;
+  return `<img class="mn-iicon" src="data/icons/${n}.png" width="${s}" height="${s}" alt="" loading="lazy" data-fallback="hide">`;
 }
 
 // ---- Curated Methods Database ----

@@ -6,7 +6,7 @@
    ============================================= */
 
 const WIKI_IMG = (name) =>
-  `https://runescape.wiki/w/Special:FilePath/${name.replace(/ /g, "_")}.png`;
+  `data/icons/${name.replace(/ /g, "_")}.png`;
 
 // ---- Ability Database (post-March 2026 Combat Modernisation) ----
 const ABILITIES = {

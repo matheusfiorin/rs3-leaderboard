@@ -33,7 +33,7 @@ const SKILL_NAMES_EN = {
 };
 function SKILL_ICON(id) {
   const name = SKILL_NAMES_EN[id];
-  return name ? `https://runescape.wiki/images/${name}-icon.png` : '';
+  return name ? `data/icons/${name}-icon.png` : '';
 }
 function skillIconImg(id, size) {
   const s = size || 20;
