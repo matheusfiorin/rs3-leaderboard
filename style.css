@@ -223,6 +223,12 @@ body::before {
 .error-banner.hidden { display: none; }
 .btn-dismiss { background: none; border: none; color: var(--red); cursor: pointer; font-size: 1.2rem; }
 
+/* Filter row hide — toggled by initFilters() across skills/quests/activity/journal */
+.skill-row.hidden,
+.ql-row.hidden,
+.feed-item.hidden,
+.j-row.hidden { display: none !important; }
+
 /* ===== MAIN LAYOUT ===== */
 .main {
   max-width: var(--max-w); margin: 0 auto;
