@@ -221,6 +221,7 @@ function renderMajorGoals(players) {
       <h2 class="section-title">${mgT("mgTitle")}</h2>
     </div>
     <div class="mg-grid">${goals.map((g) => mgCard(g, players)).join("")}</div>`;
+  if (typeof attachImgFallbacks === "function") attachImgFallbacks(el);
 
   el.querySelectorAll(".mg-card[data-mg-tab]").forEach((btn) => {
     btn.addEventListener("click", () => {

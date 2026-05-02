@@ -849,6 +849,7 @@ function renderCombat(players) {
     armor: t("cbArmor"),
   };
 
+  const root = el;
   el.innerHTML = players
     .map((p, pi) => {
       const cls = pi === 0 ? "p1" : "p2";
@@ -938,6 +939,7 @@ function renderCombat(players) {
     </div>`;
     })
     .join("");
+  if (typeof attachImgFallbacks === "function") attachImgFallbacks(root);
 }
 
 function renderBar(abilities, lang) {
@@ -962,7 +964,7 @@ function renderBar(abilities, lang) {
       const name = ab.name[lang] || ab.name.en;
       const desc = ab.desc[lang] || ab.desc.en;
       return `<div class="revo-slot ${typeClass}">
-        <img src="${WIKI_IMG(ab.icon)}" alt="${name}" class="revo-icon" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
+        <img src="${WIKI_IMG(ab.icon)}" alt="${name}" class="revo-icon" loading="lazy" data-fallback="next">
         <div class="revo-fallback">${(ab.name.en || "").slice(0, 3)}</div>
         <div class="revo-num">${i + 1}</div>
         <div class="ability-tooltip">
@@ -977,7 +979,7 @@ function renderBar(abilities, lang) {
 
 function renderGearTile(item, label, lang) {
   return `<div class="gear-tile">
-    <img src="${WIKI_IMG(item.icon)}" alt="${item.name}" class="gear-tile-img" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
+    <img src="${WIKI_IMG(item.icon)}" alt="${item.name}" class="gear-tile-img" loading="lazy" data-fallback="next">
     <div class="gear-tile-fallback">\uD83D\uDEE1\uFE0F</div>
     <div class="gear-tile-info">
       <div class="gear-tile-label">${label}</div>

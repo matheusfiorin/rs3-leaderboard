@@ -12,7 +12,7 @@ function mnItemIcon(name, size) {
   if (!name) return "";
   const s = size || 16;
   const n = String(name).replace(/\s+/g, "_");
-  return `<img class="mn-iicon" src="https://runescape.wiki/images/${n}.png" width="${s}" height="${s}" alt="" loading="lazy" onerror="this.style.display='none'">`;
+  return `<img class="mn-iicon" src="https://runescape.wiki/images/${n}.png" width="${s}" height="${s}" alt="" loading="lazy" data-fallback="hide">`;
 }
 
 // ---- Curated Methods Database ----
@@ -993,6 +993,7 @@ function renderMoney(players) {
     <div class="mn-section-title">${headerText} <span class="mn-section-count">${filtered.length}</span></div>
     ${filtered.length ? cardsBody : `<div class="mn-empty">${lang === "pt" ? "Nenhum método encontrado" : "No methods found"}</div>`}
   `;
+  if (typeof attachImgFallbacks === "function") attachImgFallbacks(grid);
 
   moneyInjectStyles();
 

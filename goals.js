@@ -9,7 +9,7 @@
 const GOALS = [
   {
     id: "senntisten",
-    icon: `<img src="https://runescape.wiki/images/Soul_Split.png" width="28" height="28" alt="Soul Split" loading="lazy" onerror="this.outerHTML='⚔️'">`,
+    icon: `<img src="https://runescape.wiki/images/Soul_Split.png" width="28" height="28" alt="Soul Split" loading="lazy" data-fallback="emoji" data-emoji="⚔️">`,
     color: "gold",
     label_pt: "Rumo ao Soul Split",
     label_en: "Road to Soul Split",
@@ -59,7 +59,7 @@ const GOALS = [
   },
   {
     id: "prifddinas",
-    icon: `<img src="https://runescape.wiki/images/Prifddinas_lodestone_icon.png" width="28" height="28" alt="Prifddinas" loading="lazy" onerror="this.outerHTML='🏰'">`,
+    icon: `<img src="https://runescape.wiki/images/Prifddinas_lodestone_icon.png" width="28" height="28" alt="Prifddinas" loading="lazy" data-fallback="emoji" data-emoji="🏰">`,
     color: "teal",
     label_pt: "Rumo a Prifddinas",
     label_en: "Road to Prifddinas",
@@ -95,7 +95,7 @@ const GOALS = [
   },
   {
     id: "worldwakes",
-    icon: `<img src="https://runescape.wiki/images/Sunshine.png" width="28" height="28" alt="Sunshine" loading="lazy" onerror="this.outerHTML='☀️'">`,
+    icon: `<img src="https://runescape.wiki/images/Sunshine.png" width="28" height="28" alt="Sunshine" loading="lazy" data-fallback="emoji" data-emoji="☀️">`,
     color: "orange",
     label_pt: "The World Wakes",
     label_en: "The World Wakes",
@@ -120,7 +120,7 @@ const GOALS = [
   },
   {
     id: "invention",
-    icon: `<img src="https://runescape.wiki/images/thumb/Invention-icon.png/28px-Invention-icon.png" width="28" height="28" alt="Invention" loading="lazy" onerror="this.outerHTML='⚙️'">`,
+    icon: `<img src="https://runescape.wiki/images/thumb/Invention-icon.png/28px-Invention-icon.png" width="28" height="28" alt="Invention" loading="lazy" data-fallback="emoji" data-emoji="⚙️">`,
     color: "purple",
     label_pt: "Desbloquear Invenção",
     label_en: "Unlock Invention",
@@ -140,7 +140,7 @@ const GOALS = [
   },
   {
     id: "rotm",
-    icon: `<img src="https://runescape.wiki/images/Ritual_of_the_Mahjarrat.png" width="28" height="28" alt="Ritual of the Mahjarrat" loading="lazy" onerror="this.outerHTML='🔥'">`,
+    icon: `<img src="https://runescape.wiki/images/Ritual_of_the_Mahjarrat.png" width="28" height="28" alt="Ritual of the Mahjarrat" loading="lazy" data-fallback="emoji" data-emoji="🔥">`,
     color: "purple",
     label_pt: "Ritual dos Mahjarrat",
     label_en: "Ritual of the Mahjarrat",
@@ -1053,6 +1053,7 @@ function renderGoalsPage(players) {
   }
 
   section.innerHTML = html;
+  if (typeof attachImgFallbacks === "function") attachImgFallbacks(section);
 
   // Disable stagger on re-renders
   if (isRerender) section.classList.add("gl-no-anim");

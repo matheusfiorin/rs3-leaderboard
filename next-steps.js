@@ -234,7 +234,7 @@ function nsPlayerColumn(player, idx) {
             <div class="ns-quest-title">${esc(quest.name)}</div>
             <div class="ns-quest-sub">${esc(note)}</div>
           </div>
-          <a class="ns-quest-wiki" href="${wikiUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Wiki ↗</a>
+          <a class="ns-quest-wiki" href="${wikiUrl}" target="_blank" rel="noopener noreferrer">Wiki ↗</a>
         </div>
         <div class="ns-chain-tag">${nsT("chainBadge")}: ${esc(quest.chain)}</div>
       </div>`;

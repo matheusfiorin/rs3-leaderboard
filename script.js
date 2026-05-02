@@ -37,7 +37,35 @@ function SKILL_ICON(id) {
 }
 function skillIconImg(id, size) {
   const s = size || 20;
-  return `<img src="${SKILL_ICON(id)}" width="${s}" height="${s}" alt="" loading="lazy" style="vertical-align:middle" onerror="this.style.display='none'">`;
+  return `<img src="${SKILL_ICON(id)}" width="${s}" height="${s}" alt="" loading="lazy" style="vertical-align:middle" data-fallback="hide">`;
+}
+
+// ---- Image fallback helper (CSP-safe replacement for inline onerror) ----
+// Modes:
+//   data-fallback="hide"  -> hide the broken image
+//   data-fallback="next"  -> hide image AND make next sibling visible (grid)
+//   data-fallback="emoji" -> replace with the emoji in data-emoji
+function attachImgFallbacks(scope) {
+  if (!scope) return;
+  scope.querySelectorAll("img[data-fallback]").forEach(img => {
+    if (img._fb) return;
+    img._fb = true;
+    img.addEventListener("error", () => {
+      const mode = img.dataset.fallback;
+      if (mode === "hide") {
+        img.style.display = "none";
+      } else if (mode === "next") {
+        img.style.display = "none";
+        const sib = img.nextElementSibling;
+        if (sib) sib.style.display = "grid";
+      } else if (mode === "emoji") {
+        const emo = img.dataset.emoji || "";
+        const span = document.createElement("span");
+        span.textContent = emo;
+        img.replaceWith(span);
+      }
+    });
+  });
 }
 
 // ---- Animated Counter ----
@@ -1450,6 +1478,9 @@ function renderTab(tab, results) {
       console.error(`Render ${tab} failed:`, e);
     }
   }
+  // Attach error fallbacks to any newly-rendered images. Idempotent: per-img
+  // _fb flag prevents duplicate listeners.
+  attachImgFallbacks(document.body);
   _rendered.add(tab);
 }
 
