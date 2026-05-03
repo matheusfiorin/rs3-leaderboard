@@ -1448,24 +1448,6 @@ function hideError() {
   $("#error-banner").classList.add("hidden");
 }
 
-// ---- Visitor stats (GoatCounter public API) ----
-async function loadVisitorStats() {
-  const el = document.getElementById("visitor-stats");
-  if (!el) return;
-  try {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 5000);
-    const resp = await fetch("https://rs3placar.goatcounter.com/counter/TOTAL.json", { signal: ctrl.signal });
-    clearTimeout(t);
-    if (!resp.ok) return;
-    const json = await resp.json();
-    const count = json.count || json.count_unique || 0;
-    if (count > 0) {
-      el.textContent = `${count} ${t("visits")}`;
-    }
-  } catch (_) { /* GoatCounter unavailable — silent */ }
-}
-
 // ---- Lazy tab rendering ----
 const _renderers = {
   dashboard: (r) => {
@@ -1742,9 +1724,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // price API. GE prices are only needed by the money page; loading them
   // first added ~1.5s to first paint for no benefit on dashboard.
   scheduledLoad();
-  // Background tasks: GE prices (used by money page) + visitor counter.
+  // Background tasks: GE prices (used by money page).
   loadGEPrices();
-  loadVisitorStats();
   $("#btn-refresh").addEventListener("click", () => {
     clearTimeout(timer);
     scheduledLoad(true); // force-live: bypass the cache-fresh skip
