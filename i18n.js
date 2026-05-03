@@ -105,7 +105,7 @@ const LANG = {
     cbBaseHit: "Dano Base",
     cbArmour: "Armadura",
     cbMaxHp: "Vida Máx",
-    cbAvgAbility: "Média Hab.",
+    cbAvgAbility: "Mult. Hab.",
     cbEstimate: "Estimativa base — sem orações, poções, perks ou auras",
     cbCursesAvailable: "Maldições disponíveis (Oração {n}) — +10% DPS com Tormento/Angústia/Turbulência",
 
@@ -397,7 +397,7 @@ const LANG = {
     cbBaseHit: "Base Hit",
     cbArmour: "Armour",
     cbMaxHp: "Max HP",
-    cbAvgAbility: "Avg Ability",
+    cbAvgAbility: "Ability Mult",
     cbEstimate: "Baseline estimate — no prayers, potions, perks, or auras",
     cbCursesAvailable: "Curses available (Prayer {n}) — +10% DPS with Turmoil/Anguish/Torment",
 

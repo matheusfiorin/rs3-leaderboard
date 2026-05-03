@@ -727,6 +727,11 @@ function getBarsForStyle(style, level) {
   }
 }
 
+// At very low levels, single-target and AoE bars share most/all unlocked
+// abilities (only basics available), so the rendered bars look identical.
+// That's correct: with no AoE-specific abilities yet, the same bar IS the
+// best AoE rotation. Once Hurricane (37) / Ricochet (67) / Chain (45) /
+// Spectral Scythe (10) unlock, the bars diverge.
 function getMeleeBars(a, lvl) {
   const s = [],
     ao = [];
