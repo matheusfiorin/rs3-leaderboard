@@ -1740,6 +1740,10 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#lang-toggle").addEventListener("click", () => {
     setLang(currentLang === "pt" ? "en" : "pt");
     updateUIText();
+    // Force re-render of every cached tab so pills/footer/show-more strings
+    // pick up the new locale immediately (renderAll's change-detection only
+    // looks at XP/quest deltas, not language).
+    _rendered.clear();
     if (data.length) renderAll(data);
   });
 

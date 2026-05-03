@@ -229,7 +229,13 @@ function renderMajorGoals(players) {
       // Stash the highlight goal so renderGoalsPage can apply it post-render
       // (survives the cache-then-live re-render that previously wiped the
       // setTimeout-based open).
-      if (goalId) window._mgPendingHighlight = goalId;
+      if (goalId) {
+        window._mgPendingHighlight = goalId;
+        // Invalidate the goals tab render cache so launchSection actually
+        // re-renders it. Without this, a cached goals page would no-op the
+        // pending-highlight handler.
+        if (typeof _rendered !== "undefined") _rendered.delete("goals");
+      }
       mgGoTab(btn.dataset.mgTab);
     });
   });
