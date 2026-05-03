@@ -115,7 +115,9 @@ const SKILLS = [
   { id: 28, abbr: "NEC", cat: "combat", max: 120 },
 ];
 
-// RS3 XP table: xpForLevel[L] = total XP needed for level L (1-150)
+// RS3 XP table: xpForLevel[L] = total XP needed for level L (1..150).
+// Loop runs 149 iterations covering L=2..150; _XP_TABLE indices 0..149,
+// xpForLevel(L) reads index L-1. xpForLevel(>150) clamps at level 150.
 const _XP_TABLE = [0];
 (function () {
   let total = 0;
@@ -410,7 +412,7 @@ const JOURNAL = [
     cat: "quests",
     icon: "👑",
     pts: 100,
-    check: (p) => p.questsDone >= p.totalQuests,
+    check: (p) => p.totalQuests > 0 && p.questsDone >= p.totalQuests,
   },
   {
     id: "rs1k",
@@ -463,7 +465,7 @@ const JOURNAL = [
   },
 ];
 function hasQuest(p, name) {
-  return p.questList.some((q) => q.title === name && q.status === "COMPLETED");
+  return (p.questList || []).some((q) => q.title === name && q.status === "COMPLETED");
 }
 const MAX_PTS = JOURNAL.reduce((a, g) => a + g.pts, 0);
 
@@ -1022,6 +1024,11 @@ function renderJournal(players, targetScores, targetGrid) {
 // ---- Utils ----
 function parseDate(s) {
   if (!s) return 0;
+  // Try ISO 8601 first (e.g. meta.json timestamps); fall back to legacy
+  // RuneMetrics format "DD-Mon-YYYY HH:MM" which Date() can't parse with
+  // dashes.
+  const iso = new Date(s);
+  if (!isNaN(iso)) return iso.getTime();
   const d = new Date(s.replace(/-/g, " "));
   return isNaN(d) ? 0 : d.getTime();
 }
@@ -1540,6 +1547,15 @@ function renderAll(results) {
   );
   data = results;
   if (changed) _rendered.clear();
+
+  // Surface a non-blocking warning when the quests endpoint silently failed.
+  // Without a quest list, every hasQuest()-based goal/journal item under-counts.
+  const missingQuests = results.some(r => r && r.questsDone > 0 && (!r.questList || r.questList.length === 0));
+  if (missingQuests) {
+    showError(currentLang === "pt"
+      ? "Lista de missões não carregou — alguns objetivos podem aparecer incompletos."
+      : "Quest list failed to load — some goals may show as incomplete.");
+  }
   renderTab(getActiveTab(), results);
   updateHomeStats();
 
