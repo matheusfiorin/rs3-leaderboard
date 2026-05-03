@@ -632,7 +632,8 @@ async function fetchCached(n) {
 
 // ---- Formatting ----
 function fmt(n) {
-  return n == null ? "\u2014" : n.toLocaleString("en-US");
+  if (n == null) return "\u2014";
+  return n.toLocaleString(currentLang === "pt" ? "pt-BR" : "en-US");
 }
 function fmtShort(n) {
   if (n >= 1e6) return (n / 1e6).toFixed(1) + "M";
@@ -728,9 +729,7 @@ function renderH2H(players) {
       ? a.name
       : winsB > winsA
         ? b.name
-        : lang === "pt"
-          ? "Empate"
-          : "Tied";
+        : t("tied");
 
   $("#h2h-container").innerHTML = `
     <div class="h2h-header"><div class="h2h-name p1" style="text-align:right">${esc(a.name)}</div><div></div><div class="h2h-name p2">${esc(b.name)}</div></div>
@@ -841,7 +840,7 @@ function renderActivity(players) {
   };
   let shown = FEED_PAGE;
   feed.innerHTML = all.slice(0, shown).map(renderItem).join("")
-    + (all.length > shown ? `<button class="pill feed-more" style="display:block;margin:10px auto;padding:6px 20px">${currentLang === "pt" ? "Mostrar mais" : "Show more"} (${all.length - shown})</button>` : "");
+    + (all.length > shown ? `<button class="pill feed-more" style="display:block;margin:10px auto;padding:6px 20px">${t("showMore")} (${all.length - shown})</button>` : "");
 
   feed.addEventListener("click", function handler(e) {
     const btn = e.target.closest(".feed-more");
@@ -851,7 +850,7 @@ function renderActivity(players) {
     btn.insertAdjacentHTML("beforebegin", frag);
     shown = next;
     if (shown >= all.length) btn.remove();
-    else btn.textContent = `${currentLang === "pt" ? "Mostrar mais" : "Show more"} (${all.length - shown})`;
+    else btn.textContent = `${t("showMore")} (${all.length - shown})`;
     // Re-apply active filter
     const activeFilter = document.querySelector("#activity-filters .pill.active");
     if (activeFilter && activeFilter.dataset.afilter !== "all") {
@@ -1095,6 +1094,13 @@ const _PHRASE_RX = [
   ],
   [/I defeated/g, "Derrotei"],
   [/Quest complete$/g, "Miss\u00e3o completa"],
+  [/I found an /g, "Encontrei um(a) "],
+  [/I found a /g, "Encontrei um(a) "],
+  [/After killing a /g, "Depois de matar um(a) "],
+  [/, it dropped /g, ", soltou "],
+  [/I have uncovered volume (\d+) of Daemonheim's history\. I now have (\d+) volumes in total/g,
+   "Descobri o volume $1 da hist\u00f3ria de Daemonheim. Agora tenho $2 volumes no total"],
+  [/Daemonheim's history uncovered, (\d+) volumes found/g, "Hist\u00f3ria de Daemonheim descoberta, $1 volumes encontrados"],
 ];
 
 function localizeActivity(text) {
@@ -1142,7 +1148,7 @@ function updateUIText() {
   s("skills-title", t("skillsTitle"));
   s("journal-title", t("journalTitle"));
   s("quests-title", t("questsTitle"));
-  s("goals-title", "\uD83C\uDFAF " + (lang === "pt" ? "Metas" : "Goals"));
+  s("goals-title", "\uD83C\uDFAF " + t("navGoals"));
   s("activity-title", t("activityTitle"));
   s("legend-ahead", t("ahead"));
   s("lookup-title", "\uD83D\uDD0D " + t("navLookup"));
@@ -1181,7 +1187,7 @@ function updateUIText() {
 
   // Easter
   s("easter-title", t("easterTitle"));
-  s("easter-sub", "Blooming Burrow \u00b7 30 Mar - 20 " + (lang === "pt" ? "Abr" : "Apr"));
+  s("easter-sub", "Blooming Burrow \u00b7 30 Mar - 20 " + t("aprMonth"));
 
   // Next Steps
   h("nextsteps-title", "\uD83C\uDFAF " + t("nextStepsTitle"));
@@ -1191,7 +1197,7 @@ function updateUIText() {
   s("money-disclaimer", t("moneyDisclaimer"));
 
   // Home grid card labels
-  s("hc-goals", lang === "pt" ? "Objetivos" : "Goals");
+  s("hc-goals", t("navGoals"));
   s("hc-skills", t("navSkills"));
   s("hc-senntisten", t("navSenntisten"));
   s("hc-prifddinas", t("navPrifddinas"));
@@ -1201,7 +1207,22 @@ function updateUIText() {
   s("hc-combat", t("navCombat"));
   s("hc-journal", t("navJournal"));
   s("hc-money", t("navMoney"));
-  s("home-grid-title", lang === "pt" ? "Explorar" : "Explore");
+  s("home-grid-title", t("explore"));
+
+  // Dock buttons: keep title= and aria-label= localized.
+  const DOCK_KEYS = {
+    dashboard: "navOverview", skills: "navSkills", quests: "navQuests",
+    goals: "navGoals", activity: "navActivity", money: "navMoney",
+    lookup: "navLookup",
+  };
+  document.querySelectorAll(".dock .dock-btn[data-launch]").forEach(btn => {
+    const k = DOCK_KEYS[btn.dataset.launch];
+    if (k) {
+      const label = t(k);
+      btn.setAttribute("title", label);
+      btn.setAttribute("aria-label", label);
+    }
+  });
 }
 
 // ---- Navigation: Home Grid + Floating Dock ----
@@ -1271,10 +1292,10 @@ function updateHomeStats() {
   const s = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
   s("hcs-skills", `${t("totalLevel")}: ${fmt(p.totalLevel)}`);
   s("hcs-quests", `${p.questsDone}/${p.totalQuests}`);
-  s("hcs-activity", `${p.activities.length} ${currentLang === "pt" ? "recentes" : "recent"}`);
+  s("hcs-activity", `${p.activities.length} ${t("recent")}`);
   s("hcs-combat", `${t("combat")} ${p.combatLevel}`);
   s("hcs-journal", `${fmt(p.totalXp)} XP`);
-  s("hcs-money", `${Object.keys(gePrices).length} ${currentLang === "pt" ? "itens" : "items"}`);
+  s("hcs-money", `${Object.keys(gePrices).length} ${t("items")}`);
   // Goals summary stat
   if (typeof GOALS !== "undefined" && typeof goalProgress === "function") {
     let totalDone = 0, totalItems = 0;
@@ -1440,7 +1461,7 @@ async function loadVisitorStats() {
     const json = await resp.json();
     const count = json.count || json.count_unique || 0;
     if (count > 0) {
-      el.textContent = `${count} ${currentLang === "pt" ? "visitas" : "visits"}`;
+      el.textContent = `${count} ${t("visits")}`;
     }
   } catch (_) { /* GoatCounter unavailable — silent */ }
 }

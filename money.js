@@ -981,7 +981,7 @@ function renderMoney(players) {
     const restHTML = rest.length ? `
       <div id="mn-rest" style="display:none">${rest.map(m => moneyCardHTML(m, player, lang, null, null)).join("")}</div>
       <button id="mn-show-more" class="pill" style="display:block;margin:12px auto;padding:8px 24px">
-        ${lang === "pt" ? "Mostrar mais" : "Show more"} (+${rest.length})
+        ${t("showMore")} (+${rest.length})
       </button>` : "";
     cardsBody = cardsHTML + restHTML;
   }
