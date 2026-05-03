@@ -1055,6 +1055,23 @@ function renderGoalsPage(players) {
   section.innerHTML = html;
   if (typeof attachImgFallbacks === "function") attachImgFallbacks(section);
 
+  // Apply pending highlight from a major-goal card click (set in major-goals.js).
+  // Re-applied on every render so a cache→live refresh can't wipe the open state.
+  if (window._mgPendingHighlight) {
+    const goalId = window._mgPendingHighlight;
+    requestAnimationFrame(() => {
+      const target = section.querySelector(`.gl-card[data-goal-id="${goalId}"]`);
+      if (target) {
+        target.setAttribute("open", "");
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        target.classList.add("gl-card-flash");
+        setTimeout(() => target.classList.remove("gl-card-flash"), 1800);
+        // Clear so future renders don't re-scroll
+        window._mgPendingHighlight = null;
+      }
+    });
+  }
+
   // Disable stagger on re-renders
   if (isRerender) section.classList.add("gl-no-anim");
   else section.dataset.glRendered = "1";
@@ -1070,7 +1087,7 @@ function renderGoalsPage(players) {
 
   // Event: back button
   const backBtn = section.querySelector("#gl-back");
-  if (backBtn) backBtn.addEventListener("click", () => { if (typeof launchSection === "function") launchSection("overview"); });
+  if (backBtn) backBtn.addEventListener("click", () => { if (typeof launchSection === "function") launchSection("dashboard"); });
 
   // Event: player tabs
   section.querySelectorAll(".gl-player-tab").forEach(btn => {

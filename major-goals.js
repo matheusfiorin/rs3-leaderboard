@@ -226,19 +226,11 @@ function renderMajorGoals(players) {
   el.querySelectorAll(".mg-card[data-mg-tab]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const goalId = btn.dataset.mgGoalId;
+      // Stash the highlight goal so renderGoalsPage can apply it post-render
+      // (survives the cache-then-live re-render that previously wiped the
+      // setTimeout-based open).
+      if (goalId) window._mgPendingHighlight = goalId;
       mgGoTab(btn.dataset.mgTab);
-      if (goalId) {
-        // Scroll the goals page to the targeted goal card after it renders
-        setTimeout(() => {
-          const target = document.querySelector(`.gl-card[data-goal-id="${goalId}"]`);
-          if (target) {
-            target.setAttribute("open", "");
-            target.scrollIntoView({ behavior: "smooth", block: "start" });
-            target.classList.add("gl-card-flash");
-            setTimeout(() => target.classList.remove("gl-card-flash"), 1800);
-          }
-        }, 250);
-      }
     });
   });
 }

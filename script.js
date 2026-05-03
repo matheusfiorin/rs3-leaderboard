@@ -1212,7 +1212,8 @@ function launchSection(page) {
   if (page === "overview") page = "dashboard";
   // Fallback: unknown pages → dashboard (handles dead hashes like #senntisten, #easter, etc.)
   const validPages = new Set(Array.from($$(".page")).map(p => p.dataset.page));
-  if (!validPages.has(page)) page = "dashboard";
+  const wasInvalid = !validPages.has(page);
+  if (wasInvalid) page = "dashboard";
   const dock = document.getElementById("dock");
 
   // Show target page
@@ -1229,7 +1230,12 @@ function launchSection(page) {
     );
   }
 
-  if (!_navFromPop) history.pushState({ page }, "", "#" + page);
+  // Normalize URL: replace stale hash on fallback so back/forward + share-links work.
+  if (wasInvalid) {
+    history.replaceState({ page }, "", "#" + page);
+  } else if (!_navFromPop) {
+    history.pushState({ page }, "", "#" + page);
+  }
 
   // Lazy render
   if (page === "lookup") {
@@ -1246,8 +1252,12 @@ function initNavigation() {
   const dock = document.getElementById("dock");
   if (dock) {
     dock.classList.add("visible");
+    // Match dock active to the currently-active page (set by launchSection
+    // moments earlier on cold deep-link). Hard-coding "dashboard" here would
+    // race with launchSection() and clobber the highlight.
+    const active = getActiveTab();
     dock.querySelectorAll(".dock-btn").forEach((b) =>
-      b.classList.toggle("active", b.dataset.launch === "dashboard")
+      b.classList.toggle("active", b.dataset.launch === active)
     );
   }
 }
