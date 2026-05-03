@@ -1237,7 +1237,7 @@ function updateUIText() {
   const DOCK_KEYS = {
     dashboard: "navOverview", skills: "navSkills", quests: "navQuests",
     goals: "navGoals", activity: "navActivity", money: "navMoney",
-    lookup: "navLookup",
+    lookup: "navLookup", live: "navLive",
   };
   document.querySelectorAll(".dock .dock-btn[data-launch]").forEach(btn => {
     const k = DOCK_KEYS[btn.dataset.launch];
@@ -1263,6 +1263,12 @@ function launchSection(page) {
   const validPages = new Set(Array.from($$(".page")).map(p => p.dataset.page));
   const wasInvalid = !validPages.has(page);
   if (wasInvalid) page = "dashboard";
+
+  // If leaving the live tab, tear down its polling.
+  const prevPage = getActiveTab();
+  if (prevPage === "live" && page !== "live" && typeof liveStop === "function") {
+    liveStop();
+  }
   const dock = document.getElementById("dock");
 
   // Show target page
@@ -1289,6 +1295,10 @@ function launchSection(page) {
   // Lazy render
   if (page === "lookup") {
     if (!_rendered.has(page)) renderTab(page, data);
+  } else if (page === "live") {
+    // Live tab is stateful; always re-render so it remounts and resumes polling.
+    _rendered.delete("live");
+    if (data.length) renderTab(page, data);
   } else if (data.length && !_rendered.has(page)) {
     renderTab(page, data);
   }
@@ -1502,6 +1512,9 @@ const _renderers = {
   },
   goals: (r) => {
     if (typeof renderGoalsPage === "function") renderGoalsPage(r);
+  },
+  live: (r) => {
+    if (typeof renderLive === "function") renderLive(r);
   },
   journal: (r) => {
     renderJournal(r, "#journal-scores-full", "#journal-grid");
