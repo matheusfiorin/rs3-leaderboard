@@ -14,14 +14,17 @@ let _livePlayerIdx = 0;             // 0 = Fio, 1 = Decxus
 let _liveCadenceMs = 30000;         // default 30s
 let _liveTimer = null;              // setTimeout handle
 let _liveInflight = false;          // single-fetch guard
-let _liveSamples = [];              // recent {at, totalXp, perSkillXp:{}, levels:{}, activities:[]}
+let _liveSamples = [];              // recent live-fetched {at, totalXp, perSkillXp:{}, levels:{}, activities:[]}
+let _liveColdSnap = null;           // initial paint snapshot (NOT pushed into samples)
+let _liveLastPoll = null;           // {at, status: "ok"|"cached"|"fail"}
+let _liveConsecutiveFails = 0;
 const _LIVE_MAX_SAMPLES = 20;
 const _LIVE_BASELINE_KEY = "rs3lb-live-baseline";
 
 // Lerp interpolation handles
 let _liveLerpRAF = 0;
 let _liveLerpPrev = null;           // {at, totalXp, perSkillXp}
-let _liveLerpRate = null;           // {totalXph, perSkillXph: {}}
+let _liveLerpRate = null;           // {totalXph, perSkillXph: {}} — sticky across cache-stale polls
 
 // ---- Baseline persistence (per player, indefinite) ----
 function liveLoadBaseline(name) {
@@ -86,18 +89,33 @@ function _liveDiffFromBaseline(snap, baseline) {
   return { dXp, skillDeltas, sessionMs: snap.at - baseline.at };
 }
 
-// ---- XP/hr from the last two samples (window-based) ----
+// ---- XP/hr from the live samples ----
+// Use the FIRST sample where totalXp strictly differs from the newest, so
+// repeated server-cached polls (RuneMetrics caches ~5 min) don't flatten
+// the rate to 0 once they're the majority of the window. If every sample
+// is identical, return the previous rate (sticky) instead of null so the
+// lerp keeps moving at the last known speed.
 function _liveComputeRates() {
-  if (_liveSamples.length < 2) return null;
-  const a = _liveSamples[0];
-  const b = _liveSamples[_liveSamples.length - 1];
-  const ms = b.at - a.at;
-  if (ms <= 0) return null;
+  if (_liveSamples.length < 2) return _liveLerpRate;
+  const newest = _liveSamples[_liveSamples.length - 1];
+  let earliest = null;
+  for (let i = 0; i < _liveSamples.length - 1; i++) {
+    if (_liveSamples[i].totalXp !== newest.totalXp) {
+      earliest = _liveSamples[i];
+      break;
+    }
+  }
+  if (!earliest) return _liveLerpRate; // all samples identical (server cache)
+  const ms = newest.at - earliest.at;
+  if (ms <= 0) return _liveLerpRate;
   const hours = ms / 3600000;
-  const totalXph = (b.totalXp - a.totalXp) / hours;
+  const totalXph = (newest.totalXp - earliest.totalXp) / hours;
+  // Cap at 5M XP/h — top RS3 methods peak ~3M; bigger means our diff math
+  // has a bug somewhere (e.g., unexpected sample mixing).
+  if (totalXph > 5_000_000) return _liveLerpRate;
   const perSkillXph = {};
   for (const s of SKILLS) {
-    perSkillXph[s.id] = ((b.perSkillXp[s.id] || 0) - (a.perSkillXp[s.id] || 0)) / hours;
+    perSkillXph[s.id] = ((newest.perSkillXp[s.id] || 0) - (earliest.perSkillXp[s.id] || 0)) / hours;
   }
   return { totalXph, perSkillXph };
 }
@@ -131,6 +149,8 @@ async function _liveTick() {
   const player = await _liveFetchOnce(name);
   if (player) {
     const snap = _liveSnapshotFromPlayer(player);
+    const last = _liveSamples[_liveSamples.length - 1];
+    const wasCached = last && last.totalXp === snap.totalXp;
     _liveSamples.push(snap);
     if (_liveSamples.length > _LIVE_MAX_SAMPLES) _liveSamples.shift();
     // Set baseline on first successful poll for this player if missing
@@ -140,8 +160,17 @@ async function _liveTick() {
       liveSaveBaseline(name, baseline);
     }
     _liveLerpPrev = snap;
-    _liveLerpRate = _liveComputeRates();
+    const newRate = _liveComputeRates();
+    if (newRate) _liveLerpRate = newRate;
+    _liveLastPoll = { at: Date.now(), status: wasCached ? "cached" : "ok" };
+    _liveConsecutiveFails = 0;
     _liveRender(snap, baseline);
+  } else {
+    _liveLastPoll = { at: Date.now(), status: "fail" };
+    _liveConsecutiveFails++;
+    // Re-render to show the failure status even when no new sample
+    const last = _liveSamples[_liveSamples.length - 1] || _liveColdSnap;
+    if (last) _liveRender(last, liveLoadBaseline(name));
   }
   _liveScheduleNext();
 }
@@ -162,6 +191,15 @@ function _liveLerpLoop() {
       const xphEl = document.getElementById("live-xp-rate");
       if (xphEl && _liveLerpRate.totalXph > 0) {
         xphEl.textContent = `${Math.round(_liveLerpRate.totalXph).toLocaleString(currentLang === "pt" ? "pt-BR" : "en-US")} XP/h`;
+      }
+    }
+    // Countdown to next poll — independent of lerp data, always useful.
+    if (_liveLastPoll && _liveCadenceMs > 0) {
+      const etaEl = document.getElementById("live-poll-eta");
+      if (etaEl) {
+        const since = Date.now() - _liveLastPoll.at;
+        const remaining = Math.max(0, Math.ceil((_liveCadenceMs - since) / 1000));
+        etaEl.textContent = `${remaining}s`;
       }
     }
     _liveLerpRAF = requestAnimationFrame(tick);
@@ -366,9 +404,23 @@ function _liveRender(snap, baseline) {
       <div class="live-rate-row">
         <span id="live-xp-rate" class="live-xp-rate">${rates && rates.totalXph > 0 ? Math.round(rates.totalXph).toLocaleString(lang === "pt" ? "pt-BR" : "en-US") + " XP/h" : "—"}</span>
         <span class="live-session">${lang === "pt" ? "Sessão" : "Session"}: <strong>+${(diff?.dXp || 0).toLocaleString(lang === "pt" ? "pt-BR" : "en-US")}</strong> · ${sessionLabel}</span>
+        <button class="live-refresh" id="live-refresh-btn" title="${lang === "pt" ? "Atualizar agora" : "Refresh now"}">⟳</button>
         <button class="live-reset" id="live-reset-btn" title="${lang === "pt" ? "Zerar baseline" : "Reset baseline"}">↺</button>
       </div>
-      <div class="live-baseline-note">${lang === "pt" ? "Baseline" : "Baseline"}: ${esc(baselineStr)}</div>
+      <div class="live-status-row">
+        <span class="live-baseline-note">${lang === "pt" ? "Baseline" : "Baseline"}: ${esc(baselineStr)}</span>
+        ${_liveLastPoll ? `<span class="live-poll-status live-poll-${_liveLastPoll.status}">${(() => {
+          const pollAt = new Date(_liveLastPoll.at).toLocaleTimeString(lang === "pt" ? "pt-BR" : "en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+          const labels = {
+            ok:     lang === "pt" ? "ok" : "ok",
+            cached: lang === "pt" ? "cache do servidor" : "server cache",
+            fail:   lang === "pt" ? "proxy falhou" : "proxy failed",
+          };
+          return `${lang === "pt" ? "Último" : "Last"}: ${pollAt} · ${labels[_liveLastPoll.status]}${_liveConsecutiveFails > 1 ? ` ×${_liveConsecutiveFails}` : ""}`;
+        })()}</span>` : `<span class="live-poll-status live-poll-pending">${lang === "pt" ? "aguardando proxy..." : "waiting proxy..."}</span>`}
+        ${_liveCadenceMs > 0 ? `<span class="live-poll-next" id="live-poll-next">${lang === "pt" ? "próximo" : "next"}: <span id="live-poll-eta">${Math.round(_liveCadenceMs/1000)}s</span></span>` : `<span class="live-poll-next">${lang === "pt" ? "polling pausado" : "polling paused"}</span>`}
+      </div>
+      ${_liveLastPoll && _liveLastPoll.status === "cached" && _liveSamples.length >= 3 ? `<div class="live-cache-hint">${lang === "pt" ? "ⓘ RuneMetrics cacheia perfis por ~5 min. O contador segue o último valor real." : "ⓘ RuneMetrics caches profiles ~5 min. Counter holds at last real value."}</div>` : ""}
     </div>
 
     ${etaHTML}
@@ -414,7 +466,7 @@ function _liveRender(snap, baseline) {
   if (resetBtn) {
     resetBtn.addEventListener("click", () => {
       const name = PLAYERS[_livePlayerIdx];
-      const last = _liveSamples[_liveSamples.length - 1];
+      const last = _liveSamples[_liveSamples.length - 1] || _liveColdSnap;
       if (last) {
         // Stamp the baseline at click time so the UI shows "now" immediately,
         // not the last poll's timestamp.
@@ -422,6 +474,14 @@ function _liveRender(snap, baseline) {
         liveSaveBaseline(name, fresh);
         _liveRender(last, fresh);
       }
+    });
+  }
+  const refreshBtn = root.querySelector("#live-refresh-btn");
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", () => {
+      if (_liveTimer) clearTimeout(_liveTimer);
+      refreshBtn.classList.add("spinning");
+      _liveTick().finally(() => refreshBtn.classList.remove("spinning"));
     });
   }
   root.querySelectorAll(".live-tip[data-goto]").forEach(el => {
@@ -445,22 +505,25 @@ function renderLive(players) {
   // Mount/refresh
   _liveActive = true;
   liveInjectStyles();
-  // First paint from cached data (no fetch yet)
+  // First paint from cached data — render but DON'T seed _liveSamples.
+  // The cron-cached snapshot can be up to 30 min stale; mixing it with the
+  // first live-fetched sample inflates rate by orders of magnitude and
+  // makes the counter pump-then-snap.
   const p = players[_livePlayerIdx];
   if (p) {
     const snap = _liveSnapshotFromPlayer(p);
-    _liveSamples.push(snap);
-    if (_liveSamples.length > _LIVE_MAX_SAMPLES) _liveSamples.shift();
+    _liveColdSnap = snap;
     let baseline = liveLoadBaseline(p.name);
     if (!baseline) {
       baseline = snap;
       liveSaveBaseline(p.name, baseline);
     }
-    _liveLerpPrev = snap;
-    _liveLerpRate = _liveComputeRates();
+    // No _liveLerpPrev set here — lerp will start once a live poll lands.
     _liveRender(snap, baseline);
   }
-  _liveScheduleNext();
+  // Kick a poll immediately so the user doesn't wait 30 s for the first
+  // real data point.
+  _liveTick();
   _liveLerpLoop();
 }
 
@@ -520,9 +583,20 @@ function liveInjectStyles() {
 .live-xp-rate { font-family: var(--font-mono); font-weight: 800; color: var(--green); }
 .live-session { color: var(--text-2); }
 .live-session strong { color: var(--gold-bright); font-family: var(--font-mono); }
-.live-reset { appearance: none; background: var(--bg-raised); border: 1px solid var(--border); color: var(--text-2); width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 0.85rem; }
-.live-reset:hover { border-color: var(--gold-dim); color: var(--gold); }
-.live-baseline-note { font-size: 0.58rem; color: var(--text-3); margin-top: 6px; }
+.live-reset, .live-refresh { appearance: none; background: var(--bg-raised); border: 1px solid var(--border); color: var(--text-2); width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 0.85rem; }
+.live-reset:hover, .live-refresh:hover { border-color: var(--gold-dim); color: var(--gold); }
+.live-refresh.spinning svg, .live-refresh.spinning { animation: liveSpin 0.8s linear infinite; }
+@keyframes liveSpin { to { transform: rotate(360deg); } }
+.live-status-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 6px; font-size: 0.58rem; }
+.live-baseline-note { color: var(--text-3); }
+.live-poll-status { font-family: var(--font-mono); }
+.live-poll-ok { color: var(--green); }
+.live-poll-cached { color: var(--gold); }
+.live-poll-fail { color: var(--red); }
+.live-poll-pending { color: var(--text-3); }
+.live-poll-next { color: var(--text-3); font-family: var(--font-mono); }
+.live-poll-next #live-poll-eta { color: var(--text-2); font-weight: 700; }
+.live-cache-hint { font-size: 0.6rem; color: var(--text-3); text-align: center; margin-top: 4px; padding: 4px 8px; background: var(--bg-raised); border-radius: var(--radius-xs); }
 
 .live-active-card { background: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--green); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 14px; }
 .live-active-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
