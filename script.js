@@ -736,11 +736,17 @@ function renderH2H(players) {
     ${rows
       .map((r) => {
         const mx = Math.max(r.v1, r.v2, 1);
+        // Avoid the "1 vs 0 looks like 80% vs nothing" visual distortion:
+        // floor at 6% so a non-zero count is always visible.
+        const barPct = (val) => {
+          if (val <= 0) return 0;
+          return Math.max((val / mx) * 100, 6);
+        };
         return `
       <div class="h2h-row">
-        <div class="h2h-bar-wrap left${r.v1 >= r.v2 ? " winner" : ""}"><div class="h2h-bar" style="width:${(r.v1 / mx) * 100}%"></div><div class="h2h-val">${fmt(r.v1)}</div></div>
+        <div class="h2h-bar-wrap left${r.v1 >= r.v2 ? " winner" : ""}"><div class="h2h-bar" style="width:${barPct(r.v1)}%"></div><div class="h2h-val">${fmt(r.v1)}</div></div>
         <div class="h2h-label">${r.label}</div>
-        <div class="h2h-bar-wrap right${r.v2 >= r.v1 ? " winner" : ""}"><div class="h2h-bar" style="width:${(r.v2 / mx) * 100}%"></div><div class="h2h-val">${fmt(r.v2)}</div></div>
+        <div class="h2h-bar-wrap right${r.v2 >= r.v1 ? " winner" : ""}"><div class="h2h-bar" style="width:${barPct(r.v2)}%"></div><div class="h2h-val">${fmt(r.v2)}</div></div>
       </div>`;
       })
       .join("")}

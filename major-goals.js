@@ -249,7 +249,7 @@ function mgInjectStyles() {
   margin-bottom: var(--sp-6, 24px);
 }
 @media (min-width: 680px) {
-  .mg-grid { grid-template-columns: repeat(2, 1fr); }
+  .mg-grid { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; }
 }
 
 .mg-card {
