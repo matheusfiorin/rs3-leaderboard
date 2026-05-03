@@ -430,7 +430,7 @@ function goalQuestRowMissing(questName) {
   return `<div class="gl-quest-inc">
     <span class="gl-q-icon">○</span>
     <span class="gl-q-name">${typeof esc === "function" ? esc(questName) : questName}</span>
-    <a class="gl-q-wiki" href="${wiki}" target="_blank" rel="noopener">Wiki</a>
+    <a class="gl-q-wiki" href="${wiki}" target="_blank" rel="noopener noreferrer">Wiki</a>
   </div>`;
 }
 
@@ -497,7 +497,7 @@ function goalPhaseTree(goal, player) {
       const cls = done ? "gl-pq-done" : isNext ? "gl-pq-next" : "gl-pq-todo";
       const wikiUrl = `https://runescape.wiki/w/${encodeURIComponent(q.replace(/ /g, "_"))}`;
       const icon = done ? "✓" : isNext ? "→" : "○";
-      html += `<a href="${wikiUrl}" target="_blank" rel="noopener" class="gl-pq ${cls}">
+      html += `<a href="${wikiUrl}" target="_blank" rel="noopener noreferrer" class="gl-pq ${cls}">
         <span class="gl-pq-icon">${icon}</span>
         <span class="gl-pq-name">${typeof esc === "function" ? esc(q) : q}</span>
       </a>`;

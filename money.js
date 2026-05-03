@@ -756,7 +756,7 @@ function moneyCardHTML(m, player, lang, rank, podium) {
     <div class="mn-card-meta">
       <span class="mn-cat">${catInfo.icon} ${catLabel}</span>
       <span class="mn-int" style="color:${intInfo.color}">${intLabel}</span>
-      ${m.wiki ? `<a class="mn-wiki" href="${m.wiki}" target="_blank" rel="noopener">Wiki</a>` : ""}
+      ${m.wiki ? `<a class="mn-wiki" href="${m.wiki}" target="_blank" rel="noopener noreferrer">Wiki</a>` : ""}
     </div>
     ${reqTags ? `<div class="mn-reqs">${reqTags}${questBadge}</div>` : (questBadge ? `<div class="mn-reqs">${questBadge}</div>` : "")}
     ${gapHTML}

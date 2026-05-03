@@ -57,8 +57,18 @@ function renderLookupPage() {
 
 /* ── Search trigger ────────────────────────────────────────────────── */
 
+// RS3 RSNs: 1–12 chars, letters/digits/space/_/-. Validate before burning
+// proxy quota on garbage input.
+const LK_RSN_RE = /^[A-Za-z0-9 _-]{1,12}$/;
+
 function lkTriggerSearch(rsn) {
+  rsn = (rsn || "").trim();
   if (!rsn) return;
+  if (!LK_RSN_RE.test(rsn)) {
+    const status = $("#lk-status");
+    if (status) status.innerHTML = `<p class="lk-error">${esc(t("lookupError"))}</p>`;
+    return;
+  }
   $("#lk-input").value = rsn;
   doLookup(rsn);
 }

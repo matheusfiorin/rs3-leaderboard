@@ -937,7 +937,7 @@ function renderQuests(players) {
         const isDN = doNextQuests.includes(q);
         const wikiUrl = `https://runescape.wiki/w/${encodeURIComponent(q.title.replace(/ /g, "_"))}`;
         return `<div class="ql-row" data-qcat="${cat}${isDN ? " do-next" : ""}">
-        <div class="ql-name"><a href="${wikiUrl}" target="_blank" rel="noopener">${esc(q.title)}</a>
+        <div class="ql-name"><a href="${wikiUrl}" target="_blank" rel="noopener noreferrer">${esc(q.title)}</a>
           <span class="ql-diff">${diffStars(q.difficulty)}</span>
           ${q.members ? '<span class="ql-members">P2P</span>' : ""}
         </div>
