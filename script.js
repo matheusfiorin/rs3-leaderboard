@@ -473,6 +473,24 @@ const MAX_PTS = JOURNAL.reduce((a, g) => a + g.pts, 0);
 let data = [];
 let source = "";
 let timer = null;
+// Last-updated stamp: kind = "cached" with cacheAgeMin, or "live" with Date.
+// Stashed at module level so updateUIText() can re-render in the new locale
+// when the user toggles language without waiting for a data refresh.
+let _lastUpdated = null;
+
+function renderLastUpdated() {
+  const el = document.getElementById("last-updated");
+  if (!el || !_lastUpdated) return;
+  if (_lastUpdated.kind === "cached") {
+    const min = _lastUpdated.cacheAgeMin;
+    el.textContent = min != null
+      ? `${t("cached")} ${min}${t("agoMin")}`
+      : t("cachedData");
+  } else if (_lastUpdated.kind === "live") {
+    const time = _lastUpdated.at.toLocaleTimeString(currentLang === "pt" ? "pt-BR" : "en-US", { hour: "2-digit", minute: "2-digit" });
+    el.textContent = `${t("updated")} ${time}`;
+  }
+}
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
 
@@ -1229,6 +1247,10 @@ function updateUIText() {
       btn.setAttribute("aria-label", label);
     }
   });
+
+  // Footer "Updated HH:MM" / "Atualizado HH:MM" relocalizes here so the lang
+  // toggle doesn't have to wait for the next data refresh.
+  renderLastUpdated();
 }
 
 // ---- Navigation: Home Grid + Floating Dock ----
@@ -1633,9 +1655,8 @@ async function load(forceLive) {
     memCacheSet(cachedResults);
     const ageStr = cacheAgeMin != null ? ` (${cacheAgeMin}${t("agoMin")})` : "";
     setSource("", `${t("cached")}${ageStr}`);
-    $("#last-updated").textContent = cacheAgeMin != null
-      ? `${t("cached")} ${cacheAgeMin}${t("agoMin")}`
-      : t("cachedData");
+    _lastUpdated = { kind: "cached", cacheAgeMin };
+    renderLastUpdated();
   }
 
   // ---- Step 2: smart-skip live when cache is cron-fresh
@@ -1664,11 +1685,13 @@ async function load(forceLive) {
     if (anyFromLive) {
       setSource("", t("live"));
       hideError();
-      const now = new Date().toLocaleTimeString(currentLang === "pt" ? "pt-BR" : "en-US", { hour: "2-digit", minute: "2-digit" });
-      $("#last-updated").textContent = `${t("updated")} ${now}`;
+      _lastUpdated = { kind: "live", at: new Date() };
+      renderLastUpdated();
     } else if (cacheAgeMin != null) {
       const ageStr = ` (${cacheAgeMin}${t("agoMin")})`;
       setSource("", `${t("cached")}${ageStr}`);
+      _lastUpdated = { kind: "cached", cacheAgeMin };
+      renderLastUpdated();
       if (cacheAgeMin > 120) showError(`⚠️ ${t("errOutdated").replace("{n}", cacheAgeMin)}`);
     }
     btn.classList.remove("spinning");
