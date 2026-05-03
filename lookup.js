@@ -37,6 +37,7 @@ function renderLookupPage() {
     <div class="lk-search-box">
       <input id="lk-input" class="lk-input" type="text"
              placeholder="${esc(t("lookupPlaceholder"))}"
+             aria-label="${esc(t("lookupPlaceholder"))}"
              autocomplete="off" spellcheck="false">
       <button id="lk-btn" class="lk-btn">${esc(t("lookupSearch"))}</button>
     </div>

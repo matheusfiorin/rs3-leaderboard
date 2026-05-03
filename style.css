@@ -32,7 +32,7 @@
   /* Parchment text — boosted for readability */
   --text: #ede7db;
   --text-2: #ada598;
-  --text-3: #706860;
+  --text-3: #9c948a;
 
   /* Status */
   --green: #3dd68c;
@@ -1043,7 +1043,13 @@ body::before {
   .skill-row { grid-template-columns: 160px 1fr 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .gl-stagger, .pageIn, .gl-pq-next .gl-pq-icon { animation: none !important; }
 }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }

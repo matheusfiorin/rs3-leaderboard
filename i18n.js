@@ -569,4 +569,11 @@ function tJournalCat(cat) {
 function setLang(lang) {
   currentLang = lang;
   localStorage.setItem("rs3lb-lang", lang);
+  // Keep <html lang> + lang-toggle aria-pressed in sync without depending on
+  // a follow-up updateUIText() call.
+  if (typeof document !== "undefined") {
+    document.documentElement.lang = lang === "pt" ? "pt-BR" : "en";
+    const btn = document.getElementById("lang-toggle");
+    if (btn) btn.setAttribute("aria-pressed", lang === "en" ? "true" : "false");
+  }
 }

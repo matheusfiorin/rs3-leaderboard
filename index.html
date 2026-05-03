@@ -32,7 +32,7 @@
             <p class="subtitle" id="subtitle-text">Acompanhamento em tempo real</p>
           </div>
           <div class="header-right">
-            <button class="lang-toggle" id="lang-toggle" title="Trocar idioma / Switch language">
+            <button class="lang-toggle" id="lang-toggle" title="Trocar idioma / Switch language" aria-label="Switch language" aria-pressed="false">
               <span id="lang-label">EN</span>
             </button>
             <div class="data-source-badge" id="data-source-badge">
@@ -68,14 +68,14 @@
       <!-- ERROR -->
       <div id="error-banner" class="error-banner hidden" role="alert">
         <span id="error-message"></span>
-        <button class="btn-dismiss" id="btn-dismiss-error">&times;</button>
+        <button class="btn-dismiss" id="btn-dismiss-error" aria-label="Dismiss">&times;</button>
       </div>
 
       <!-- MAIN CONTENT -->
       <main class="main" id="main-content">
 
         <!-- PAGE 1: DASHBOARD -->
-        <section class="page active" data-page="dashboard" role="tabpanel">
+        <section class="page active" data-page="dashboard">
           <!-- Mission Control: dynamic next-steps panel -->
           <div id="mission-control"></div>
           <!-- Major goals summary -->
@@ -90,7 +90,7 @@
         </section>
 
         <!-- PAGE: ACTIVITY -->
-        <section class="page" data-page="activity" role="tabpanel">
+        <section class="page" data-page="activity">
           <div class="section-head">
             <h2 class="section-title" id="activity-title">Atividade Recente</h2>
             <span class="badge" id="activity-count">0</span>
@@ -105,7 +105,7 @@
         </section>
 
         <!-- PAGE: MONEY -->
-        <section class="page" data-page="money" role="tabpanel">
+        <section class="page" data-page="money">
           <div class="section-head">
             <h2 class="section-title" id="money-title">Formas de Ganhar GP</h2>
           </div>
@@ -113,7 +113,7 @@
         </section>
 
         <!-- PAGE 2: SKILLS -->
-        <section class="page" data-page="skills" role="tabpanel">
+        <section class="page" data-page="skills">
           <div class="section-head">
             <h2 class="section-title" id="skills-title">Todas as Habilidades</h2>
             <div class="pill-filters" id="skill-filters">
@@ -146,7 +146,7 @@
         </section>
 
         <!-- PAGE 3: QUESTS (Goals + Quest List unified) -->
-        <section class="page" data-page="quests" role="tabpanel">
+        <section class="page" data-page="quests">
           <!-- Goals cards rendered here by goals.js -->
           <div class="section-head">
             <h2 class="section-title" id="quests-title">Miss&#245;es</h2>
@@ -165,7 +165,7 @@
         </section>
 
         <!-- PAGE 4: JOURNAL -->
-        <section class="page" data-page="journal" role="tabpanel">
+        <section class="page" data-page="journal">
           <div class="section-head">
             <h2 class="section-title" id="journal-title">Di&#225;rio de Aventuras</h2>
             <div class="pill-filters" id="journal-filters">
@@ -181,7 +181,7 @@
         </section>
 
         <!-- PAGE 5: LOOKUP -->
-        <section class="page" data-page="lookup" role="tabpanel">
+        <section class="page" data-page="lookup">
           <div class="section-head">
             <h2 class="section-title" id="lookup-title">&#x1f50d; Consulta</h2>
           </div>
@@ -189,7 +189,7 @@
         </section>
 
         <!-- PAGE: GOALS -->
-        <section class="page" data-page="goals" role="tabpanel">
+        <section class="page" data-page="goals">
           <div class="section-head">
             <h2 class="section-title" id="goals-title">Metas</h2>
           </div>
@@ -210,28 +210,28 @@
       </footer>
     </div>
 
-    <!-- DOCK: 8 buttons -->
-    <nav class="dock" id="dock">
-      <button class="dock-btn" data-launch="dashboard" title="Dashboard">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <!-- DOCK: 7 buttons -->
+    <nav class="dock" id="dock" aria-label="Main navigation">
+      <button class="dock-btn" data-launch="dashboard" title="Dashboard" aria-label="Dashboard">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       </button>
-      <button class="dock-btn" data-launch="skills" title="Skills">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <button class="dock-btn" data-launch="skills" title="Skills" aria-label="Skills">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       </button>
-      <button class="dock-btn" data-launch="quests" title="Quests">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <button class="dock-btn" data-launch="quests" title="Quests" aria-label="Quests">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
       </button>
-      <button class="dock-btn" data-launch="goals" title="Goals">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22c5.5 0 10-4.5 10-10S17.5 2 12 2 2 6.5 2 12s4.5 10 10 10z"/><circle cx="12" cy="12" r="3"/></svg>
+      <button class="dock-btn" data-launch="goals" title="Goals" aria-label="Goals">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22c5.5 0 10-4.5 10-10S17.5 2 12 2 2 6.5 2 12s4.5 10 10 10z"/><circle cx="12" cy="12" r="3"/></svg>
       </button>
-      <button class="dock-btn" data-launch="activity" title="Activity">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <button class="dock-btn" data-launch="activity" title="Activity" aria-label="Activity">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       </button>
-      <button class="dock-btn" data-launch="money" title="Money">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v12m-4-8h8"/></svg>
+      <button class="dock-btn" data-launch="money" title="Money" aria-label="Money">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v12m-4-8h8"/></svg>
       </button>
-      <button class="dock-btn" data-launch="lookup" title="Lookup">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <button class="dock-btn" data-launch="lookup" title="Lookup" aria-label="Lookup">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       </button>
     </nav>
 

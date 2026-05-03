@@ -450,15 +450,15 @@ function goalManualRow(player, item, isDone) {
   const label = lang === "pt" ? item.label_pt : item.label_en;
 
   if (isDone) {
-    return `<div class="gl-manual-done">
+    return `<label class="gl-manual-done">
       <input type="checkbox" class="gl-check" data-key="${key}" ${checked}>
       <span class="gl-done-name">${typeof esc === "function" ? esc(label) : label}</span>
-    </div>`;
+    </label>`;
   }
-  return `<div class="gl-manual-inc">
+  return `<label class="gl-manual-inc">
     <input type="checkbox" class="gl-check" data-key="${key}" ${checked}>
     <span class="gl-manual-label">${typeof esc === "function" ? esc(label) : label}</span>
-  </div>`;
+  </label>`;
 }
 
 // ---- Phase Tree (ROTM-style guide) ----
