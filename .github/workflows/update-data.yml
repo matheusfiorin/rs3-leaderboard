@@ -24,36 +24,58 @@ jobs:
         run: |
           mkdir -p data
 
+          # Fetch a URL to a temp file. Only overwrite the target when the
+          # response passes the jq validator. Preserves the last known-good
+          # cache when RuneMetrics returns NOT_A_MEMBER (private profile),
+          # the player is unranked on hiscores, or any transient API hiccup.
+          fetch_or_keep() {
+            local url="$1" target="$2" validator="$3" label="$4"
+            local tmp
+            tmp="$(mktemp)"
+            if curl -sf --retry 3 --max-time 15 \
+                 -H "User-Agent: RS3-Leaderboard/1.0" \
+                 "$url" -o "$tmp"; then
+              if jq -e "$validator" "$tmp" >/dev/null 2>&1; then
+                mv "$tmp" "$target"
+                echo "  ok  $label -> $target"
+              else
+                echo "  skip $label (validator failed; preserving previous $target)"
+                rm -f "$tmp"
+              fi
+            else
+              echo "  skip $label (fetch failed; preserving previous $target)"
+              rm -f "$tmp"
+            fi
+          }
+
           for player in "Fiorovizk" "Decxus"; do
-            safe=$(echo "$player" | tr '[:upper:]' '[:lower:]')
+            safe="$(echo "$player" | tr '[:upper:]' '[:lower:]')"
             echo "Fetching data for $player..."
 
-            # RuneMetrics Profile
-            curl -sf --retry 3 --max-time 15 \
-              -H "User-Agent: RS3-Leaderboard/1.0" \
+            fetch_or_keep \
               "https://apps.runescape.com/runemetrics/profile/profile?user=${player}&activities=20" \
-              -o "data/${safe}_profile.json" || echo "{\"error\":\"fetch_failed\"}" > "data/${safe}_profile.json"
+              "data/${safe}_profile.json" \
+              '(.error // empty) == empty and ((.skillvalues // []) | length) > 0' \
+              "profile($player)"
 
-            # Hiscores JSON
-            curl -sf --retry 3 --max-time 15 \
-              -H "User-Agent: RS3-Leaderboard/1.0" \
+            fetch_or_keep \
               "https://secure.runescape.com/m=hiscore/index_lite.json?player=${player}" \
-              -o "data/${safe}_hiscores.json" || echo "{\"error\":\"fetch_failed\"}" > "data/${safe}_hiscores.json"
+              "data/${safe}_hiscores.json" \
+              '((.skills // []) | length) > 0' \
+              "hiscores($player)"
 
-            # Quests
-            curl -sf --retry 3 --max-time 15 \
-              -H "User-Agent: RS3-Leaderboard/1.0" \
+            fetch_or_keep \
               "https://apps.runescape.com/runemetrics/quests?user=${player}" \
-              -o "data/${safe}_quests.json" || echo "{\"error\":\"fetch_failed\"}" > "data/${safe}_quests.json"
+              "data/${safe}_quests.json" \
+              '((.quests // []) | length) > 0' \
+              "quests($player)"
 
             sleep 1
           done
 
-          # GE Prices for money making
           echo "Fetching GE prices..."
           python3 scripts/fetch_prices.py
 
-          # Timestamp
           echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > data/meta.json
 
           echo "Done fetching all data"
