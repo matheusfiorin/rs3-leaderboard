@@ -555,7 +555,11 @@ async function liveFetch(url) {
 }
 
 async function cacheFetch(path) {
-  const r = await fetchWithTimeout(path, {}, 3000);
+  // Pages serves data/*.json with max-age=600. Without revalidation the browser
+  // would happily serve a stale (potentially error-state) body for 10 minutes
+  // after a fresh deploy. `no-cache` forces a conditional GET (If-None-Match),
+  // so the response is either 304 (cheap) or 200 with the latest body.
+  const r = await fetchWithTimeout(path, { cache: "no-cache" }, 3000);
   if (!r.ok) throw new Error("cache_miss");
   return r.json();
 }
