@@ -1061,3 +1061,34 @@ body::before {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--bg-raised); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--bg-hover); }
+
+/* ---- Focus Indicators (Accessibility - WCAG 2.4.7) ---- */
+button:focus-visible,
+.btn-refresh:focus-visible,
+.btn-dismiss:focus-visible,
+.btn-refetch:focus-visible,
+.lang-toggle:focus-visible,
+.pill:focus-visible,
+.dock-btn:focus-visible,
+.back-btn:focus-visible,
+.lk-btn:focus-visible,
+.feed-more:focus-visible,
+a:focus-visible {
+  outline: 3px solid var(--gold-bright);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Remove default outline for styled elements already handling focus */
+.lk-input:focus-visible {
+  outline: 3px solid var(--gold-bright);
+  outline-offset: 1px;
+  border-color: var(--gold-bright);
+}
+
+/* Tab/pill active state with aria-pressed for screen readers */
+[aria-pressed="true"]:focus-visible,
+[aria-current="page"]:focus-visible {
+  outline: 3px solid var(--gold-bright);
+  outline-offset: 2px;
+}

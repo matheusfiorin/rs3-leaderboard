@@ -14,7 +14,6 @@ let _livePlayerIdx = 0;             // 0 = Fio, 1 = Decxus
 let _liveCadenceMs = 30000;         // default 30s
 let _liveTimer = null;              // setTimeout handle
 let _liveInflight = false;          // single-fetch guard
-let _liveAbortCtrl = null;            // AbortController for current player request
 let _liveSamples = [];              // recent live-fetched {at, totalXp, perSkillXp:{}, levels:{}, activities:[]}
 let _liveColdSnap = null;           // initial paint snapshot (NOT pushed into samples)
 let _liveLastPoll = null;           // {at, status: "ok"|"cached"|"fail"}
@@ -145,10 +144,9 @@ function _liveScheduleNext() {
 }
 
 async function _liveTick() {
-  const currentIdx = _livePlayerIdx;  // Capture current player index at start
   if (!_liveActive) return;
   const name = PLAYERS[_livePlayerIdx];
-  const player = await _liveFetchOnce(name, currentIdx);
+  const player = await _liveFetchOnce(name);
   if (player) {
     const snap = _liveSnapshotFromPlayer(player);
     const last = _liveSamples[_liveSamples.length - 1];
@@ -442,7 +440,6 @@ function _liveRender(snap, baseline) {
     b.addEventListener("click", () => {
       const idx = parseInt(b.dataset.livePlayer, 10);
       if (idx === _livePlayerIdx) return;
-      if (_liveAbortCtrl) _liveAbortCtrl.abort();  // Abort any in-flight request for previous player
       _livePlayerIdx = idx;
       _liveSamples = [];
       _liveLerpPrev = null;

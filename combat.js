@@ -742,12 +742,14 @@ function getMeleeBars(a, lvl) {
   if (lvl >= 7) s.push(a.adaptive_str);
   s.push(a.attack_basic);
   if (lvl >= 60) s.push(a.punish);
+  if (lvl >= 42) s.push(a.berserk);
   if (lvl >= 37) ao.push(a.hurricane);
   if (lvl >= 3) ao.push(a.assault);
   if (lvl >= 7) ao.push(a.adaptive_str);
   if (lvl >= 50) ao.push(a.dismember);
   if (lvl >= 21) ao.push(a.fury);
   if (lvl >= 18) ao.push(a.rend);
+  if (lvl >= 42) ao.push(a.berserk);
   ao.push(a.attack_basic);
   return { single: s.slice(0, 9), aoe: ao.slice(0, 9) };
 }
@@ -761,12 +763,14 @@ function getRangedBars(a, lvl) {
   if (lvl >= 58) s.push(a.galeshot);
   if (lvl >= 31) s.push(a.binding);
   s.push(a.ranged_basic);
+  if (lvl >= 69) s.push(a.deadshot);
   if (lvl >= 36) ao.push(a.bombardment);
   if (lvl >= 67) ao.push(a.ricochet);
   if (lvl >= 3) ao.push(a.snap);
   if (lvl >= 62) ao.push(a.rapid);
   if (lvl >= 13) ao.push(a.piercing);
   if (lvl >= 5) ao.push(a.snipe);
+  if (lvl >= 69) ao.push(a.deadshot);
   ao.push(a.ranged_basic);
   return { single: s.slice(0, 9), aoe: ao.slice(0, 9) };
 }
@@ -781,11 +785,15 @@ function getMagicBars(a, lvl) {
   s.push(a.magic_basic);
   if (lvl >= 40) s.push(a.impact);
   if (lvl >= 26) s.push(a.runic_charge);
+  if (lvl >= 92) s.push(a.sunshine);
+  if (lvl >= 101) s.push(a.omnipower);
   if (lvl >= 19) ao.push(a.dragon_breath);
   if (lvl >= 45) ao.push(a.chain);
   if (lvl >= 55) ao.push(a.wild_magic);
   if (lvl >= 10) ao.push(a.combust);
   if (lvl >= 6) ao.push(a.sonic);
+  if (lvl >= 92) ao.push(a.sunshine);
+  if (lvl >= 101) ao.push(a.omnipower);
   ao.push(a.magic_basic);
   if (lvl >= 26) ao.push(a.runic_charge);
   return { single: s.slice(0, 9), aoe: ao.slice(0, 9) };
@@ -801,6 +809,7 @@ function getNecroBars(a, lvl) {
   if (lvl >= 5) s.push(a.soul_sap);
   s.push(a.touch_of_death);
   if (lvl >= 32) s.push(a.command_skel);
+  if (lvl >= 50) s.push(a.living_death);
   if (lvl >= 10) ao.push(a.spectral_scythe);
   if (lvl >= 40) ao.push(a.death_skulls);
   if (lvl >= 30) ao.push(a.volley_of_souls);
@@ -808,6 +817,7 @@ function getNecroBars(a, lvl) {
   if (lvl >= 12) ao.push(a.finger_of_death);
   if (lvl >= 24) ao.push(a.bloat);
   if (lvl >= 5) ao.push(a.soul_sap);
+  if (lvl >= 50) ao.push(a.living_death);
   ao.push(a.touch_of_death);
   return { single: s.slice(0, 9), aoe: ao.slice(0, 9) };
 }

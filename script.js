@@ -638,19 +638,6 @@ async function fetchLive(n) {
   const quests   = q.status === "fulfilled" ? q.value   : (cq.status === "fulfilled" ? cq.value : null);
   return parse(profile, hiscores, quests);
 }
-async function fetchCached(n) {
-  const [p, h, q] = await Promise.allSettled([
-    cacheFetch(CACHE.profile(n)),
-    cacheFetch(CACHE.hiscores(n)),
-    cacheFetch(CACHE.quests(n)),
-  ]);
-  if (p.status === "rejected") throw new Error("cache_fail");
-  return parse(
-    p.value,
-    h.status === "fulfilled" ? h.value : null,
-    q.status === "fulfilled" ? q.value : null,
-  );
-}
 
 // ---- Formatting ----
 function fmt(n) {
@@ -846,7 +833,16 @@ function renderActivity(players) {
       });
   });
   all.sort((a, b) => b.ts - a.ts);
-  $("#activity-count").textContent = all.length;
+  
+  // Count only NEW activities since last view
+  const lastSeenTime = parseInt(localStorage.getItem("lastActivityTime") || "0", 10);
+  const newActivities = all.filter(a => a.ts > lastSeenTime);
+  $("#activity-count").textContent = newActivities.length;
+  
+  // Update last seen time to most recent activity
+  if (all.length > 0) {
+    localStorage.setItem("lastActivityTime", all[0].ts.toString());
+  }
 
   if (!all.length) {
     $("#activity-feed").innerHTML =
@@ -1042,8 +1038,8 @@ function renderJournal(players, targetScores, targetGrid) {
       <div class="j-title"><span class="j-title-icon">${g.icon}</span>${j.title}</div><div class="j-desc">${j.desc}</div></div>
       <div class="j-pts">${g.pts} ${t("pts")}</div>
       <div class="j-checks">
-        <div class="j-check p1-color${p1d ? " done" : ""}" title="${players[0].name}">${p1d ? "\u2713" : ""}</div>
-        <div class="j-check p2-color${p2d ? " done" : ""}" title="${players[1].name}">${p2d ? "\u2713" : ""}</div>
+        <div class="j-check p1-color${p1d ? " done" : ""}" title="${esc(players[0].name)}">${p1d ? "\u2713" : ""}</div>
+        <div class="j-check p2-color${p2d ? " done" : ""}" title="${esc(players[1].name)}">${p2d ? "\u2713" : ""}</div>
       </div></div>`;
   }).join("");
 }
@@ -1284,9 +1280,11 @@ function launchSection(page) {
   // Update dock active states
   if (dock) {
     dock.classList.add("visible");
-    dock.querySelectorAll(".dock-btn").forEach((b) =>
-      b.classList.toggle("active", b.dataset.launch === page)
-    );
+    dock.querySelectorAll(".dock-btn").forEach((b) => {
+      const isActive = b.dataset.launch === page;
+      b.classList.toggle("active", isActive);
+      b.setAttribute("aria-pressed", isActive ? "true" : "false");
+    });
   }
 
   // Normalize URL: replace stale hash on fallback so back/forward + share-links work.
@@ -1319,13 +1317,13 @@ function initNavigation() {
     // moments earlier on cold deep-link). Hard-coding "dashboard" here would
     // race with launchSection() and clobber the highlight.
     const active = getActiveTab();
-    dock.querySelectorAll(".dock-btn").forEach((b) =>
-      b.classList.toggle("active", b.dataset.launch === active)
-    );
+    dock.querySelectorAll(".dock-btn").forEach((b) => {
+      const isActive = b.dataset.launch === active;
+      b.classList.toggle("active", isActive);
+      b.setAttribute("aria-pressed", isActive ? "true" : "false");
+    });
   }
 }
-// Alias for backward compat
-function initTabs() { initNavigation(); }
 
 // Update home card stats from live data
 function updateHomeStats() {
