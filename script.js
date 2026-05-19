@@ -1644,14 +1644,15 @@ const CACHE_FRESH_MS = 25 * 60 * 1000;
 
 async function load(forceLive) {
   const btn = $("#btn-refresh");
-  btn.classList.add("spinning");
+  if (btn) btn.classList.add("spinning");
   hideError();
 
-  // ---- Step 1: read meta + every cache file in parallel
-  const [metaR, ...cacheRs] = await Promise.allSettled([
-    cacheFetch(CACHE.meta),
-    ...PLAYERS.flatMap(n => [cacheFetch(CACHE.profile(n)), cacheFetch(CACHE.hiscores(n)), cacheFetch(CACHE.quests(n))]),
-  ]);
+  try {
+    // ---- Step 1: read meta + every cache file in parallel
+    const [metaR, ...cacheRs] = await Promise.allSettled([
+      cacheFetch(CACHE.meta),
+      ...PLAYERS.flatMap(n => [cacheFetch(CACHE.profile(n)), cacheFetch(CACHE.hiscores(n)), cacheFetch(CACHE.quests(n))]),
+    ]);
 
   const meta = metaR.status === "fulfilled" ? metaR.value : null;
   const cacheAgeMs = meta ? Date.now() - new Date(meta.timestamp).getTime() : null;
@@ -1738,16 +1739,47 @@ async function load(forceLive) {
     clearTimeout(timer);
     timer = setTimeout(scheduledLoad, 30000);
   }
-  btn.classList.remove("spinning");
+    btn.classList.remove("spinning");
+  } catch (err) {
+    console.error("Load fatal error:", err);
+    const btn = $("#btn-refresh");
+    if (btn) btn.classList.remove("spinning");
+    // Ensure overlay is hidden on any fatal error
+    const overlay = $("#loading-overlay");
+    if (overlay) overlay.classList.add("hidden");
+    const content = $("#main-content");
+    if (content) content.classList.add("visible");
+    showError(currentLang === "pt" ? "Erro ao carregar dados. Tente novamente." : "Error loading data. Please try again.");
+    // Re-throw so scheduledLoad catches it
+    throw err;
+  }
 }
 
-// ---- Scheduled load with guard ----
+// ---- Scheduled load with guard + timeout ----
 let _loading = false;
+const LOAD_TIMEOUT_MS = 10000;
+
 async function scheduledLoad(forceLive) {
   if (_loading) return;
   _loading = true;
   try {
-    await load(forceLive);
+    const loadPromise = load(forceLive);
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("load_timeout")), LOAD_TIMEOUT_MS)
+    );
+    await Promise.race([loadPromise, timeoutPromise]);
+  } catch (err) {
+    console.error("Load error:", err);
+    const btn = $("#btn-refresh");
+    if (btn) btn.classList.remove("spinning");
+    const overlay = $("#loading-overlay");
+    if (overlay) overlay.classList.add("hidden");
+    const content = $("#main-content");
+    if (content) content.classList.add("visible");
+    const errMsg = err?.message === "load_timeout"
+      ? (currentLang === "pt" ? "Carregamento expirou. Tente novamente." : "Loading timed out. Please try again.")
+      : (currentLang === "pt" ? "Erro ao carregar dados. Tente novamente." : "Error loading data. Please try again.");
+    showError(errMsg);
   } finally {
     _loading = false;
   }
