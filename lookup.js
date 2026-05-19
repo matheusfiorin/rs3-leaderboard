@@ -178,8 +178,13 @@ async function doLookup(rsn) {
 
     $("#lk-back-btn")?.addEventListener("click", () => {
       results.innerHTML = "";
-      $("#lk-input").value = "";
-      $("#lk-input").focus();
+      const input = $("#lk-input");
+      input.value = "";
+      input.focus();
+      // Show hint that search was cleared (especially helpful on mobile)
+      if (typeof showToast === "function") {
+        showToast(t("lookupPlaceholder"), "default");
+      }
     });
   } catch (err) {
     console.error("Lookup failed:", err);

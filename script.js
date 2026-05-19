@@ -866,7 +866,10 @@ function renderActivity(players) {
   feed.innerHTML = all.slice(0, shown).map(renderItem).join("")
     + (all.length > shown ? `<button class="pill feed-more" style="display:block;margin:10px auto;padding:6px 20px">${t("showMore")} (${all.length - shown})</button>` : "");
 
-  feed.addEventListener("click", function handler(e) {
+  // Remove previous listener if it exists (prevent memory leak from multiple renders)
+  if (feed._activityHandler) feed.removeEventListener("click", feed._activityHandler);
+  
+  feed._activityHandler = function handler(e) {
     const btn = e.target.closest(".feed-more");
     if (!btn) return;
     const next = Math.min(shown + FEED_PAGE, all.length);
@@ -880,7 +883,9 @@ function renderActivity(players) {
     if (activeFilter && activeFilter.dataset.afilter !== "all") {
       $$(".feed-item").forEach(r => r.classList.toggle("hidden", r.dataset.atype !== activeFilter.dataset.afilter));
     }
-  });
+  };
+  
+  feed.addEventListener("click", feed._activityHandler);
 }
 
 // ---- Render: Quests ----
@@ -1531,9 +1536,11 @@ function renderTab(tab, results) {
       console.error(`Render ${tab} failed:`, e);
     }
   }
-  // Attach error fallbacks to any newly-rendered images. Idempotent: per-img
+  // Attach error fallbacks only to images in the active page, not entire document.
+  // This avoids a full-document query-selector on every render. Idempotent: per-img
   // _fb flag prevents duplicate listeners.
-  attachImgFallbacks(document.body);
+  const pageEl = document.querySelector('[data-page="' + tab + '"]');
+  attachImgFallbacks(pageEl || document.body);
   _rendered.add(tab);
 }
 
@@ -1603,7 +1610,11 @@ function renderAll(results) {
       ? "Lista de missões não carregou — alguns objetivos podem aparecer incompletos."
       : "Quest list failed to load — some goals may show as incomplete.");
   }
-  renderTab(getActiveTab(), results);
+  // Only re-render the active tab if data actually changed
+  const activeTab = getActiveTab();
+  if (changed || !_rendered.has(activeTab)) {
+    renderTab(activeTab, results);
+  }
   // updateHomeStats() removed — targets non-existent DOM IDs
 
   // Animate XP counters if data changed (Variable Reward Schedule)
@@ -1782,6 +1793,14 @@ document.addEventListener("DOMContentLoaded", () => {
     // looks at XP/quest deltas, not language).
     _rendered.clear();
     if (data.length) renderAll(data);
+  });
+  // Pause 5-min refresh when tab is hidden to save battery and API quota
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      if (timer) clearTimeout(timer);
+    } else {
+      if (!_loading) scheduledLoad(); // Resume if not already loading
+    }
   });
 
 });
