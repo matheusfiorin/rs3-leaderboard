@@ -376,23 +376,25 @@ function goalNextActionsPanel(player) {
 }
 
 // ---- Segmented Progress Bar ----
-function goalSegmentedBar(prog, goal) {
+function goalSegmentedBar(prog, goal, capstoneDone) {
   const lang = typeof currentLang !== "undefined" ? currentLang : "en";
   const segments = [];
   const labels = [];
+  // If capstone done, show all segments as 100% (capstone proves all were met)
+  const displayAsComplete = capstoneDone ? true : false;
 
   if (goal.skills.length) {
-    const pct = Math.round((prog.skillsDone / goal.skills.length) * 100);
+    const pct = displayAsComplete ? 100 : Math.round((prog.skillsDone / goal.skills.length) * 100);
     segments.push(`<div class="gl-seg gl-seg-skill" style="flex:${goal.skills.length}"><div class="gl-seg-fill" data-tw="${pct}%" style="width:0"></div></div>`);
     labels.push(`<span>${lang === "pt" ? "Hab" : "Skills"} ${prog.skillsDone}/${goal.skills.length}</span>`);
   }
   if (goal.quests.length) {
-    const pct = Math.round((prog.questsDone / goal.quests.length) * 100);
+    const pct = displayAsComplete ? 100 : Math.round((prog.questsDone / goal.quests.length) * 100);
     segments.push(`<div class="gl-seg gl-seg-quest" style="flex:${goal.quests.length}"><div class="gl-seg-fill" data-tw="${pct}%" style="width:0"></div></div>`);
     labels.push(`<span>${lang === "pt" ? "Missões" : "Quests"} ${prog.questsDone}/${goal.quests.length}</span>`);
   }
   if (goal.manual.length) {
-    const pct = Math.round((prog.manualDone / goal.manual.length) * 100);
+    const pct = displayAsComplete ? 100 : Math.round((prog.manualDone / goal.manual.length) * 100);
     segments.push(`<div class="gl-seg gl-seg-manual" style="flex:${goal.manual.length}"><div class="gl-seg-fill" data-tw="${pct}%" style="width:0"></div></div>`);
     labels.push(`<span>${lang === "pt" ? "Manual" : "Manual"} ${prog.manualDone}/${goal.manual.length}</span>`);
   }
@@ -514,6 +516,8 @@ function goalCard(goal, player, playerIdx, staggerIdx) {
   const lang = typeof currentLang !== "undefined" ? currentLang : "en";
   const label = lang === "pt" ? goal.label_pt : goal.label_en;
   const sub = lang === "pt" ? goal.sub_pt : goal.sub_en;
+  // Show 100% completion if capstone is done (satisfies all requirements at once)
+  const displayPct = prog.capstoneDone ? 100 : prog.pct;
   const allDone = prog.pct >= 100 || prog.capstoneDone;
   const manual = goalsLoadManual();
 
@@ -618,9 +622,9 @@ function goalCard(goal, player, playerIdx, staggerIdx) {
       <div class="gl-card-info">
         <div class="gl-card-title">${label}</div>
         <div class="gl-card-sub">${sub}</div>
-        ${goalSegmentedBar(prog, goal)}
+        ${goalSegmentedBar(prog, goal, prog.capstoneDone)}
       </div>
-      ${goalRing(prog.pct, 56, goal.color)}
+      ${goalRing(displayPct, 56, goal.color)}
     </summary>
     <div class="gl-card-body">${body}</div>
   </details>`;
