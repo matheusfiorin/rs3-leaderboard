@@ -76,7 +76,10 @@ jobs:
           echo "Fetching GE prices..."
           python3 scripts/fetch_prices.py
 
-          echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > data/meta.json
+          # Only update meta.json if data actually changed (not just meta)
+          if git diff --name-only HEAD -- data/ | grep -qv meta.json; then
+            echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > data/meta.json
+          fi
 
           echo "Done fetching all data"
 

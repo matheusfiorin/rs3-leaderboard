@@ -1294,6 +1294,16 @@ function launchSection(page) {
     history.pushState({ page }, "", "#" + page);
   }
 
+  // Move keyboard focus to main content for accessibility (WCAG 2.4.3)
+  const pageEls = $$(".page");
+  for (const el of pageEls) {
+    if (el.dataset.page === page) {
+      el.setAttribute("tabindex", "-1");
+      el.focus();
+      break;
+    }
+  }
+
   // Lazy render
   if (page === "lookup") {
     if (!_rendered.has(page)) renderTab(page, data);
@@ -1326,28 +1336,8 @@ function initNavigation() {
 }
 
 // Update home card stats from live data
-function updateHomeStats() {
-  if (!data.length) return;
-  const p = data[0];
-  const s = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
-  s("hcs-skills", `${t("totalLevel")}: ${fmt(p.totalLevel)}`);
-  s("hcs-quests", `${p.questsDone}/${p.totalQuests}`);
-  s("hcs-activity", `${p.activities.length} ${t("recent")}`);
-  s("hcs-combat", `${t("combat")} ${p.combatLevel}`);
-  s("hcs-journal", `${fmt(p.totalXp)} XP`);
-  s("hcs-money", `${Object.keys(gePrices).length} ${t("items")}`);
-  // Goals summary stat
-  if (typeof GOALS !== "undefined" && typeof goalProgress === "function") {
-    let totalDone = 0, totalItems = 0;
-    for (const g of GOALS) {
-      const prog = goalProgress(g, p);
-      totalDone += prog.done;
-      totalItems += prog.total;
-    }
-    const pct = totalItems ? Math.round((totalDone / totalItems) * 100) : 0;
-    s("hcs-goals", `${pct}% (${totalDone}/${totalItems})`);
-  }
-}
+// Removed: updateHomeStats() — targets non-existent DOM IDs (hcs-*)
+// These dashboard elements don't exist in current index.html
 
 // ---- Filters ----
 function initFilters() {
@@ -1614,7 +1604,7 @@ function renderAll(results) {
       : "Quest list failed to load — some goals may show as incomplete.");
   }
   renderTab(getActiveTab(), results);
-  updateHomeStats();
+  // updateHomeStats() removed — targets non-existent DOM IDs
 
   // Animate XP counters if data changed (Variable Reward Schedule)
   if (prevData) {

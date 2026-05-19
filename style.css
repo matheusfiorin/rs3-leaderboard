@@ -698,8 +698,9 @@ body::before {
 .lk-input {
   flex: 1; background: var(--bg-card); border: 1px solid var(--border);
   border-radius: var(--radius-sm); padding: 10px 14px;
-  color: var(--text); font-size: 0.82rem; font-family: var(--font);
+  color: var(--text); font-size: 1rem; font-family: var(--font);
   transition: border-color 0.2s;
+  /* iOS fix: font-size <16px triggers auto-zoom on focus */
 }
 .lk-input:focus { outline: none; border-color: var(--gold-dim); box-shadow: 0 0 0 3px rgba(212,168,67,0.06); }
 .lk-btn {
@@ -1003,7 +1004,8 @@ body::before {
   .chart-container { height: 200px; }
 
   /* Lookup */
-  .lk-input { padding: 8px 12px; font-size: 0.78rem; }
+  .lk-input { padding: 8px 12px; }
+  /* Keep font-size: 1rem on iOS to prevent auto-zoom on input focus */
   .lk-btn { padding: 8px 16px; font-size: 0.75rem; }
   .lk-skills-grid { grid-template-columns: 1fr; }
 

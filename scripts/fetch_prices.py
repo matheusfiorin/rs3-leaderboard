@@ -101,6 +101,11 @@ def main():
         if (i + 1) % 10 == 0:
             time.sleep(0.5)
 
+    # Validator: require >70% of items to succeed before overwriting cache
+    if len(prices) < total * 0.7:
+        print(f'ERROR: Only {len(prices)}/{total} prices fetched (<70% threshold). Preserving cache.', file=sys.stderr)
+        sys.exit(1)
+
     with open('data/ge_prices.json', 'w') as f:
         json.dump(prices, f)
     print(f'Cached {len(prices)}/{total} item prices')

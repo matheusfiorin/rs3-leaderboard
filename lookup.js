@@ -133,11 +133,13 @@ async function lkFetchJSON(url) {
 async function lkFetchPlayer(rsn) {
   const enc = encodeURIComponent(rsn);
   const profileUrl = `https://apps.runescape.com/runemetrics/profile/profile?user=${enc}&activities=20`;
+  const hiscoresUrl = `https://secure.runescape.com/m=hiscore/index_lite.json?player=${enc}`;
   const questsUrl = `https://apps.runescape.com/runemetrics/quests?user=${enc}`;
 
-  // Fetch profile (required) and quests (optional) in parallel
-  const [profileRes, questsRes] = await Promise.allSettled([
+  // Fetch profile (required), hiscores (for RuneScore), and quests (optional) in parallel
+  const [profileRes, hiscoresRes, questsRes] = await Promise.allSettled([
     lkFetchJSON(profileUrl),
+    lkFetchJSON(hiscoresUrl),
     lkFetchJSON(questsUrl),
   ]);
 
@@ -145,10 +147,11 @@ async function lkFetchPlayer(rsn) {
   const profile = profileRes.value;
   if (profile.error) throw new Error(profile.error);
 
+  const hiscores = hiscoresRes.status === "fulfilled" ? hiscoresRes.value : null;
   const quests = questsRes.status === "fulfilled" ? questsRes.value : null;
 
-  // Parse into the same format as script.js parse()
-  return parse(profile, null, quests);
+  // Parse into the same format as script.js parse() (now with RuneScore support)
+  return parse(profile, hiscores, quests);
 }
 
 /* ── Fetch & render full profile ───────────────────────────────────── */
