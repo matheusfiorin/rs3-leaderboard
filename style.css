@@ -1092,3 +1092,40 @@ a:focus-visible {
   outline: 3px solid var(--gold-bright);
   outline-offset: 2px;
 }
+
+/* ---- Dock Button Labels (UX: Cold-start discoverability) ---- */
+.dock-btn::before {
+  content: attr(data-label);
+  position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  font-size: 0.65rem;
+  white-space: nowrap;
+  color: var(--text-2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  z-index: 10;
+}
+
+.dock-btn:hover::before,
+.dock-btn:focus::before {
+  opacity: 1;
+}
+
+/* Show labels on desktop screens by default (cold user discovery) */
+@media (min-width: 1024px) {
+  .dock-btn::before {
+    opacity: 1;
+  }
+}
+
+/* Hide labels on small phones to save space */
+@media (max-width: 520px) {
+  .dock-btn::before {
+    display: none;
+  }
+}

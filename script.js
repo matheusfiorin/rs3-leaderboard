@@ -1571,10 +1571,11 @@ function showToast(message, type) {
 
 function renderAll(results) {
   // Milestone notifications
-  if (data.length === 2 && results.length === 2) {
+  if (results.length === 2) {
     for (let i = 0; i < 2; i++) {
-      const old = data[i],
-        nw = results[i];
+      // Use in-memory data first, fall back to persisted snapshot for cold load
+      const old = data[i] || (persistedSnapshot && persistedSnapshot.players && persistedSnapshot.players[i]);
+      const nw = results[i];
       if (!old || !nw) continue;
       // Level-ups
       for (const sk of SKILLS) {
@@ -1668,6 +1669,10 @@ async function load(forceLive) {
   if (haveAllCache) {
     renderAll(cachedResults);
     memCacheSet(cachedResults);
+    // Persist snapshot for cold-load level-up detection
+    try {
+      localStorage.setItem("rs3lb-snapshot", JSON.stringify({ at: Date.now(), players: cachedResults }));
+    } catch {}
     const ageStr = cacheAgeMin != null ? ` (${cacheAgeMin}${t("agoMin")})` : "";
     setSource("", `${t("cached")}${ageStr}`);
     _lastUpdated = { kind: "cached", cacheAgeMin };
@@ -1696,6 +1701,10 @@ async function load(forceLive) {
   if (liveResults.every(r => r !== null)) {
     const anyFromLive = liveSettled.some(r => r.status === "fulfilled");
     renderAll(liveResults);
+    // Persist snapshot for cold-load level-up detection
+    try {
+      localStorage.setItem("rs3lb-snapshot", JSON.stringify({ at: Date.now(), players: liveResults }));
+    } catch {}
     memCacheSet(liveResults);
     if (anyFromLive) {
       setSource("", t("live"));
