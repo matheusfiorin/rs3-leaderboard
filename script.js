@@ -533,6 +533,46 @@ function renderLastUpdated() {
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
 
+// ---- Event Listener & Timer Tracking (Memory Leak Prevention) ----
+const _trackedListeners = new Map();
+const _trackedTimers = new Map();
+
+function addTrackedListener(el, event, handler) {
+  if (!el) return;
+  el.addEventListener(event, handler);
+  if (!_trackedListeners.has(el)) _trackedListeners.set(el, []);
+  _trackedListeners.get(el).push({ event, handler });
+}
+
+function trackedSetTimeout(fn, ms) {
+  const id = setTimeout(() => { fn(); _trackedTimers.delete(id); }, ms);
+  _trackedTimers.set(id, { type: 'timeout' });
+  return id;
+}
+
+function trackedSetInterval(fn, ms) {
+  const id = setInterval(fn, ms);
+  _trackedTimers.set(id, { type: 'interval' });
+  return id;
+}
+
+function cleanupAllTrackedResources() {
+  _trackedTimers.forEach((meta, id) => {
+    if (meta.type === 'timeout') clearTimeout(id);
+    else if (meta.type === 'interval') clearInterval(id);
+  });
+  _trackedTimers.clear();
+  
+  _trackedListeners.forEach((listeners, el) => {
+    listeners.forEach(({ event, handler }) => {
+      el.removeEventListener(event, handler);
+    });
+  });
+  _trackedListeners.clear();
+}
+
+window.addEventListener('beforeunload', cleanupAllTrackedResources);
+
 // ---- Fetch ----
 // On GitHub Pages, direct fetch to runescape.com is always CORS-blocked, so
 // we skip it entirely in the browser and race multiple CORS proxies. Local
