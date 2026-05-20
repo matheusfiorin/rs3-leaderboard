@@ -3,6 +3,37 @@
    i18n, tabs, cache-first, Easter event
    ============================================= */
 
+// ---- Global Error Handler ----
+// Setup unhandled rejection and global error handlers
+(function initGlobalErrorHandling() {
+  if (window.__errorHandlerInit) return; // Prevent double-init
+  window.__errorHandlerInit = true;
+  
+  // Handle unhandled promise rejections
+  window.addEventListener('unhandledrejection', (event) => {
+    console.error('Unhandled Promise Rejection:', event.reason);
+    event.preventDefault();
+    
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed; top: 20px; right: 20px;
+      background: #ff4444; color: white; padding: 16px 20px;
+      border-radius: 4px; font-size: 14px; z-index: 10000;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    `;
+    notification.textContent = 'Network error. Retrying...';
+    if (document.body) {
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 5000);
+    }
+  });
+  
+  // Handle global errors
+  window.addEventListener('error', (event) => {
+    console.error('Global Error:', event.error);
+  });
+})();
+
 const PLAYERS = ["Fiorovizk", "Decxus"];
 const REFRESH_MS = 5 * 60 * 1000;
 
