@@ -9,3 +9,21 @@ __pycache__/
 *.pyc
 extras/
 .playwright-mcp/
+
+# Backup files (prevent production backups)
+*.backup
+*.bak
+*.tmp
+*.swp
+*.swo
+*~
+.DS_Store?
+
+# Test results
+test-results/
+.test-results/
+playwright-report/
+
+# Audit reports (generated)
+.audit-*/
+.review-*/
