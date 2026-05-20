@@ -471,6 +471,7 @@ const MAX_PTS = JOURNAL.reduce((a, g) => a + g.pts, 0);
 
 // ---- State ----
 let data = [];
+let persistedSnapshot = null;
 let source = "";
 let timer = null;
 // Last-updated stamp: kind = "cached" with cacheAgeMin, or "live" with Date.
