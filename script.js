@@ -472,6 +472,13 @@ const MAX_PTS = JOURNAL.reduce((a, g) => a + g.pts, 0);
 // ---- State ----
 let data = [];
 let persistedSnapshot = null;
+// Load persisted snapshot from localStorage on init
+try {
+  const stored = localStorage.getItem('rs3lb-snapshot');
+  if (stored) persistedSnapshot = JSON.parse(stored);
+} catch (e) {
+  console.warn('Failed to load persisted snapshot:', e);
+}
 let source = "";
 let timer = null;
 // Last-updated stamp: kind = "cached" with cacheAgeMin, or "live" with Date.
