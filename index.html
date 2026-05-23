@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>RS3 Placar — Fiorovizk &amp; Decxus</title>
+    <title>RS3 Placar — Decxus &amp; Soclopata</title>
     <meta name="description" content="Acompanhamento em tempo real de jogadores de RuneScape 3" />
     <meta name="theme-color" content="#07070d" />
     <meta http-equiv="Content-Security-Policy"
@@ -13,12 +13,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <!-- Preload data cache so it streams in parallel with JS, not after it. -->
     <link rel="preload" href="data/meta.json" as="fetch" crossorigin="anonymous" />
-    <link rel="preload" href="data/fiorovizk_profile.json" as="fetch" crossorigin="anonymous" />
+    <link rel="preload" href="data/soclopata_profile.json" as="fetch" crossorigin="anonymous" />
     <link rel="preload" href="data/decxus_profile.json" as="fetch" crossorigin="anonymous" />
-    <link rel="preload" href="data/fiorovizk_quests.json" as="fetch" crossorigin="anonymous" />
+    <link rel="preload" href="data/soclopata_quests.json" as="fetch" crossorigin="anonymous" />
     <link rel="preload" href="data/decxus_quests.json" as="fetch" crossorigin="anonymous" />
-    <link rel="preload" href="data/fiorovizk_hiscores.json" as="fetch" crossorigin="anonymous" />
+    <link rel="preload" href="data/soclopata_hiscores.json" as="fetch" crossorigin="anonymous" />
     <link rel="preload" href="data/decxus_hiscores.json" as="fetch" crossorigin="anonymous" />
+    <!-- Memorial archive (frozen) -->
+    <link rel="preload" href="data/fiorovizk_profile.json" as="fetch" crossorigin="anonymous" />
+    <link rel="preload" href="data/fiorovizk_hiscores.json" as="fetch" crossorigin="anonymous" />
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9876;</text></svg>" />
   </head>
@@ -76,6 +79,8 @@
 
         <!-- PAGE 1: DASHBOARD -->
         <section class="page active" data-page="dashboard">
+          <!-- In Memoriam: tribute card for retired players (rendered by memorial.js) -->
+          <div id="memorial-mount"></div>
           <!-- Mission Control: dynamic next-steps panel -->
           <div id="mission-control"></div>
           <!-- Major goals summary -->
@@ -250,6 +255,7 @@
     <script defer src="next-steps.js?v=33"></script>
     <script defer src="tips.js?v=2"></script>
     <script defer src="live.js?v=2"></script>
+    <script defer src="memorial.js?v=1"></script>
     <script defer src="script.js?v=33"></script>
   </body>
 </html>

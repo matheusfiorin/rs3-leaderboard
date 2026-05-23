@@ -297,6 +297,16 @@ const LANG = {
       xp: "XP",
       quests: "Missões",
     },
+
+    // Memorial (In Memoriam tribute for retired players)
+    memorialTitle: "In Memoriam",
+    memorialSub: "Conta aposentada",
+    memorialFinalStats: "Estatísticas finais",
+    memorialTopSkills: "Maiores conquistas",
+    memorialLastSeen: "Visto pela última vez",
+    memorialEpitaph: "Que a aventura continue em outras terras.",
+    memorialViewJourney: "Ver jornada arquivada",
+    memorialNoActivity: "Nenhuma atividade arquivada.",
   },
 
   en: {
@@ -569,6 +579,16 @@ const LANG = {
       xp: "XP",
       quests: "Quests",
     },
+
+    // Memorial (In Memoriam tribute for retired players)
+    memorialTitle: "In Memoriam",
+    memorialSub: "Account retired",
+    memorialFinalStats: "Final stats",
+    memorialTopSkills: "Greatest accomplishments",
+    memorialLastSeen: "Last seen",
+    memorialEpitaph: "May the adventure live on in other lands.",
+    memorialViewJourney: "View archived journey",
+    memorialNoActivity: "No archived activity.",
   },
 };
 

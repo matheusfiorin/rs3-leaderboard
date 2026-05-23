@@ -110,12 +110,34 @@ test.describe('RS3 Leaderboard Smoke Tests', () => {
 
   test('i18n keys resolve without falling back to key name', async ({ page }) => {
     await page.goto('/');
-    
+
     // Get all text content
     const bodyText = await page.locator('body').textContent();
-    
+
     // Should not contain orphaned keys like "easterTitle"
     expect(bodyText).not.toContain('easterTitle');
     expect(bodyText).not.toContain('decMonth');
+    expect(bodyText).not.toContain('memorialTitle'); // memorial keys must resolve
+  });
+
+  test('memorial section renders with Fiorovizk vitals', async ({ page }) => {
+    await page.goto('/');
+    // Memorial loads async via cacheFetch — give it a moment.
+    await page.waitForSelector('#memorial-mount .mem-name', { timeout: 5000 });
+    const name = await page.locator('#memorial-mount .mem-name').textContent();
+    expect(name.trim()).toBe('Fiorovizk');
+    const combatStat = await page.locator('#memorial-mount .mem-vital dd').first().textContent();
+    expect(combatStat.trim()).toMatch(/^\d+$/); // numeric combat level
+  });
+
+  test('active dashboard shows Decxus and Soclopata', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForTimeout(800);
+    const title = await page.title();
+    expect(title).toContain('Decxus');
+    expect(title).toContain('Soclopata');
+    // Decxus is p1 (listed first), Soclopata is p2
+    expect(title.indexOf('Decxus')).toBeLessThan(title.indexOf('Soclopata'));
+    expect(title).not.toContain('Fiorovizk');
   });
 });

@@ -10,7 +10,7 @@
 
 // ---- Module state ----
 let _liveActive = false;            // is the live page currently mounted/visible?
-let _livePlayerIdx = 0;             // 0 = Fio, 1 = Decxus
+let _livePlayerIdx = 0;             // 0 = Decxus (p1, purple), 1 = Soclopata (p2, gold)
 let _liveCadenceMs = 30000;         // default 30s
 let _liveTimer = null;              // setTimeout handle
 let _liveInflight = false;          // single-fetch guard
@@ -564,8 +564,8 @@ function liveInjectStyles() {
 .live-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .live-ptabs { display: flex; gap: 6px; }
 .live-ptab { appearance: none; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-2); padding: 6px 16px; border-radius: 100px; font-family: var(--font); font-size: 0.78rem; font-weight: 600; cursor: pointer; min-height: 32px; }
-.live-ptab.active.p1 { border-color: var(--gold-dim); background: var(--gold-bg); color: var(--gold); }
-.live-ptab.active.p2 { border-color: var(--teal-dim); background: var(--teal-bg); color: var(--teal); }
+.live-ptab.active.p1 { border-color: var(--purple-dim); background: var(--purple-bg); color: var(--purple-bright); }
+.live-ptab.active.p2 { border-color: var(--gold-dim); background: var(--gold-bg); color: var(--gold-bright); }
 .live-cad-row { display: flex; gap: 4px; align-items: center; }
 .live-cad-label { font-size: 0.62rem; color: var(--text-3); text-transform: uppercase; letter-spacing: .8px; margin-right: 4px; }
 .live-cad { appearance: none; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-2); padding: 5px 10px; border-radius: 100px; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 700; cursor: pointer; min-height: 32px; }
@@ -574,8 +574,8 @@ function liveInjectStyles() {
 .live-hero { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 18px 14px; margin-bottom: 14px; text-align: center; position: relative; }
 .live-hero-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .live-name { font-family: var(--font-display); font-size: 1.15rem; font-weight: 800; letter-spacing: .5px; }
-.live-name.p1 { color: var(--gold-bright); }
-.live-name.p2 { color: var(--teal-bright); }
+.live-name.p1 { color: var(--purple-bright); }
+.live-name.p2 { color: var(--gold-bright); }
 .live-hero-stats { display: flex; gap: 12px; }
 .live-mini { display: flex; flex-direction: column; align-items: flex-end; }
 .live-mini-val { font-family: var(--font-mono); font-size: 1rem; font-weight: 800; color: var(--text); }

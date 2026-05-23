@@ -1017,8 +1017,8 @@ function moneyInjectStyles() {
 .mn-player-tabs { display:flex; justify-content:center; gap:8px; margin-bottom:14px; }
 .mn-ptab { appearance:none; padding:5px 16px; border:1px solid var(--border); border-radius:100px; background:var(--bg-card); color:var(--text-2); cursor:pointer; font-size:0.73rem; font-weight:600; font-family:var(--font); transition:all .2s; }
 .mn-ptab:hover { border-color:var(--border-hover); }
-.mn-ptab.active { border-color:var(--gold-dim); color:var(--gold); background:var(--gold-bg); }
-.mn-ptab.p2.active { border-color:var(--teal-dim); color:var(--teal); background:var(--teal-bg); }
+.mn-ptab.active { border-color:var(--purple-dim); color:var(--purple-bright); background:var(--purple-bg); }
+.mn-ptab.p2.active { border-color:var(--gold-dim); color:var(--gold-bright); background:var(--gold-bg); }
 
 .mn-filters { margin-bottom:14px; }
 .mn-filter-row { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:6px; }

@@ -240,6 +240,101 @@ const GOALS = [
   }
 })();
 
+// ---- Late-game goals (added 2026-05-21 alongside Soclopata onboarding) ----
+GOALS.push(
+  {
+    id: "sliske",
+    icon: `<img src="data/icons/Mahjarrat_aura.png" width="28" height="28" alt="Sliske's Endgame" loading="lazy" data-fallback="emoji" data-emoji="🎭">`,
+    color: "purple",
+    label_pt: "Endgame de Sliske",
+    label_en: "Sliske's Endgame",
+    sub_pt: "Capstone do Sexto Era — arco Mahjarrat",
+    sub_en: "Sixth Age capstone — Mahjarrat arc",
+    capstone: "Sliske's Endgame",
+    skills: [
+      { id: 5, required: 75, reason: "Sliske's Endgame" },
+      { id: 16, required: 80, reason: "Sliske's Endgame" },
+    ],
+    quests: [
+      "Ritual of the Mahjarrat", "Missing, Presumed Death",
+      "The Branches of Darkmeyer", "The Light Within", "Fate of the Gods",
+      "Children of Mah", "Sliske's Endgame",
+    ],
+    manual: [
+      { id: "sl_combat_110", label_pt: "Combate 110+ recomendado", label_en: "Combat 110+ recommended" },
+      { id: "sl_supplies", label_pt: "Suprimentos T80+ prontos", label_en: "T80+ supplies ready" },
+    ],
+  },
+  {
+    id: "necromancy_99",
+    icon: `<img src="data/icons/Necromancy-icon.png" width="28" height="28" alt="Necromancy 99" loading="lazy" data-fallback="emoji" data-emoji="💀">`,
+    color: "purple",
+    label_pt: "Necromancia 99",
+    label_en: "Necromancy 99",
+    sub_pt: "Maestria no novo estilo de combate",
+    sub_en: "Mastery of the new combat style",
+    capstone: "Rune Mythos",
+    skills: [
+      { id: 28, required: 99, reason: "Necromancy 99" },
+    ],
+    quests: [],
+    manual: [
+      { id: "nec_unlocked", label_pt: "Necromancia desbloqueada", label_en: "Necromancy unlocked" },
+      { id: "nec_t90", label_pt: "Armas T90 craftadas", label_en: "T90 weapons crafted" },
+    ],
+  },
+  {
+    id: "base_50",
+    icon: `<img src="data/icons/Stats_icon.png" width="28" height="28" alt="Base 50" loading="lazy" data-fallback="emoji" data-emoji="📊">`,
+    color: "teal",
+    label_pt: "Base 50 em tudo",
+    label_en: "Base 50 across the board",
+    sub_pt: "Toda habilidade no nível 50+",
+    sub_en: "Every skill at level 50+",
+    capstone: null,
+    // Generated programmatically: every active skill (id 1-25, plus 27/28).
+    skills: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,27,28]
+      .map(id => ({ id, required: 50, reason: "Base 50" })),
+    quests: [],
+    manual: [],
+  },
+);
+
+// ---- Per-player tier gating ----
+// Returns true if a goal is relevant to display for the given player.
+// Logic: hide goals that are fully done (capstone quest complete) AND hide
+// goals far above the player's current tier (would just be 0%/discouraging).
+function goalIsRelevantForPlayer(goal, player) {
+  if (!goal || !player) return true;
+  const combatLvl = player.combatLevel || 0;
+  const hasQ = (name) => typeof hasQuest === "function" && hasQuest(player, name);
+
+  // Per-goal tiers:
+  const lateGoals = new Set(["rotm", "sliske", "necromancy_99"]);
+  const midGoals  = new Set(["senntisten", "prifddinas", "worldwakes", "invention"]);
+  const earlyGoals = new Set(["base_50"]);
+
+  // Already cleared the capstone? Hide it (line 318 supersedes the legacy
+  // mid-tier combat check the reviewer flagged as unreachable).
+  if (goal.capstone && hasQ(goal.capstone)) return false;
+
+  // Late goals need solid combat — Decxus at <95 would never see these.
+  if (lateGoals.has(goal.id) && combatLvl < 95) return false;
+
+  // Early-tier goals (Base 50) hidden once the player meets them globally.
+  if (earlyGoals.has(goal.id)) {
+    const skills = goal.skills || [];
+    const met = skills.every(s => ((player.skills[s.id] || {}).level || 0) >= s.required);
+    if (met) return false;
+  }
+
+  // Mid-game arcs without an explicit capstone — keep simple: show by default.
+  // Combat-130 hard-hide removed: a high-combat player who somehow lacks the
+  // capstone (rare) should still see the goal so they can finish it.
+  void midGoals;
+  return true;
+}
+
 // ---- Storage ----
 const GOALS_STORAGE = "rs3lb-goals";
 function goalsLoadManual() {
@@ -655,8 +750,8 @@ function goalsInjectStyles() {
 .gl-player-tabs { display:flex; justify-content:center; gap:8px; margin-bottom:18px; }
 .gl-player-tab { appearance:none; padding:6px 18px; border:1px solid var(--border); border-radius:100px; background:var(--bg-card); color:var(--text-2); cursor:pointer; font-size:0.75rem; font-weight:600; font-family:var(--font); transition:all .2s; }
 .gl-player-tab:hover { border-color:var(--border-glow); }
-.gl-player-tab.active { border-color:var(--gold-dim); color:var(--gold); background:var(--gold-bg); }
-.gl-player-tab.p2.active { border-color:var(--teal-dim); color:var(--teal); background:var(--teal-bg); }
+.gl-player-tab.active { border-color:var(--purple-dim); color:var(--purple); background:var(--purple-bg); }
+.gl-player-tab.p2.active { border-color:var(--gold-dim); color:var(--gold); background:var(--gold-bg); }
 
 /* ---- Next Actions Panel ---- */
 .gl-next-actions {

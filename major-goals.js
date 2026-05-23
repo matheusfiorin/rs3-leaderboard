@@ -76,7 +76,7 @@ function mgGoTab(tabName) {
 // ---- Player badge (small avatar chip) ----
 function mgBadge(player, idx, pct) {
   const c = idx === 0 ? "p1" : "p2";
-  const color = idx === 0 ? "var(--gold)" : "var(--teal)";
+  const color = idx === 0 ? "var(--purple-bright)" : "var(--gold-bright)";
   const done = pct >= 100;
   return `<div class="mg-badge mg-badge-${c}">
     <span class="mg-badge-name">${esc(player.name)}</span>
@@ -85,18 +85,23 @@ function mgBadge(player, idx, pct) {
 }
 
 // ---- Build one goal card ----
-function mgCard(cfg, players) {
+// `relevantIdx` is the list of original player indices this goal renders for;
+// players gated out by goalIsRelevantForPlayer() are excluded, while surviving
+// players keep their original p1/p2 badge color via the preserved index.
+function mgCard(cfg, allPlayers, relevantIdx) {
+  const idx = relevantIdx && relevantIdx.length ? relevantIdx : allPlayers.map((_, i) => i);
+  const players = idx.map((i) => allPlayers[i]);
   const counts = players.map((p) => cfg.count(p));
-  // Combined progress (average of both)
+  // Combined progress (sum over relevant players only)
   const totalDone = counts.reduce((a, c) => a + c.done, 0);
   const totalAll = counts.reduce((a, c) => a + c.total, 0);
   const combinedPct = totalAll > 0 ? (totalDone / totalAll) * 100 : 0;
   const done = combinedPct >= 100;
 
   const badges = players
-    .map((p, i) => {
-      const pct = counts[i].total > 0 ? (counts[i].done / counts[i].total) * 100 : 0;
-      return mgBadge(p, i, pct);
+    .map((p, j) => {
+      const pct = counts[j].total > 0 ? (counts[j].done / counts[j].total) * 100 : 0;
+      return mgBadge(p, idx[j], pct);
     })
     .join("");
 
@@ -204,6 +209,14 @@ function renderMajorGoals(players) {
     for (const g of GOALS) {
       const theme = themeMap[g.id] || (g.color === "teal" ? "teal" : g.color === "purple" ? "purple" : "gold");
       const lang = typeof currentLang !== "undefined" ? currentLang : "en";
+      // Tier-gate: which player indices should see this goal?
+      const gate = typeof goalIsRelevantForPlayer === "function"
+        ? goalIsRelevantForPlayer
+        : () => true;
+      const relevantIdx = players
+        .map((p, i) => (gate(g, p) ? i : -1))
+        .filter((i) => i >= 0);
+      if (relevantIdx.length === 0) continue; // hide card if nobody is in this tier
       goals.push({
         title: lang === "pt" ? g.label_pt : g.label_en,
         icon: g.icon || "\u2694\uFE0F",
@@ -211,6 +224,7 @@ function renderMajorGoals(players) {
         tab: "goals",
         targetGoalId: g.id,
         ringColor: ringMap[theme] || "var(--gold-bright)",
+        relevantIdx,
         count: mgGoalCount(g.id),
       });
     }
@@ -220,7 +234,7 @@ function renderMajorGoals(players) {
     <div class="section-head" style="margin-top:24px">
       <h2 class="section-title">${mgT("mgTitle")}</h2>
     </div>
-    <div class="mg-grid">${goals.map((g) => mgCard(g, players)).join("")}</div>`;
+    <div class="mg-grid">${goals.map((g) => mgCard(g, players, g.relevantIdx)).join("")}</div>`;
   if (typeof attachImgFallbacks === "function") attachImgFallbacks(el);
 
   el.querySelectorAll(".mg-card[data-mg-tab]").forEach((btn) => {

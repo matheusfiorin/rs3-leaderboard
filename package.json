@@ -5,7 +5,7 @@
   "type": "module",
   "main": "script.js",
   "scripts": {
-    "lint": "node --check script.js && node --check combat.js && node --check money.js && node --check goals.js && node --check live.js && node --check lookup.js && node --check tips.js && node --check i18n.js && node --check major-goals.js && node --check next-steps.js",
+    "lint": "node --check script.js && node --check combat.js && node --check money.js && node --check goals.js && node --check live.js && node --check lookup.js && node --check tips.js && node --check i18n.js && node --check major-goals.js && node --check next-steps.js && node --check memorial.js",
     "test": "playwright test",
     "test:debug": "playwright test --debug"
   },

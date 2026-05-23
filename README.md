@@ -1,6 +1,6 @@
 # RS3 Leaderboard
 
-A co-op RuneScape 3 adventure tracker for **Fiorovizk** & **Decxus** — two Brazilian players discovering Gielinor together.
+A co-op RuneScape 3 adventure tracker for **Decxus** & **Soclopata** — two Brazilian players discovering Gielinor together. Honors **Fiorovizk** (retired 2026-05-21) in the In Memoriam section.
 
 ## Features
 

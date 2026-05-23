@@ -1136,3 +1136,53 @@ a:focus-visible {
     display: none;
   }
 }
+
+/* ============================================================
+   Player palette override — Decxus (p1) → purple, Soclopata (p2) → gold.
+   Added 2026-05-22 alongside player swap. Appends after the legacy
+   gold/teal player rules so the cascade wins without touching them.
+   ============================================================ */
+:root {
+  --purple-bright: #c4a8ff;
+  --purple-glow: rgba(167, 139, 250, 0.15);
+}
+
+.p-card.p1::before { background: linear-gradient(90deg, var(--purple-dim), var(--purple), var(--purple-dim)); }
+.p-card.p1 .p-card-name { color: var(--purple-bright); }
+.p-card.p2::before { background: linear-gradient(90deg, var(--gold-dim), var(--gold), var(--gold-dim)); }
+.p-card.p2 .p-card-name { color: var(--gold-bright); }
+
+.h2h-row .h2h-bar-wrap.left .h2h-bar,
+.h2h-row .h2h-bar-wrap.winner .h2h-bar { background: var(--purple-dim); }
+.h2h-row .h2h-bar-wrap.right .h2h-bar { background: var(--gold-dim); }
+.h2h-name.p1 { color: var(--purple); }
+.h2h-name.p2 { color: var(--gold); }
+
+.legend-swatch.p1 { background: var(--purple); }
+.legend-swatch.p2 { background: var(--gold); }
+
+.sk-bar-fill.p1 { background: var(--purple-dim); }
+.sk-bar-fill.p2 { background: var(--gold-dim); }
+
+.feed-player.p1 { color: var(--purple-bright); }
+.feed-player.p2 { color: var(--gold-bright); }
+
+.q-card.p1::before { background: var(--purple-dim); }
+.q-card.p2::before { background: var(--gold-dim); }
+.q-card.p1 .q-name, .q-card.p1 .q-pct { color: var(--purple-bright); }
+.q-card.p2 .q-name, .q-card.p2 .q-pct { color: var(--gold-bright); }
+
+.j-score-card.p1 .j-num { color: var(--purple-bright); }
+.j-score-card.p2 .j-num { color: var(--gold-bright); }
+.j-score-card.p1 .j-bar-fill,
+.j-score-card.p1 .j-score-bar-fill { background: var(--purple-dim); }
+.j-score-card.p2 .j-bar-fill,
+.j-score-card.p2 .j-score-bar-fill { background: var(--gold-dim); }
+.j-score-card.p1 .j-score-value { color: var(--purple-bright); }
+.j-score-card.p2 .j-score-value { color: var(--gold-bright); }
+
+.j-check.p1-color.done { background: var(--purple-bg); color: var(--purple-bright); }
+.j-check.p2-color.done { background: var(--gold-bg); color: var(--gold-bright); }
+
+.combat-player-name.p1 { color: var(--purple-bright); }
+.combat-player-name.p2 { color: var(--gold-bright); }

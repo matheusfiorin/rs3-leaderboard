@@ -48,7 +48,9 @@ jobs:
             fi
           }
 
-          for player in "Fiorovizk" "Decxus"; do
+          # NOTE: Fiorovizk retired 2026-05-21. Memorial section reads frozen
+          # data/fiorovizk_*.json (preserved untouched). Soclopata replaces.
+          for player in "Decxus" "Soclopata"; do
             safe="$(echo "$player" | tr '[:upper:]' '[:lower:]')"
             echo "Fetching data for $player..."
 

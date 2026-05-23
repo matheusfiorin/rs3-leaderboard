@@ -34,7 +34,7 @@
   });
 })();
 
-const PLAYERS = ["Fiorovizk", "Decxus"];
+const PLAYERS = ["Decxus", "Soclopata"];
 const REFRESH_MS = 5 * 60 * 1000;
 
 const API = {
@@ -839,7 +839,7 @@ function renderH2H(players) {
       })
       .join("")}
     <div style="text-align:center;margin-top:8px;font-size:0.72rem;color:var(--text-3)">
-      ${t("verdict")}: <strong style="color:${winsA > winsB ? "var(--gold)" : winsB > winsA ? "var(--teal)" : "var(--text-2)"}">${esc(verdict)}</strong>
+      ${t("verdict")}: <strong style="color:${winsA > winsB ? "var(--purple-bright)" : winsB > winsA ? "var(--gold-bright)" : "var(--text-2)"}">${esc(verdict)}</strong>
       (${winsA}-${winsB})
     </div>`;
 }
@@ -999,7 +999,7 @@ function renderQuests(players) {
         <div class="q-stat"><div class="q-stat-val none">${p.questsNone}</div><div class="q-stat-lbl">${t("remaining")}</div></div>
       </div>
       <div style="margin-top:10px;text-align:center;font-size:0.72rem;color:var(--text-3)">
-        <span style="font-family:var(--font-mono);font-weight:700;color:${i === 0 ? "var(--gold)" : "var(--teal)"}">${qp}</span> ${t("questPoints")}
+        <span style="font-family:var(--font-mono);font-weight:700;color:${i === 0 ? "var(--purple-bright)" : "var(--gold-bright)"}">${qp}</span> ${t("questPoints")}
       </div>
     </div>`;
     })
@@ -1231,7 +1231,7 @@ function updateUIText() {
   s("subtitle-text", t("subtitle"));
   s("lang-label", lang === "pt" ? "EN" : "PT");
   document.documentElement.lang = lang === "pt" ? "pt-BR" : "en";
-  document.title = t("title") + " \u2014 Fiorovizk & Decxus";
+  document.title = t("title") + " \u2014 Decxus & Soclopata";
 
   // Tabs
   s("tab-overview", t("navOverview"));
@@ -1335,6 +1335,9 @@ function updateUIText() {
   // Footer "Updated HH:MM" / "Atualizado HH:MM" relocalizes here so the lang
   // toggle doesn't have to wait for the next data refresh.
   renderLastUpdated();
+
+  // Memorial section text is bilingual; re-render on lang flip.
+  if (typeof renderMemorial === "function") renderMemorial();
 }
 
 // ---- Navigation: Home Grid + Floating Dock ----

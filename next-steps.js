@@ -73,17 +73,18 @@ const NS_UNLOCKS = [
 
 // ---- Major quest chain priorities — the "what should I quest next" rail.
 // Ordered by player progress: first incomplete in the list is the recommendation.
-// Different rails for Fio (deep into chain) vs Decxus (early game).
+// Different rails for Soclopata (deep into chain, TWW + Plague's End done, ROTM
+// arc still pending) vs Decxus (early game).
 const NS_QUEST_RAILS = {
-  Fiorovizk: [
+  Soclopata: [
     { name: "Lunar Diplomacy", chain: "ROTM", pt: "Próximo da cadeia ROTM", en: "Next in ROTM chain" },
     { name: "Dream Mentor", chain: "ROTM", pt: "Continuação Lunar", en: "Lunar continuation" },
-    { name: "Wanted!", chain: "ROTM", pt: "Bridge para WGS", en: "Bridge to WGS" },
     { name: "The Hunt for Surok", chain: "ROTM", pt: "Pré-WGS", en: "Pre-WGS" },
     { name: "While Guthix Sleeps", chain: "ROTM", pt: "Última porta antes do Ritual", en: "Last gate before Ritual" },
     { name: "Ritual of the Mahjarrat", chain: "ROTM", pt: "Capstone do arco", en: "Arc capstone" },
-    { name: "The World Wakes", chain: "Sunshine", pt: "Sunshine + Death's Swiftness", en: "Sunshine + Death's Swiftness" },
-    { name: "Plague's End", chain: "Prifddinas", pt: "Cidade dos Elfos", en: "Elf city unlock" },
+    { name: "Fate of the Gods", chain: "Zaros", pt: "Próximo arco Zarosiano", en: "Next Zarosian arc" },
+    { name: "Children of Mah", chain: "Sliske", pt: "Pré-Endgame de Sliske", en: "Pre Sliske endgame" },
+    { name: "Sliske's Endgame", chain: "Sliske", pt: "Endgame mahjarrat", en: "Mahjarrat endgame" },
   ],
   Decxus: [
     { name: "Dragon Slayer", chain: "starter", pt: "Capa Caça-Dragões + rune", en: "DS cape + rune access" },
@@ -115,7 +116,7 @@ function nsDailyMoves(player) {
   if (lvl(14) >= 81) {
     out.push({ ic: "💎", pt: "Red Sandstone diário", en: "Daily Red Sandstone", min: 4, gp: "1.5M" });
   }
-  // Senntisten Altar - if Soul Split unlocked (Fio)
+  // Senntisten Altar - if Soul Split unlocked
   if (has("The Temple at Senntisten")) {
     out.push({ ic: "💀", pt: "Ossos no Altar de Senntisten", en: "Bones at Senntisten Altar", min: 30, gp: "Prayer XP" });
   }
@@ -140,7 +141,7 @@ function nsPickClosestUnlock(player) {
 
 // ---- Pick first incomplete quest from rail ----
 function nsPickNextQuest(player) {
-  const rail = NS_QUEST_RAILS[player.name] || NS_QUEST_RAILS.Fiorovizk;
+  const rail = NS_QUEST_RAILS[player.name] || NS_QUEST_RAILS.Soclopata;
   for (const q of rail) {
     if (typeof hasQuest === "function" && !hasQuest(player, q.name)) return q;
   }
@@ -386,8 +387,8 @@ function nsInjectStyles() {
   border-radius: 11px;
   position: relative;
 }
-.ns-col-p1 { border-top: 2px solid var(--gold-dim); }
-.ns-col-p2 { border-top: 2px solid var(--teal-dim); }
+.ns-col-p1 { border-top: 2px solid var(--purple-dim); }
+.ns-col-p2 { border-top: 2px solid var(--gold-dim); }
 
 .ns-col-header {
   display: flex; align-items: center; gap: 10px;
@@ -403,16 +404,16 @@ function nsInjectStyles() {
   border-radius: 6px;
   letter-spacing: 0;
 }
-.ns-col-p1 .ns-col-rune { color: var(--gold-bright); border: 1px solid rgba(212,168,67,0.25); }
-.ns-col-p2 .ns-col-rune { color: var(--teal-bright); border: 1px solid rgba(34,211,187,0.25); }
+.ns-col-p1 .ns-col-rune { color: var(--purple-bright); border: 1px solid rgba(167,139,250,0.25); }
+.ns-col-p2 .ns-col-rune { color: var(--gold-bright); border: 1px solid rgba(212,168,67,0.25); }
 .ns-col-meta { flex: 1; min-width: 0; }
 .ns-col-name {
   font-family: var(--font-display);
   font-size: 0.95rem; font-weight: 700;
   letter-spacing: 0.04em;
 }
-.ns-col-p1 .ns-col-name { color: var(--gold-bright); }
-.ns-col-p2 .ns-col-name { color: var(--teal-bright); }
+.ns-col-p1 .ns-col-name { color: var(--purple-bright); }
+.ns-col-p2 .ns-col-name { color: var(--gold-bright); }
 .ns-col-stats {
   font-family: var(--font-mono);
   font-size: 0.6rem;
@@ -479,10 +480,10 @@ function nsInjectStyles() {
 }
 .ns-unlock-title strong {
   font-family: var(--font-mono);
-  color: var(--gold-bright);
+  color: var(--purple-bright);
   font-weight: 800;
 }
-.ns-col-p2 .ns-unlock-title strong { color: var(--teal-bright); }
+.ns-col-p2 .ns-unlock-title strong { color: var(--gold-bright); }
 .ns-unlock-arrow {
   color: var(--text-3);
   font-family: var(--font-mono);

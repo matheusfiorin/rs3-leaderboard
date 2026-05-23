@@ -82,7 +82,8 @@
 All 17-34 errors are CORS-related (expected on GitHub Pages — live API blocked, falls back to cached JSON). **No JS runtime errors.**
 
 ## Data Integrity
-- Both players (Fiorovizk, Decxus) load from cache
+- Both players (Soclopata, Decxus) load from cache
+- Memorial section renders frozen Fiorovizk snapshot
 - 29 skills rendered with correct RS3 icons
 - 361 quests loaded
 - 45 journal achievements tracked
