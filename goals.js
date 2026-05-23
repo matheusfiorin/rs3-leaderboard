@@ -244,7 +244,7 @@ const GOALS = [
 GOALS.push(
   {
     id: "sliske",
-    icon: `<img src="data/icons/Ritual_of_the_Mahjarrat.png" width="28" height="28" alt="Sliske's Endgame" loading="lazy" data-fallback="emoji" data-emoji="🎭">`,
+    icon: `<span class="mg-emoji-icon" aria-hidden="true">🎭</span>`,
     color: "purple",
     label_pt: "Endgame de Sliske",
     label_en: "Sliske's Endgame",

@@ -7,8 +7,8 @@
     <meta name="description" content="Acompanhamento em tempo real de jogadores de RuneScape 3" />
     <meta name="theme-color" content="#07070d" />
     <meta http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://apps.runescape.com https://secure.runescape.com https://api.allorigins.win https://api.codetabs.com https://api.weirdgloop.org" />
-    <link rel="stylesheet" href="style.css?v=30" />
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://apps.runescape.com https://secure.runescape.com https://api.allorigins.win https://api.codetabs.com https://api.weirdgloop.org" />
+    <link rel="stylesheet" href="style.css?v=31" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <!-- Preload data cache so it streams in parallel with JS, not after it. -->
@@ -22,6 +22,7 @@
     <!-- Memorial archive (frozen) -->
     <link rel="preload" href="data/fiorovizk_profile.json" as="fetch" crossorigin="anonymous" />
     <link rel="preload" href="data/fiorovizk_hiscores.json" as="fetch" crossorigin="anonymous" />
+    <link rel="preload" href="data/fiorovizk_quests.json" as="fetch" crossorigin="anonymous" />
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9876;</text></svg>" />
   </head>
@@ -253,9 +254,9 @@
     <script defer src="goals.js?v=33"></script>
     <script defer src="money.js?v=33"></script>
     <script defer src="next-steps.js?v=33"></script>
-    <script defer src="tips.js?v=2"></script>
-    <script defer src="live.js?v=2"></script>
-    <script defer src="memorial.js?v=1"></script>
+    <script defer src="tips.js?v=3"></script>
+    <script defer src="live.js?v=3"></script>
+    <script defer src="memorial.js?v=2"></script>
     <script defer src="script.js?v=33"></script>
   </body>
 </html>

@@ -387,10 +387,10 @@ const MEMORIAL_CSS = `
 }
 .mem-vital dt {
   font-family: var(--font-mono, monospace);
-  font-size: 0.54rem;
+  font-size: 0.58rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--mem-ink-dim);
+  color: color-mix(in oklch, var(--mem-ink-dim) 70%, var(--mem-ink));
   margin: 0 0 4px;
   white-space: nowrap;
 }
