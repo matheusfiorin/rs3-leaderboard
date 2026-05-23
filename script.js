@@ -1545,7 +1545,7 @@ function initFilters() {
     let _qsTimer = null;
     questSearchEl.addEventListener("input", () => {
       clearTimeout(_qsTimer);
-      _qsTimer = setTimeout(applyQuestFilters, 80);
+      _qsTimer = setTimeout(applyQuestFilters, 120);
     });
   }
   $$("#activity-filters .pill").forEach((b) =>
@@ -1599,7 +1599,9 @@ function applyQuestFilters() {
   const filter = activePill ? activePill.dataset.qfilter : "all";
   const searchEl = document.getElementById("quest-search");
   const q = (searchEl ? searchEl.value : "").trim().toLowerCase();
-  document.querySelectorAll(".ql-row").forEach((r) => {
+  const rows = document.querySelectorAll(".ql-row");
+  let shown = 0;
+  rows.forEach((r) => {
     let show = true;
     if (filter !== "all") {
       const cats = (r.dataset.qcat || "").split(" ");
@@ -1610,7 +1612,21 @@ function applyQuestFilters() {
       show = name.includes(q);
     }
     r.classList.toggle("hidden", !show);
+    if (show) shown++;
   });
+  // Result count chip (aria-live polite). Hidden on default empty state.
+  const countEl = document.getElementById("quest-search-count");
+  if (countEl) {
+    if (q || filter !== "all") {
+      const lang = typeof currentLang !== "undefined" ? currentLang : "en";
+      const ofWord = lang === "pt" ? "de" : "of";
+      countEl.textContent = `${shown} ${ofWord} ${rows.length}`;
+      countEl.hidden = false;
+    } else {
+      countEl.textContent = "";
+      countEl.hidden = true;
+    }
+  }
 }
 
 // ---- Status ----

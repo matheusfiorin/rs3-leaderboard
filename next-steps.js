@@ -281,8 +281,24 @@ function renderMissionControl(players) {
 
   const cols = players.map((p, i) => nsPlayerColumn(p, i)).join("");
 
+  // Collapse state — persisted across visits. Default: collapsed on narrow
+  // mobile (≤640px), expanded on desktop. The panel was the #1 mobile
+  // friction (967px tall pushed Major Goals below 1.5 screens deep).
+  const STORAGE_KEY = "rs3lb-ns-collapsed";
+  const stored = localStorage.getItem(STORAGE_KEY);
+  let collapsed;
+  if (stored === "1" || stored === "0") {
+    collapsed = stored === "1";
+  } else {
+    collapsed = window.matchMedia && window.matchMedia("(max-width: 640px)").matches;
+  }
+  const lang = typeof currentLang !== "undefined" ? currentLang : "en";
+  const toggleLabel = collapsed
+    ? (lang === "pt" ? "Expandir" : "Expand")
+    : (lang === "pt" ? "Recolher" : "Collapse");
+
   el.innerHTML = `
-    <section class="ns-panel ns-stagger" style="--si:0">
+    <section class="ns-panel ns-stagger ${collapsed ? "ns-collapsed" : ""}" style="--si:0">
       <div class="ns-panel-grain"></div>
       <header class="ns-panel-head">
         <div class="ns-head-mark">⚜</div>
@@ -290,9 +306,35 @@ function renderMissionControl(players) {
           <h2 class="ns-head-title">${nsT("title")}</h2>
           <p class="ns-head-sub">${nsT("sub")}</p>
         </div>
+        <button class="ns-collapse-toggle" type="button" aria-expanded="${collapsed ? "false" : "true"}" aria-controls="ns-grid-body" title="${toggleLabel}">
+          <span class="ns-collapse-label">${toggleLabel}</span>
+          <svg class="ns-collapse-chev" viewBox="0 0 12 8" aria-hidden="true" focusable="false">
+            <path d="M1 1 L6 6 L11 1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
       </header>
-      <div class="ns-grid">${cols}</div>
+      <div class="ns-grid" id="ns-grid-body" ${collapsed ? "hidden" : ""}>${cols}</div>
     </section>`;
+
+  // Collapse toggle
+  const toggleBtn = el.querySelector(".ns-collapse-toggle");
+  const body = el.querySelector("#ns-grid-body");
+  if (toggleBtn && body) {
+    toggleBtn.addEventListener("click", () => {
+      const isCollapsed = !body.hidden;
+      body.hidden = isCollapsed;
+      el.querySelector(".ns-panel").classList.toggle("ns-collapsed", isCollapsed);
+      toggleBtn.setAttribute("aria-expanded", isCollapsed ? "false" : "true");
+      const newLang = typeof currentLang !== "undefined" ? currentLang : "en";
+      const newLabel = isCollapsed
+        ? (newLang === "pt" ? "Expandir" : "Expand")
+        : (newLang === "pt" ? "Recolher" : "Collapse");
+      toggleBtn.title = newLabel;
+      const labelEl = toggleBtn.querySelector(".ns-collapse-label");
+      if (labelEl) labelEl.textContent = newLabel;
+      localStorage.setItem(STORAGE_KEY, isCollapsed ? "1" : "0");
+    });
+  }
 
   // Block click handlers (delegate)
   el.querySelectorAll("[data-ns-go]").forEach(b => {
@@ -348,6 +390,33 @@ function nsInjectStyles() {
   border-bottom: 1px solid rgba(212,168,67,0.10);
   margin-bottom: 18px;
 }
+.ns-head-text { flex: 1; min-width: 0; }
+.ns-collapse-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  color: var(--text-2);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+  min-block-size: 32px;
+}
+.ns-collapse-toggle:hover, .ns-collapse-toggle:focus-visible {
+  border-color: var(--gold-dim);
+  color: var(--gold);
+  outline: none;
+}
+.ns-collapse-chev { width: 10px; height: 7px; transition: transform 0.25s ease; }
+.ns-panel.ns-collapsed .ns-collapse-chev { transform: rotate(-90deg); }
+.ns-panel.ns-collapsed .ns-panel-head { margin-bottom: 0; border-bottom: none; padding-bottom: 4px; }
+@media (pointer: coarse) { .ns-collapse-toggle { min-block-size: 44px; } }
+@media (prefers-reduced-motion: reduce) { .ns-collapse-chev { transition: none !important; } }
 .ns-head-mark {
   font-size: 1.6rem; line-height: 1;
   color: var(--gold);

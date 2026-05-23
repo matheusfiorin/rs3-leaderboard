@@ -1138,10 +1138,34 @@ a:focus-visible {
   }
 }
 
-/* Hide labels on small phones to save space */
+/* On small phones, convert the hover-tooltip label into a permanent
+   icon-under-text micro-label so new mobile users can tell what each dock
+   button does without tapping each one. */
 @media (max-width: 520px) {
+  .dock-btn {
+    flex-direction: column;
+    gap: 1px;
+    padding: 4px 2px;
+    width: auto; min-width: 44px; height: 50px;
+  }
+  .dock-btn svg { width: 18px; height: 18px; }
   .dock-btn::before {
-    display: none;
+    content: attr(data-label);
+    position: static; transform: none;
+    margin: 0; padding: 0;
+    background: none; border: none;
+    opacity: 1;
+    font-size: 0.48rem;
+    font-weight: 600;
+    line-height: 1;
+    color: inherit;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .dock-btn.active::after {
+    bottom: 1px;
+    width: 3px; height: 3px;
   }
 }
 
@@ -1213,7 +1237,16 @@ a:focus-visible {
 .h2h-delta-p2 { color: var(--gold-bright); border-color: color-mix(in oklch, var(--gold-dim) 70%, transparent); }
 
 /* Quest list search box */
-.quest-search-row { display: flex; margin-bottom: 8px; }
+.quest-search-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.quest-search-count {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.66rem;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+}
+.quest-search-count[hidden] { display: none; }
 .quest-search {
   flex: 1;
   background: var(--bg-card);
