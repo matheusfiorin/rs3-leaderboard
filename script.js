@@ -822,18 +822,28 @@ function renderH2H(players) {
   $("#h2h-container").innerHTML = `
     <div class="h2h-header"><div class="h2h-name p1" style="text-align:right">${esc(a.name)}</div><div></div><div class="h2h-name p2">${esc(b.name)}</div></div>
     ${rows
+      // Drop rows where both sides are 0 — the "empty bars on either side"
+      // visual reads as broken rather than informative.
+      .filter((r) => r.v1 > 0 || r.v2 > 0)
       .map((r) => {
         const mx = Math.max(r.v1, r.v2, 1);
-        // Avoid the "1 vs 0 looks like 80% vs nothing" visual distortion:
-        // floor at 6% so a non-zero count is always visible.
+        // Floor non-zero bars at 6% so a small count stays visible against a
+        // larger comparator.
         const barPct = (val) => {
           if (val <= 0) return 0;
           return Math.max((val / mx) * 100, 6);
         };
+        // Delta chip: rendered in the label gutter with a side hint so the
+        // viewer doesn't have to mentally subtract. Hidden when tied.
+        const diff = Math.abs(r.v1 - r.v2);
+        const aheadCls = r.v1 > r.v2 ? "h2h-delta-p1" : r.v2 > r.v1 ? "h2h-delta-p2" : "";
+        const deltaChip = diff > 0
+          ? `<span class="h2h-delta ${aheadCls}">${aheadCls === "h2h-delta-p1" ? "◂ " : ""}${fmt(diff)}${aheadCls === "h2h-delta-p2" ? " ▸" : ""}</span>`
+          : "";
         return `
       <div class="h2h-row">
         <div class="h2h-bar-wrap left${r.v1 >= r.v2 ? " winner" : ""}"><div class="h2h-bar" style="width:${barPct(r.v1)}%"></div><div class="h2h-val">${fmt(r.v1)}</div></div>
-        <div class="h2h-label">${r.label}</div>
+        <div class="h2h-label">${r.label}${deltaChip}</div>
         <div class="h2h-bar-wrap right${r.v2 >= r.v1 ? " winner" : ""}"><div class="h2h-bar" style="width:${barPct(r.v2)}%"></div><div class="h2h-val">${fmt(r.v2)}</div></div>
       </div>`;
       })

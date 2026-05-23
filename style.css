@@ -1186,3 +1186,20 @@ a:focus-visible {
 
 .combat-player-name.p1 { color: var(--purple-bright); }
 .combat-player-name.p2 { color: var(--gold-bright); }
+
+/* H2H delta chip — shown in the label gutter, side-coded by lead. */
+.h2h-label { display: flex; flex-direction: column; align-items: center; gap: 2px; line-height: 1.1; }
+.h2h-delta {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  font-variant-numeric: tabular-nums;
+  padding: 1px 6px;
+  border-radius: 100px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+.h2h-delta-p1 { color: var(--purple-bright); border-color: color-mix(in oklch, var(--purple-dim) 70%, transparent); }
+.h2h-delta-p2 { color: var(--gold-bright); border-color: color-mix(in oklch, var(--gold-dim) 70%, transparent); }
