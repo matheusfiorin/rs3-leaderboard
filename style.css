@@ -136,10 +136,15 @@ body::before {
 /* Language toggle */
 .lang-toggle {
   background: var(--bg-raised); border: 1px solid var(--border);
-  color: var(--text-2); padding: 4px 10px;
+  color: var(--text-2); padding: 4px 12px;
   border-radius: 12px; font-size: 0.65rem; font-weight: 700;
   cursor: pointer; transition: all 0.2s;
+  /* WCAG 2.5.5: Touch targets ≥44×44 — min-block-size gives keyboard/touch
+     room without ballooning the visible chip. */
+  min-block-size: 32px;
+  min-inline-size: 44px;
 }
+@media (pointer: coarse) { .lang-toggle { min-block-size: 44px; } }
 .lang-toggle:hover { border-color: var(--border-hover); color: var(--text); }
 
 /* Data source badge */
@@ -159,9 +164,12 @@ body::before {
 .btn-refresh {
   background: none; border: 1px solid var(--border);
   color: var(--text-2); padding: 8px; border-radius: 8px;
-  cursor: pointer; display: flex; transition: all 0.2s;
-  /* WCAG 2.5.5: Touch targets ≥44×44px */
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+  /* WCAG 2.5.5: Touch targets ≥44×44 on coarse pointers. */
+  min-block-size: 36px; min-inline-size: 36px;
 }
+@media (pointer: coarse) { .btn-refresh { min-block-size: 44px; min-inline-size: 44px; } }
 .btn-refresh:hover { color: var(--gold); border-color: var(--gold-dim); }
 .btn-refresh.spinning svg { animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -1203,3 +1211,26 @@ a:focus-visible {
 }
 .h2h-delta-p1 { color: var(--purple-bright); border-color: color-mix(in oklch, var(--purple-dim) 70%, transparent); }
 .h2h-delta-p2 { color: var(--gold-bright); border-color: color-mix(in oklch, var(--gold-dim) 70%, transparent); }
+
+/* Quest list search box */
+.quest-search-row { display: flex; margin-bottom: 8px; }
+.quest-search {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  color: var(--text);
+  padding: 8px 14px;
+  font-family: var(--font, "Sora", sans-serif);
+  font-size: 0.78rem;
+  min-block-size: 36px;
+  outline: none;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.quest-search::placeholder { color: var(--text-3); }
+.quest-search:hover { border-color: var(--border-hover); }
+.quest-search:focus-visible {
+  border-color: var(--gold-dim);
+  background: color-mix(in oklch, var(--bg-card) 92%, var(--gold) 8%);
+}
+@media (pointer: coarse) { .quest-search { min-block-size: 44px; } }

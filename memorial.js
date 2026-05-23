@@ -159,11 +159,11 @@ function memorialTemplate(MEM) {
     </div>
 
     <dl class="mem-vitals" aria-label="${memEsc(memT("memorialFinalStats"))}">
-      <div class="mem-vital"><dt>Combat</dt><dd>${memFmt(MEM.combat)}</dd></div>
-      <div class="mem-vital"><dt>Total</dt><dd>${memFmt(MEM.totalLevel)}</dd></div>
-      <div class="mem-vital"><dt>XP</dt><dd>${memEsc(totalXpShort)}</dd></div>
-      <div class="mem-vital"><dt>QP</dt><dd>${memFmt(MEM.qp)}</dd></div>
-      <div class="mem-vital"><dt>Quests</dt><dd>${memFmt(MEM.quests)}</dd></div>
+      <div class="mem-vital"><dt>${memEsc(memT("memorialVitalCombat"))}</dt><dd>${memFmt(MEM.combat)}</dd></div>
+      <div class="mem-vital"><dt>${memEsc(memT("memorialVitalTotal"))}</dt><dd>${memFmt(MEM.totalLevel)}</dd></div>
+      <div class="mem-vital"><dt>${memEsc(memT("memorialVitalXp"))}</dt><dd>${memEsc(totalXpShort)}</dd></div>
+      <div class="mem-vital"><dt>${memEsc(memT("memorialVitalQp"))}</dt><dd>${memFmt(MEM.qp)}</dd></div>
+      <div class="mem-vital"><dt>${memEsc(memT("memorialVitalQuests"))}</dt><dd>${memFmt(MEM.quests)}</dd></div>
     </dl>
 
     <div class="mem-aside">

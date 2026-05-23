@@ -672,8 +672,13 @@ function parse(profile, hiscores, quests) {
       if (m && m[1] in clues) clues[m[1]] = a.score;
     }
   }
+  // Normalize display name. RuneMetrics returns the actual stored casing,
+  // which is occasionally mixed-case "SOClOPATA". UI looks cleaner if we
+  // match the canonical PLAYERS roster (Pascal-cased login).
+  const rawName = profile.name || "";
+  const canonical = PLAYERS.find((p) => p.toLowerCase() === rawName.toLowerCase());
   return {
-    name: profile.name,
+    name: canonical || rawName,
     rank: profile.rank,
     totalLevel: profile.totalskill,
     totalXp: profile.totalxp,
@@ -1043,12 +1048,15 @@ function renderQuests(players) {
 
   const questListEl = document.getElementById("quest-list");
   if (questListEl) {
+    // After (re-)render, re-apply the current pill + search filters so a
+    // cache→live re-render doesn't reset the user's view.
+    queueMicrotask(() => { try { applyQuestFilters(); } catch (_) {} });
     questListEl.innerHTML = quests
       .map((q) => {
         const cat = getQCat(q);
         const isDN = doNextQuests.includes(q);
         const wikiUrl = `https://runescape.wiki/w/${encodeURIComponent(q.title.replace(/ /g, "_"))}`;
-        return `<div class="ql-row" data-qcat="${cat}${isDN ? " do-next" : ""}">
+        return `<div class="ql-row" data-qcat="${cat}${isDN ? " do-next" : ""}" data-qname="${esc(q.title.toLowerCase())}">
         <div class="ql-name"><a href="${wikiUrl}" target="_blank" rel="noopener noreferrer">${esc(q.title)}</a>
           <span class="ql-diff">${diffStars(q.difficulty)}</span>
           ${q.members ? '<span class="ql-members">P2P</span>' : ""}
@@ -1290,6 +1298,11 @@ function updateUIText() {
   s("qf-one-done", t("qfOneDone"));
   s("qf-do-next", t("qfDoNext"));
   s("qf-in-progress", t("qfInProgress"));
+  const qsearch = document.getElementById("quest-search");
+  if (qsearch) {
+    qsearch.placeholder = t("questSearchPlaceholder");
+    qsearch.setAttribute("aria-label", t("questSearchPlaceholder"));
+  }
 
   // Activity filters
   s("af-all", t("all"));
@@ -1303,9 +1316,7 @@ function updateUIText() {
   s("footer-refresh", t("footerRefresh"));
   s("loader-text", t("loading"));
 
-  // Easter
-  s("easter-title", t("easterTitle"));
-  s("easter-sub", "Blooming Burrow \u00b7 30 Mar - 20 " + t("aprMonth"));
+  // Easter event removed \u2014 section no longer exists in index.html.
 
   // Next Steps
   h("nextsteps-title", "\uD83C\uDFAF " + t("nextStepsTitle"));
@@ -1345,6 +1356,24 @@ function updateUIText() {
   // Footer "Updated HH:MM" / "Atualizado HH:MM" relocalizes here so the lang
   // toggle doesn't have to wait for the next data refresh.
   renderLastUpdated();
+  // Same treatment for the header "Cache (3min atrás)" / "Cached 3m ago" pill.
+  renderSource();
+
+  // Localize chrome tooltips so screen readers + native tooltips match the
+  // active language.
+  const refreshBtn = document.getElementById("btn-refresh");
+  if (refreshBtn) {
+    refreshBtn.setAttribute("title", t("refresh"));
+    refreshBtn.setAttribute("aria-label", t("refresh"));
+  }
+  const langBtn = document.getElementById("lang-toggle");
+  if (langBtn) {
+    // Switcher, not a binary toggle — aria-label describes the destination.
+    const dest = lang === "pt" ? "Switch to English" : "Mudar para português";
+    langBtn.setAttribute("aria-label", dest);
+    langBtn.setAttribute("title", dest);
+    langBtn.removeAttribute("aria-pressed");
+  }
 
   // Memorial section text is bilingual; re-render on lang flip.
   if (typeof renderMemorial === "function") renderMemorial();
@@ -1508,17 +1537,17 @@ function initFilters() {
     b.addEventListener("click", () => {
       $$("#quest-filters .pill").forEach((x) => x.classList.remove("active"));
       b.classList.add("active");
-      const filter = b.dataset.qfilter;
-      $$(".ql-row").forEach((r) => {
-        if (filter === "all") {
-          r.classList.remove("hidden");
-          return;
-        }
-        const cats = r.dataset.qcat.split(" ");
-        r.classList.toggle("hidden", !cats.includes(filter));
-      });
+      applyQuestFilters();
     }),
   );
+  const questSearchEl = document.getElementById("quest-search");
+  if (questSearchEl) {
+    let _qsTimer = null;
+    questSearchEl.addEventListener("input", () => {
+      clearTimeout(_qsTimer);
+      _qsTimer = setTimeout(applyQuestFilters, 80);
+    });
+  }
   $$("#activity-filters .pill").forEach((b) =>
     b.addEventListener("click", () => {
       $$("#activity-filters .pill").forEach((x) =>
@@ -1562,10 +1591,58 @@ function renderNextSteps(players) {
   el.innerHTML = items.join("") || `<div style="color:var(--text-3);font-size:0.78rem;text-align:center;padding:16px">${lang === "pt" ? "Nenhuma sugestão" : "No suggestions"}</div>`;
 }
 
+// Quest filter pills + search box share a single re-apply function so they
+// compose correctly. Module-scoped so renderQuests() can re-call it after a
+// cache→live re-render.
+function applyQuestFilters() {
+  const activePill = document.querySelector("#quest-filters .pill.active");
+  const filter = activePill ? activePill.dataset.qfilter : "all";
+  const searchEl = document.getElementById("quest-search");
+  const q = (searchEl ? searchEl.value : "").trim().toLowerCase();
+  document.querySelectorAll(".ql-row").forEach((r) => {
+    let show = true;
+    if (filter !== "all") {
+      const cats = (r.dataset.qcat || "").split(" ");
+      show = cats.includes(filter);
+    }
+    if (show && q) {
+      const name = (r.dataset.qname || r.textContent || "").toLowerCase();
+      show = name.includes(q);
+    }
+    r.classList.toggle("hidden", !show);
+  });
+}
+
 // ---- Status ----
-function setSource(state, text) {
+// Tracked at module scope so updateUIText() can re-render in the new locale
+// when the user toggles language without waiting for the next refresh.
+let _sourceState = null;
+function setSource(state, text, kind, payload) {
   $(".source-dot").className = "source-dot " + state;
   $("#source-text").textContent = text;
+  _sourceState = { state, kind: kind || "text", payload };
+}
+function renderSource() {
+  if (!_sourceState) return;
+  const dot = $(".source-dot");
+  const txt = $("#source-text");
+  if (!dot || !txt) return;
+  dot.className = "source-dot " + (_sourceState.state || "");
+  const k = _sourceState.kind;
+  if (k === "cached") {
+    const min = _sourceState.payload;
+    txt.textContent = min != null
+      ? `${t("cached")} ${min}${t("agoMin")}`
+      : t("cachedData");
+  } else if (k === "live") {
+    txt.textContent = t("live");
+  } else if (k === "loading-live") {
+    txt.textContent = t("updatingLive");
+  } else if (k === "loading-refresh") {
+    txt.textContent = t("refreshing");
+  } else if (k === "offline") {
+    txt.textContent = t("offline");
+  }
 }
 function showError(msg) {
   $("#error-message").textContent = msg;
@@ -1768,7 +1845,7 @@ async function load(forceLive) {
       localStorage.setItem("rs3lb-snapshot", JSON.stringify({ at: Date.now(), players: cachedResults }));
     } catch {}
     const ageStr = cacheAgeMin != null ? ` (${cacheAgeMin}${t("agoMin")})` : "";
-    setSource("", `${t("cached")}${ageStr}`);
+    setSource("", `${t("cached")}${ageStr}`, "cached", cacheAgeMin);
     _lastUpdated = { kind: "cached", cacheAgeMin };
     renderLastUpdated();
   }
@@ -1782,9 +1859,9 @@ async function load(forceLive) {
 
   // ---- Step 3: try live in parallel (both players, racing proxies)
   if (haveAllCache) {
-    setSource("loading", t("updatingLive"));
+    setSource("loading", t("updatingLive"), "loading-live");
   } else {
-    setSource("loading", t("refreshing"));
+    setSource("loading", t("refreshing"), "loading-refresh");
   }
 
   const liveSettled = await Promise.allSettled(PLAYERS.map(fetchLive));
@@ -1801,13 +1878,13 @@ async function load(forceLive) {
     } catch {}
     memCacheSet(liveResults);
     if (anyFromLive) {
-      setSource("", t("live"));
+      setSource("", t("live"), "live");
       hideError();
       _lastUpdated = { kind: "live", at: new Date() };
       renderLastUpdated();
     } else if (cacheAgeMin != null) {
       const ageStr = ` (${cacheAgeMin}${t("agoMin")})`;
-      setSource("", `${t("cached")}${ageStr}`);
+      setSource("", `${t("cached")}${ageStr}`, "cached", cacheAgeMin);
       _lastUpdated = { kind: "cached", cacheAgeMin };
       renderLastUpdated();
       if (cacheAgeMin > 120) showError(`⚠️ ${t("errOutdated").replace("{n}", cacheAgeMin)}`);
@@ -1819,12 +1896,12 @@ async function load(forceLive) {
   // ---- Step 4: nothing worked - show what we have
   if (haveAllCache) {
     const ageStr = cacheAgeMin != null ? ` (${cacheAgeMin}${t("agoMin")})` : "";
-    setSource("", `${t("cached")}${ageStr}`);
+    setSource("", `${t("cached")}${ageStr}`, "cached", cacheAgeMin);
     if (cacheAgeMin != null && cacheAgeMin > 120) {
       showError(`⚠️ ${t("errOutdated").replace("{n}", cacheAgeMin)}`);
     }
   } else {
-    setSource("error", t("offline"));
+    setSource("error", t("offline"), "offline");
     showError(t("errFailed"));
     $("#loading-overlay").classList.add("hidden");
     $("#main-content").classList.add("visible");

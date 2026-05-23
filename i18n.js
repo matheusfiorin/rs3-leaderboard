@@ -187,7 +187,6 @@ const LANG = {
     // Footer
     footerApi: "Dados da API RuneMetrics & Hiscores",
     footerRefresh: "Atualiza a cada 5 min",
-    updated: "Atualizado",
     cachedData: "Dados em cache",
 
     // Skill names (official PT-BR from pt.runescape.wiki)
@@ -307,6 +306,12 @@ const LANG = {
     memorialEpitaph: "Que a aventura continue em outras terras.",
     memorialViewJourney: "Ver jornada arquivada",
     memorialNoActivity: "Nenhuma atividade arquivada.",
+    memorialVitalCombat: "Combate",
+    memorialVitalTotal: "Total",
+    memorialVitalXp: "XP",
+    memorialVitalQp: "PM",
+    memorialVitalQuests: "Missões",
+    questSearchPlaceholder: "Buscar missão...",
   },
 
   en: {
@@ -484,7 +489,6 @@ const LANG = {
 
     footerApi: "Data from RuneMetrics & Hiscores API",
     footerRefresh: "Auto-refreshes every 5 min",
-    updated: "Updated",
     cachedData: "Cached data",
 
     skillNames: {
@@ -589,6 +593,12 @@ const LANG = {
     memorialEpitaph: "May the adventure live on in other lands.",
     memorialViewJourney: "View archived journey",
     memorialNoActivity: "No archived activity.",
+    memorialVitalCombat: "Combat",
+    memorialVitalTotal: "Total",
+    memorialVitalXp: "XP",
+    memorialVitalQp: "QP",
+    memorialVitalQuests: "Quests",
+    questSearchPlaceholder: "Search quest...",
   },
 };
 
