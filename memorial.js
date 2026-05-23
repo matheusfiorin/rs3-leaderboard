@@ -613,17 +613,33 @@ const MEMORIAL_CSS = `
   .mem-trophy {
     flex: 0 0 auto;
     grid-template-columns: 5px auto auto;
-    gap: 6px;
-    padding: 2px 10px;
+    gap: 5px;
+    padding: 2px 8px;
     border-left: 0;
     border: 1px solid color-mix(in oklch, var(--mem-gold-aged) 40%, transparent);
     border-radius: 100px;
     background: color-mix(in oklch, var(--gold) 5%, transparent);
   }
-  .mem-trophy-skill { font-size: 0.7rem; }
-  .mem-trophy-lvl { font-size: 0.78rem; }
+  .mem-trophy-skill { font-size: 0.66rem; letter-spacing: 0; }
+  .mem-trophy-lvl { font-size: 0.74rem; }
   .mem-journey-trigger { justify-content: space-between; gap: 6px; }
   .mem-epitaph { font-size: 0.7rem; gap: 10px; }
+}
+
+/* Extra-tight bin for sub-360 screens — keeps the 3 trophy chips on one
+   line without scroll and shrinks the monogram cap so the name row
+   doesn't ride against the right border. */
+@media (max-width: 360px) {
+  .mem-frame { padding: 10px 10px 6px; }
+  .mem-monogram-initial { font-size: 2.1rem; }
+  .mem-name { font-size: 0.92rem; letter-spacing: 0.08em; }
+  .mem-vital { min-width: 60px !important; padding: 2px 4px; }
+  .mem-vital dt { font-size: 0.5rem; letter-spacing: 0.14em; }
+  .mem-vital dd { font-size: 0.78rem; }
+  .mem-trophy { padding: 2px 6px; }
+  .mem-trophy-skill { font-size: 0.6rem; }
+  .mem-trophy-lvl { font-size: 0.7rem; }
+  .mem-epitaph { font-size: 0.62rem; gap: 6px; padding: 4px 4px 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -54,7 +54,7 @@
   --radius: 8px;
   --radius-sm: 6px;
   --radius-xs: 4px;
-  --max-w: 960px;
+  --max-w: 1100px;
 
   /* Player binding */
   --p1: var(--gold); --p1-bg: var(--gold-bg);
@@ -1039,11 +1039,23 @@ body::before {
   .main { padding: 10px 6px 90px; }
   .p-stats { grid-template-columns: repeat(2, 1fr); }
   .grind-stats { grid-template-columns: repeat(3, 1fr) !important; }
-  /* Touch targets stay ≥44px even on tiny viewports — keep parity with the
-     larger breakpoint (overrides earlier shrink). */
-  .dock-btn { min-width: 44px; min-height: 44px; width: 44px; height: 44px; }
-  /* Dock buttons wrap on ultra-small phones to prevent horizontal overflow */
-  .dock { flex-wrap: wrap; max-width: calc(100vw - 20px); }
+  /* Ultra-narrow phones: keep dock to a single row by shrinking buttons.
+     Wrapping to multiple rows was eating 25% of viewport height.
+     Icon-only (label hidden via the .dock-btn::before media at ≤520
+     stays — here we just tighten width and trim icon). */
+  .dock {
+    flex-wrap: nowrap;
+    gap: 1px;
+    padding: 5px 6px;
+    max-width: calc(100vw - 12px);
+  }
+  .dock-btn {
+    min-width: 36px; min-height: 44px;
+    width: 36px; height: 46px;
+    padding: 3px 0;
+  }
+  .dock-btn svg { width: 16px; height: 16px; }
+  .dock-btn::before { font-size: 0.42rem; letter-spacing: 0; }
 }
 
 /* Tablet: 768px+ */

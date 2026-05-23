@@ -415,7 +415,21 @@ function nsInjectStyles() {
 .ns-collapse-chev { width: 10px; height: 7px; transition: transform 0.25s ease; }
 .ns-panel.ns-collapsed .ns-collapse-chev { transform: rotate(-90deg); }
 .ns-panel.ns-collapsed .ns-panel-head { margin-bottom: 0; border-bottom: none; padding-bottom: 4px; }
+/* UA stylesheet [hidden] display:none and .ns-grid display:grid share the
+   same specificity (0,1,0). The injected ns-grid rule wins on source order,
+   so the hidden attribute is silently ignored without this explicit override. */
+.ns-grid[hidden] { display: none !important; }
 @media (pointer: coarse) { .ns-collapse-toggle { min-block-size: 44px; } }
+@media (max-width: 520px) {
+  /* On narrow phones, the "Expandir/Recolher" word eats horizontal room
+     the header needs for title + subtitle. Keep just the chevron + an
+     accessible-name label, hidden visually. */
+  .ns-collapse-toggle { padding: 6px 8px; gap: 0; }
+  .ns-collapse-toggle .ns-collapse-label {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+}
 @media (prefers-reduced-motion: reduce) { .ns-collapse-chev { transition: none !important; } }
 .ns-head-mark {
   font-size: 1.6rem; line-height: 1;
