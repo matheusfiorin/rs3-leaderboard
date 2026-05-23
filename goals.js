@@ -244,7 +244,7 @@ const GOALS = [
 GOALS.push(
   {
     id: "sliske",
-    icon: `<img src="data/icons/Mahjarrat_aura.png" width="28" height="28" alt="Sliske's Endgame" loading="lazy" data-fallback="emoji" data-emoji="🎭">`,
+    icon: `<img src="data/icons/Ritual_of_the_Mahjarrat.png" width="28" height="28" alt="Sliske's Endgame" loading="lazy" data-fallback="emoji" data-emoji="🎭">`,
     color: "purple",
     label_pt: "Endgame de Sliske",
     label_en: "Sliske's Endgame",
@@ -285,7 +285,7 @@ GOALS.push(
   },
   {
     id: "base_50",
-    icon: `<img src="data/icons/Stats_icon.png" width="28" height="28" alt="Base 50" loading="lazy" data-fallback="emoji" data-emoji="📊">`,
+    icon: `<span class="mg-emoji-icon" aria-hidden="true">📊</span>`,
     color: "teal",
     label_pt: "Base 50 em tudo",
     label_en: "Base 50 across the board",

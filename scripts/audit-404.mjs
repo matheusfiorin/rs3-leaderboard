@@ -1,0 +1,14 @@
+import { chromium } from '@playwright/test';
+const url = process.argv[2] || 'https://matheusfiorin.github.io/rs3-leaderboard/';
+const browser = await chromium.launch();
+const ctx = await browser.newContext({ viewport: { width: 1440, height: 1100 } });
+const page = await ctx.newPage();
+const fails = [];
+page.on('response', (r) => { if (r.status() === 404) fails.push({ status: r.status(), url: r.url() }); });
+const errs = [];
+page.on('pageerror', (e) => errs.push('pageerror: ' + e.message));
+page.on('console', (m) => { if (m.type() === 'error') errs.push('console: ' + m.text()); });
+await page.goto(url, { waitUntil: 'networkidle' });
+await page.waitForTimeout(1500);
+console.log(JSON.stringify({ url, four04s: fails, errs }, null, 2));
+await browser.close();

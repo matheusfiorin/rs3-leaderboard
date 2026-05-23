@@ -57,7 +57,7 @@ jobs:
             fetch_or_keep \
               "https://apps.runescape.com/runemetrics/profile/profile?user=${player}&activities=20" \
               "data/${safe}_profile.json" \
-              '(.error // empty) == empty and ((.skillvalues // []) | length) > 0' \
+              '(.error == null) and ((.skillvalues // []) | length) > 0' \
               "profile($player)"
 
             fetch_or_keep \
