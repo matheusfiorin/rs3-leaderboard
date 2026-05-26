@@ -313,7 +313,7 @@ const LANG = {
     memorialVitalQuests: "Missões",
     questSearchPlaceholder: "Buscar missão...",
     tierEarly: "Início de Jogo",
-    tierMid: "Meio de Jogo",
+    tierMid: "Mid-Game",
     tierEnd: "Endgame",
     tierDone: "feitas",
     tierLocked: "Bloqueado",

@@ -18,7 +18,7 @@ const TIER_DEFS = [
   },
   {
     id: "mid",
-    label_pt: "Meio de Jogo",
+    label_pt: "Mid-Game",
     label_en: "Mid Game",
     lock_pt: null,
     lock_en: null,
