@@ -78,7 +78,11 @@
 
 /* ---- Reset ---- */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-html { font-size: 15px; scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+/* Base 16px on mobile/tablet for readable sub-rem labels (0.65rem = 10.4px
+   floor). Drops to 15px on desktop where viewport pixels are abundant.
+   The media query approach beats clamp() here — no in-between half-pixels. */
+html { font-size: 16px; scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+@media (min-width: 1024px) { html { font-size: 15px; } }
 body {
   font-family: var(--font);
   background: var(--bg);
@@ -116,22 +120,88 @@ body::before {
 }
 .header-content {
   max-width: var(--max-w); margin: 0 auto;
-  padding: 12px 16px;
+  padding: 14px 18px 12px;
   display: flex; align-items: center;
   justify-content: space-between; gap: 12px;
 }
+.header-left {
+  display: flex; align-items: center; gap: 14px;
+  min-width: 0;
+}
+.masthead-rule {
+  display: none;
+  color: var(--gold-dim);
+  width: 56px;
+  flex-shrink: 0;
+}
+.masthead-rule svg { display: block; width: 100%; height: auto; opacity: 0.7; }
+@media (min-width: 640px) { .masthead-rule { display: inline-flex; } }
+.masthead-text {
+  display: flex; flex-direction: column; gap: 2px;
+  min-width: 0;
+}
 .logo {
   font-family: var(--font-display);
-  font-size: 1.15rem; font-weight: 800;
-  letter-spacing: 1px; text-transform: uppercase;
+  font-size: 1.25rem; font-weight: 800;
+  letter-spacing: 3px; text-transform: uppercase;
+  line-height: 1;
+  /* Subtle ink-on-vellum gradient — readable, not a flat slab */
+  background: linear-gradient(180deg, var(--text) 0%, #cbbe9c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 1px 0 rgba(212,168,67,0.04);
 }
-.accent { color: var(--gold-bright); }
+.accent {
+  color: var(--gold-bright);
+  background: linear-gradient(180deg, var(--gold-bright) 0%, var(--gold) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
 .subtitle {
-  font-size: 0.55rem; color: var(--text-3);
-  margin-top: 1px; letter-spacing: 2px;
+  font-size: 0.58rem; color: var(--text-3);
+  margin-top: 4px; letter-spacing: 3.5px;
   text-transform: uppercase; font-weight: 500;
+  font-family: var(--font-mono);
 }
 .header-right { display: flex; align-items: center; gap: 8px; }
+
+/* Era stamp: chiseled metadata block, only renders on wider screens */
+.era-stamp {
+  display: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  padding: 3px 12px;
+  margin-right: 4px;
+  border-left: 1px solid rgba(212,168,67,0.16);
+  border-right: 1px solid rgba(212,168,67,0.16);
+  position: relative;
+}
+.era-stamp::before,
+.era-stamp::after {
+  content: "";
+  position: absolute;
+  left: 4px; right: 4px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212,168,67,0.4), transparent);
+}
+.era-stamp::before { top: 0; }
+.era-stamp::after  { bottom: 0; }
+.era-stamp-label {
+  font-family: var(--font-display);
+  font-size: 0.55rem; font-weight: 700;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--gold-bright);
+  line-height: 1.1;
+}
+.era-stamp-date {
+  font-family: var(--font-mono);
+  font-size: 0.62rem; font-weight: 500;
+  letter-spacing: 2px;
+  color: var(--text-3);
+}
+@media (min-width: 768px) { .era-stamp { display: flex; } }
 
 /* Language toggle */
 .lang-toggle {
@@ -158,6 +228,28 @@ body::before {
 }
 .source-dot.loading { background: var(--orange); animation: pulse 1.5s infinite; }
 .source-dot.error { background: var(--red); }
+
+/* Mobile header: collapse non-essential pieces so the bell + lang + refresh
+   trio gets the room they need to hit 44px touch targets. */
+@media (max-width: 640px) {
+  .header-content {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .header-left { gap: 0; min-width: 0; flex-shrink: 1; }
+  .header-right { gap: 6px; }
+  .logo { font-size: 1.1rem; letter-spacing: 2px; }
+  .subtitle { font-size: 0.55rem; letter-spacing: 2.5px; }
+  /* Drop the source-text label — keep just the colored status dot.
+     Status is still conveyed via the dot's color (green/orange/red). */
+  .data-source-badge .source-text { display: none; }
+  .data-source-badge { padding: 0 2px; }
+}
+@media (max-width: 400px) {
+  /* Tightest viewports: drop the subtitle line entirely; the logo carries the brand. */
+  .subtitle { display: none; }
+  .header-content { padding: 8px 10px; }
+}
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 
 /* Refresh button */
@@ -173,6 +265,127 @@ body::before {
 .btn-refresh:hover { color: var(--gold); border-color: var(--gold-dim); }
 .btn-refresh.spinning svg { animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== NOTIFICATIONS ===== */
+.notif-wrap { position: relative; display: inline-flex; }
+.notif-bell {
+  position: relative;
+  background: none; border: 1px solid var(--border);
+  color: var(--text-2);
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+  min-block-size: 36px; min-inline-size: 36px;
+  font-size: 0.9rem;
+}
+@media (pointer: coarse) { .notif-bell { min-block-size: 44px; min-inline-size: 44px; } }
+.notif-bell:hover { border-color: var(--gold-dim); color: var(--gold); }
+.notif-bell[aria-expanded="true"] { background: var(--bg-raised); border-color: var(--gold-dim); }
+.notif-bell-icon { line-height: 1; }
+.notif-badge {
+  position: absolute;
+  top: -4px; right: -4px;
+  min-width: 18px; height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--red, #f87171);
+  color: white;
+  font-size: 0.6rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 2px solid var(--bg, #0a0a0f);
+}
+/* The HTML `hidden` attribute must beat the .badge display rule. */
+.notif-badge[hidden] { display: none !important; }
+.notif-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(360px, 90vw);
+  max-height: 70vh;
+  overflow-y: auto;
+  background: var(--bg-raised, #1a1a24);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+  z-index: 1000;
+  animation: notifPanelIn .18s ease-out;
+}
+@keyframes notifPanelIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+.notif-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0;
+  background: var(--bg-raised, #1a1a24);
+  z-index: 1;
+}
+.notif-h-left { display: flex; flex-direction: column; gap: 2px; }
+.notif-h-title { font-family: var(--font-display); font-size: 0.8rem; font-weight: 800; color: var(--gold-bright); letter-spacing: .5px; }
+.notif-h-sub { font-size: 0.65rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 1px; }
+.notif-mark {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  padding: 6px 10px;
+  border-radius: 100px;
+  cursor: pointer;
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-family: var(--font);
+  transition: all .2s;
+  min-block-size: 28px;
+}
+.notif-mark:not([disabled]):hover { border-color: var(--gold-dim); color: var(--gold); }
+.notif-mark[disabled] { opacity: .5; cursor: default; }
+.notif-body { padding: 4px 0 8px; }
+.notif-list { list-style: none; margin: 0; padding: 0; }
+.notif-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 0.78rem;
+  color: var(--text-2);
+  position: relative;
+}
+.notif-row:last-child { border-bottom: none; }
+.notif-row .notif-icon { font-size: 1rem; line-height: 1; text-align: center; }
+.notif-row .notif-text { color: var(--text-1); }
+.notif-row .notif-time { font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-3); }
+.notif-row.notif-unseen { background: rgba(252,211,77,0.05); }
+.notif-row.notif-unseen .notif-text { color: var(--gold-bright); font-weight: 600; }
+.notif-dot {
+  position: absolute;
+  left: 4px; top: 50%;
+  transform: translateY(-50%);
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--gold-bright, #fcd34d);
+}
+.notif-empty {
+  padding: 22px 14px;
+  text-align: center;
+  color: var(--text-3);
+  font-size: 0.78rem;
+}
+@media (max-width: 520px) {
+  .notif-panel {
+    position: fixed;
+    top: 60px; right: 8px; left: 8px;
+    width: auto;
+    max-height: calc(100vh - 80px);
+  }
+}
 
 /* ===== LOADING =====
    Smooth fade-in (only visible if load takes >250ms) and fade-out.
@@ -1167,9 +1380,10 @@ a:focus-visible {
     margin: 0; padding: 0;
     background: none; border: none;
     opacity: 1;
-    font-size: 0.48rem;
+    font-size: 0.58rem;
     font-weight: 600;
-    line-height: 1;
+    line-height: 1.1;
+    letter-spacing: 0.04em;
     color: inherit;
     letter-spacing: 0.04em;
     white-space: nowrap;
@@ -1204,6 +1418,344 @@ a:focus-visible {
 
 .legend-swatch.p1 { background: var(--purple); }
 .legend-swatch.p2 { background: var(--gold); }
+
+/* ============================================================
+   ILLUMINATED CODEX — masthead, tier ribbon, ornaments
+   ============================================================ */
+
+/* ---- Tier ribbon: 3 sigils at the page entry, click-to-jump ---- */
+.tier-ribbon {
+  max-width: var(--max-w);
+  margin: 14px auto 0;
+  padding: 10px 18px;
+  display: flex; align-items: center; justify-content: center;
+  gap: 14px;
+  position: relative;
+}
+.tier-ribbon::before,
+.tier-ribbon::after {
+  content: "";
+  position: absolute; top: 50%; height: 1px;
+  width: 8%;
+  background: linear-gradient(90deg, transparent, rgba(212,168,67,0.25));
+}
+.tier-ribbon::before { left: 6%; transform: scaleX(-1); }
+.tier-ribbon::after  { right: 6%; }
+
+.tier-sigil {
+  appearance: none;
+  background: linear-gradient(180deg, rgba(212,168,67,0.04), rgba(255,255,255,0)) ,
+              radial-gradient(ellipse 80% 60% at 50% 0%, rgba(212,168,67,0.10), transparent 70%);
+  border: 1px solid rgba(212,168,67,0.18);
+  border-radius: 14px;
+  color: var(--text-2);
+  cursor: pointer;
+  padding: 12px 16px;
+  display: grid;
+  grid-template-columns: 32px auto 60px;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font);
+  position: relative;
+  transition: transform .25s cubic-bezier(.22,1,.36,1), border-color .2s, box-shadow .25s;
+  min-block-size: 56px;
+}
+.tier-sigil:hover {
+  border-color: rgba(212,168,67,0.42);
+  box-shadow: 0 8px 30px -10px var(--gold-glow), inset 0 1px 0 rgba(255,255,255,0.04);
+  transform: translateY(-1px);
+}
+.tier-sigil:active { transform: translateY(0) scale(0.985); }
+.tier-sigil-rune {
+  font-family: var(--font-display);
+  font-size: 1.05rem; font-weight: 800;
+  letter-spacing: 2px;
+  color: var(--gold-bright);
+  text-align: center;
+  /* Slight stone-carved feel */
+  text-shadow: 0 1px 0 rgba(0,0,0,0.6), 0 0 14px rgba(212,168,67,0.25);
+}
+.tier-sigil-meta {
+  display: flex; flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+  min-width: 0;
+}
+.tier-sigil-name {
+  font-family: var(--font-display);
+  font-size: 0.74rem; font-weight: 700;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--text);
+}
+.tier-sigil-pct {
+  font-family: var(--font-mono);
+  font-size: 0.84rem; font-weight: 700;
+  color: var(--gold-bright);
+  margin-top: 4px;
+  letter-spacing: 0.04em;
+}
+.tier-sigil-arc {
+  width: 48px; height: 48px;
+  transform: rotate(-90deg);
+  justify-self: end;
+}
+.tier-sigil-arc-track {
+  fill: none;
+  stroke: rgba(212,168,67,0.10);
+  stroke-width: 3;
+}
+.tier-sigil-arc-fill {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 3;
+  stroke-linecap: round;
+  /* Set via inline style at render time: dasharray=arc length, dashoffset=arc gap */
+  stroke-dasharray: 150.8;
+  stroke-dashoffset: 150.8;
+  transition: stroke-dashoffset .9s cubic-bezier(.22,1,.36,1);
+  filter: drop-shadow(0 0 4px rgba(240,199,94,0.45));
+}
+
+/* Tier-specific accents */
+.tier-sigil[data-tier="early"] .tier-sigil-rune { color: var(--teal-bright); text-shadow: 0 1px 0 rgba(0,0,0,0.6), 0 0 14px rgba(34,211,187,0.25); }
+.tier-sigil[data-tier="early"] .tier-sigil-arc-fill { stroke: var(--teal); filter: drop-shadow(0 0 4px rgba(34,211,187,0.45)); }
+.tier-sigil[data-tier="early"] { border-color: rgba(34,211,187,0.20); }
+.tier-sigil[data-tier="early"]:hover { border-color: rgba(34,211,187,0.45); box-shadow: 0 8px 30px -10px rgba(34,211,187,0.35), inset 0 1px 0 rgba(255,255,255,0.04); }
+
+.tier-sigil[data-tier="end"] .tier-sigil-rune { color: var(--purple-bright); text-shadow: 0 1px 0 rgba(0,0,0,0.6), 0 0 14px rgba(167,139,250,0.30); }
+.tier-sigil[data-tier="end"] .tier-sigil-arc-fill { stroke: var(--purple); filter: drop-shadow(0 0 4px rgba(167,139,250,0.45)); }
+.tier-sigil[data-tier="end"] { border-color: rgba(167,139,250,0.22); }
+.tier-sigil[data-tier="end"]:hover { border-color: rgba(167,139,250,0.5); box-shadow: 0 8px 30px -10px var(--purple-glow), inset 0 1px 0 rgba(255,255,255,0.04); }
+
+/* Locked end-tier (low combat) is muted but still clickable */
+.tier-sigil.tier-locked { opacity: 0.55; }
+.tier-sigil.tier-locked::after {
+  content: "✕";
+  position: absolute; top: 6px; right: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.55rem; color: var(--text-3);
+  letter-spacing: 0;
+}
+
+/* Inter-sigil glyphs */
+.tier-ribbon-glyph {
+  width: 22px; height: 16px;
+  color: rgba(212,168,67,0.35);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.tier-ribbon-glyph svg { width: 100%; height: 100%; }
+
+/* Ornamental rule below ribbon — slim flourish that divides hero from main */
+.ornament-rule {
+  max-width: var(--max-w);
+  margin: 8px auto 0;
+  padding: 0 18px;
+  color: rgba(212,168,67,0.45);
+  text-align: center;
+}
+.ornament-rule svg {
+  width: 100%; max-width: 360px;
+  height: 18px;
+  display: inline-block;
+}
+
+/* ---- Mobile compaction ----
+   Below 640px, the ribbon becomes a 3-column grid filling viewport width.
+   Sigils stay readable: bigger rune, bigger pct, bigger arc, hide secondary
+   label on very narrow screens so the % stays prominent. */
+@media (max-width: 640px) {
+  .tier-ribbon {
+    gap: 8px;
+    padding: 10px 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    max-width: 100%;
+  }
+  .tier-ribbon::before, .tier-ribbon::after { display: none; }
+  .tier-ribbon-glyph { display: none; }
+  .tier-sigil {
+    grid-template-columns: 24px 1fr 40px;
+    padding: 10px 12px;
+    gap: 9px;
+    border-radius: 12px;
+    min-block-size: 56px;
+  }
+  .tier-sigil-rune { font-size: 0.9rem; letter-spacing: 1.6px; }
+  .tier-sigil-name { font-size: 0.62rem; letter-spacing: 1.8px; }
+  .tier-sigil-pct  { font-size: 0.78rem; margin-top: 2px; }
+  .tier-sigil-arc  { width: 36px; height: 36px; }
+  .ornament-rule { padding: 0 14px; margin-top: 8px; }
+  .ornament-rule svg { max-width: 240px; height: 14px; }
+}
+
+/* Very small (<400px): drop the secondary label, keep rune + pct.
+   The icon-pct combo communicates the tier just as well in tight space. */
+@media (max-width: 400px) {
+  .tier-ribbon { gap: 6px; padding: 8px 10px; }
+  .tier-sigil {
+    grid-template-columns: 22px 1fr 32px;
+    gap: 6px;
+    padding: 8px 8px;
+  }
+  .tier-sigil-name { display: none; }
+  .tier-sigil-rune { font-size: 0.84rem; }
+  .tier-sigil-pct { font-size: 0.85rem; margin-top: 0; }
+  .tier-sigil-arc { width: 30px; height: 30px; }
+}
+
+/* ---- Page hero tightening ---- */
+.main { padding-top: 8px; }
+
+/* ---- Dashboard inter-section breathing room ----
+   Avoid the "glued cards" feeling where memorial sits directly on top of
+   mission-control or major-goals. The mounts have no inherent margin since
+   they're just divs that hold dynamically-rendered children. */
+.page[data-page="dashboard"] > #memorial-mount,
+.page[data-page="dashboard"] > #mission-control,
+.page[data-page="dashboard"] > #major-goals,
+.page[data-page="dashboard"] > .player-cards,
+.page[data-page="dashboard"] > .h2h-section,
+.page[data-page="dashboard"] > .section { margin-bottom: 28px; }
+.page[data-page="dashboard"] > #memorial-mount:empty,
+.page[data-page="dashboard"] > #mission-control:empty,
+.page[data-page="dashboard"] > #major-goals:empty { margin-bottom: 0; }
+@media (max-width: 640px) {
+  .page[data-page="dashboard"] > #memorial-mount,
+  .page[data-page="dashboard"] > #mission-control,
+  .page[data-page="dashboard"] > #major-goals,
+  .page[data-page="dashboard"] > .player-cards,
+  .page[data-page="dashboard"] > .h2h-section,
+  .page[data-page="dashboard"] > .section { margin-bottom: 22px; }
+}
+
+/* ============================================================
+   DOCK — heraldic ribbon refinement
+   Subtle illumination via inset borders + serif label on hover.
+   ============================================================ */
+.dock {
+  /* Keep current sizing/positioning; only refine the surface treatment */
+  background: linear-gradient(180deg, rgba(20,15,26,0.96), rgba(8,6,12,0.96));
+  border: 1px solid rgba(212,168,67,0.16);
+  box-shadow:
+    0 10px 40px rgba(0,0,0,0.65),
+    inset 0 1px 0 rgba(255,255,255,0.035),
+    inset 0 -1px 0 rgba(212,168,67,0.06);
+}
+.dock::after {
+  content: "";
+  position: absolute; bottom: -1px; left: 30%; right: 30%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212,168,67,0.18), transparent);
+}
+.dock-btn { border-radius: 11px; }
+.dock-btn.active {
+  background: radial-gradient(ellipse at 50% 100%, rgba(212,168,67,0.18), rgba(212,168,67,0.05) 70%);
+  border-color: rgba(212,168,67,0.28);
+  box-shadow: 0 0 20px rgba(212,168,67,0.12), inset 0 0 0 1px rgba(212,168,67,0.04);
+}
+.dock-btn.active::after {
+  width: 18px; height: 2px; border-radius: 2px;
+  bottom: 3px;
+  background: linear-gradient(90deg, transparent, var(--gold-bright), transparent);
+  box-shadow: 0 0 10px var(--gold-glow);
+}
+
+/* ============================================================
+   NOTIF PANEL — Parchment scroll treatment
+   ============================================================ */
+.notif-panel {
+  background:
+    linear-gradient(180deg, rgba(30,26,42,0.97), rgba(18,16,28,0.97)),
+    radial-gradient(ellipse at top, rgba(212,168,67,0.06), transparent 60%);
+  border: 1px solid rgba(212,168,67,0.22);
+  border-radius: 14px;
+  box-shadow:
+    0 18px 48px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(255,255,255,0.04),
+    inset 0 -1px 0 rgba(212,168,67,0.08);
+  /* Decorative top edge — glint of gold */
+  position: relative;
+}
+.notif-panel::before {
+  content: "";
+  position: absolute; top: -1px; left: 14%; right: 14%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-bright), transparent);
+  opacity: 0.5;
+}
+.notif-head {
+  background: linear-gradient(180deg, rgba(212,168,67,0.05), transparent);
+  border-bottom: 1px solid rgba(212,168,67,0.15);
+}
+.notif-h-title {
+  font-family: var(--font-display);
+  font-size: 0.85rem; font-weight: 800;
+  letter-spacing: 2.5px; text-transform: uppercase;
+}
+.notif-h-sub {
+  font-family: var(--font-mono);
+  font-size: 0.6rem; letter-spacing: 2.5px;
+}
+.notif-row {
+  transition: background .2s;
+}
+.notif-row:hover { background: rgba(255,255,255,0.025); }
+.notif-row.notif-unseen {
+  background: linear-gradient(90deg, rgba(252,211,77,0.10), rgba(252,211,77,0.02) 60%, transparent);
+  border-left: 2px solid var(--gold-bright);
+}
+.notif-row .notif-text { font-family: var(--font); }
+.notif-row .notif-time { font-family: var(--font-mono); }
+.notif-empty {
+  font-family: var(--font-display);
+  letter-spacing: 1.5px; text-transform: uppercase;
+  font-size: 0.7rem;
+}
+
+/* Notif bell — recast as a chiseled bracket */
+.notif-bell {
+  background: linear-gradient(180deg, rgba(212,168,67,0.04), rgba(0,0,0,0));
+  border: 1px solid rgba(212,168,67,0.20);
+  border-radius: 10px;
+  transition: all .25s cubic-bezier(.22,1,.36,1);
+}
+.notif-bell:hover {
+  border-color: rgba(212,168,67,0.55);
+  box-shadow: 0 0 18px -4px var(--gold-glow);
+  transform: translateY(-1px);
+}
+.notif-bell[aria-expanded="true"] {
+  background: linear-gradient(180deg, rgba(212,168,67,0.12), rgba(212,168,67,0.04));
+  border-color: var(--gold);
+  box-shadow: 0 0 22px -6px var(--gold-glow), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.notif-bell-icon {
+  filter: drop-shadow(0 0 4px rgba(240,199,94,0.4));
+}
+
+/* Notif row icon gets a slight gold halo on unseen entries */
+.notif-row.notif-unseen .notif-icon {
+  filter: drop-shadow(0 0 6px rgba(240,199,94,0.45));
+}
+
+/* ============================================================
+   GOAL TIERS — subtle integration with the codex theme
+   The base .gl-tier styles live in goals.js (injected). Augment
+   here without conflicting on selectors that already exist.
+   ============================================================ */
+.gl-tier {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.025), transparent),
+    radial-gradient(ellipse at 50% -10%, rgba(212,168,67,0.06), transparent 60%);
+}
+.gl-tier-head .gl-tier-label {
+  font-family: var(--font-display) !important;
+  letter-spacing: 2.5px !important;
+  text-transform: uppercase;
+}
+.gl-tier-count,
+.gl-tier-lock {
+  font-family: var(--font-mono);
+}
 
 .sk-bar-fill.p1 { background: var(--purple-dim); }
 .sk-bar-fill.p2 { background: var(--gold-dim); }

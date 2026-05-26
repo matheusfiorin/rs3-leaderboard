@@ -29,13 +29,32 @@
   <body>
     <div id="app">
       <!-- HEADER -->
-      <header class="header">
+      <header class="header" role="banner">
         <div class="header-content">
           <div class="header-left">
-            <h1 class="logo" id="logo-text">RS3 <span class="accent">Placar</span></h1>
-            <p class="subtitle" id="subtitle-text">Acompanhamento em tempo real</p>
+            <span class="masthead-rule" aria-hidden="true">
+              <svg viewBox="0 0 64 14" preserveAspectRatio="xMidYMid meet">
+                <path d="M0 7 L26 7 L32 1 L38 7 L64 7" stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round"/>
+                <circle cx="32" cy="7" r="1.6" fill="currentColor"/>
+              </svg>
+            </span>
+            <div class="masthead-text">
+              <h1 class="logo" id="logo-text">RS3 <span class="accent">Placar</span></h1>
+              <p class="subtitle" id="subtitle-text">Acompanhamento em tempo real</p>
+            </div>
           </div>
           <div class="header-right">
+            <div class="era-stamp" aria-hidden="true">
+              <span class="era-stamp-label">Sexta Era</span>
+              <span class="era-stamp-date" id="era-stamp-date">·</span>
+            </div>
+            <div class="notif-wrap">
+              <button class="notif-bell" id="notif-bell" type="button" aria-label="Notifications" aria-haspopup="dialog" aria-expanded="false">
+                <span class="notif-bell-icon" aria-hidden="true">🔔</span>
+                <span class="badge notif-badge" id="notif-count" hidden>0</span>
+              </button>
+              <div class="notif-panel" id="notif-panel" hidden role="dialog" aria-label="Notifications today"></div>
+            </div>
             <button class="lang-toggle" id="lang-toggle" title="Trocar idioma / Switch language" aria-label="Switch language" aria-pressed="false">
               <span id="lang-label">EN</span>
             </button>
@@ -59,6 +78,59 @@
           <span id="tab-senntisten"></span>
         </div>
       </header>
+
+      <!-- TIER RIBBON: at-a-glance progress across the 3 game stages -->
+      <nav class="tier-ribbon" id="tier-ribbon" aria-label="Progress across game stages">
+        <button class="tier-sigil" data-tier="early" type="button" aria-label="Early Game">
+          <span class="tier-sigil-rune" aria-hidden="true">I</span>
+          <span class="tier-sigil-meta">
+            <span class="tier-sigil-name" data-tier-name>Early</span>
+            <span class="tier-sigil-pct" data-tier-pct>—</span>
+          </span>
+          <svg class="tier-sigil-arc" viewBox="0 0 56 56" aria-hidden="true">
+            <circle cx="28" cy="28" r="24" class="tier-sigil-arc-track"/>
+            <circle cx="28" cy="28" r="24" class="tier-sigil-arc-fill" data-tier-arc/>
+          </svg>
+        </button>
+        <span class="tier-ribbon-glyph" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M3 12 L9 12 L12 8 L15 12 L21 12" stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg>
+        </span>
+        <button class="tier-sigil tier-sigil-mid" data-tier="mid" type="button" aria-label="Mid Game">
+          <span class="tier-sigil-rune" aria-hidden="true">II</span>
+          <span class="tier-sigil-meta">
+            <span class="tier-sigil-name" data-tier-name>Mid</span>
+            <span class="tier-sigil-pct" data-tier-pct>—</span>
+          </span>
+          <svg class="tier-sigil-arc" viewBox="0 0 56 56" aria-hidden="true">
+            <circle cx="28" cy="28" r="24" class="tier-sigil-arc-track"/>
+            <circle cx="28" cy="28" r="24" class="tier-sigil-arc-fill" data-tier-arc/>
+          </svg>
+        </button>
+        <span class="tier-ribbon-glyph" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M3 12 L9 12 L12 8 L15 12 L21 12" stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg>
+        </span>
+        <button class="tier-sigil tier-sigil-end" data-tier="end" type="button" aria-label="End Game">
+          <span class="tier-sigil-rune" aria-hidden="true">III</span>
+          <span class="tier-sigil-meta">
+            <span class="tier-sigil-name" data-tier-name>End</span>
+            <span class="tier-sigil-pct" data-tier-pct>—</span>
+          </span>
+          <svg class="tier-sigil-arc" viewBox="0 0 56 56" aria-hidden="true">
+            <circle cx="28" cy="28" r="24" class="tier-sigil-arc-track"/>
+            <circle cx="28" cy="28" r="24" class="tier-sigil-arc-fill" data-tier-arc/>
+          </svg>
+        </button>
+      </nav>
+
+      <!-- ORNAMENT: illuminated rule below the ribbon -->
+      <div class="ornament-rule" aria-hidden="true">
+        <svg viewBox="0 0 600 18" preserveAspectRatio="xMidYMid meet">
+          <line x1="0" y1="9" x2="265" y2="9" stroke="currentColor" stroke-width="0.6" opacity="0.45"/>
+          <line x1="335" y1="9" x2="600" y2="9" stroke="currentColor" stroke-width="0.6" opacity="0.45"/>
+          <path d="M283 9 L296 2 L309 9 L296 16 Z" fill="none" stroke="currentColor" stroke-width="0.8"/>
+          <circle cx="296" cy="9" r="1.4" fill="currentColor"/>
+        </svg>
+      </div>
 
       <!-- LOADING -->
       <div id="loading-overlay" class="loading-overlay" role="status" aria-live="polite">
@@ -251,7 +323,9 @@
       </button>
     </nav>
 
+    <script defer src="utils/storage.js?v=1"></script>
     <script defer src="i18n.js?v=33"></script>
+    <script defer src="notifications.js?v=1"></script>
     <script defer src="combat.js?v=33"></script>
     <script defer src="lookup.js?v=33"></script>
     <script defer src="major-goals.js?v=33"></script>

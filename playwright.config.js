@@ -12,6 +12,7 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   projects: [
+    // ---- Desktop ----
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
@@ -23,6 +24,37 @@ export default defineConfig({
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
+    },
+    // ---- Tablet (chromium engine, iPad viewport) ----
+    // Uses chromium engine because installing webkit deps requires sudo on
+    // Linux. UX-level checks (touch targets, viewport overflow) don't depend
+    // on rendering engine, so this is a safe substitute.
+    {
+      name: 'tablet',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 768, height: 1024 },
+        hasTouch: true,
+        isMobile: true,
+        userAgent: 'Mozilla/5.0 (iPad; CPU OS 14_4 like Mac OS X) AppleWebKit/605.1.15',
+      },
+    },
+    // ---- Mobile ----
+    {
+      name: 'mobile-chrome',
+      use: {
+        ...devices['Pixel 5'],
+      },
+    },
+    {
+      name: 'mobile-safari',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 390, height: 844 },
+        hasTouch: true,
+        isMobile: true,
+        userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15',
+      },
     },
   ],
   webServer: {

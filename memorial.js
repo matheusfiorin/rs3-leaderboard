@@ -239,7 +239,7 @@ const MEMORIAL_CSS = `
 #memorial-mount { display: block; }
 
 .mem {
-  margin: 6px 0 14px;
+  margin: 8px 0 28px;
   --mem-parchment:   color-mix(in oklch, var(--bg-card) 78%, #1f1608);
   --mem-parchment-2: color-mix(in oklch, var(--bg-card) 86%, #34250e);
   --mem-ink:         color-mix(in oklch, var(--text-2) 96%, #f3d99e);

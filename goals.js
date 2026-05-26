@@ -4,11 +4,42 @@
    items, quantifies gaps, shows next actions.
    ============================================= */
 
+// ---- Tier definitions ----
+// Goals are bucketed into 3 stages. A `gate` returning false means the tier
+// is locked for that player (collapsed by default with a reason subtitle).
+const TIER_DEFS = [
+  {
+    id: "early",
+    label_pt: "Início de Jogo",
+    label_en: "Early Game",
+    lock_pt: null,
+    lock_en: null,
+    gate: () => true,
+  },
+  {
+    id: "mid",
+    label_pt: "Meio de Jogo",
+    label_en: "Mid Game",
+    lock_pt: null,
+    lock_en: null,
+    gate: () => true,
+  },
+  {
+    id: "end",
+    label_pt: "Endgame",
+    label_en: "End Game",
+    lock_pt: "Bloqueado — Combate 95+ recomendado",
+    lock_en: "Locked — Combat 95+ recommended",
+    gate: (p) => (p && p.combatLevel || 0) >= 95,
+  },
+];
+
 // ---- Goal Definitions ----
 
 const GOALS = [
   {
     id: "senntisten",
+    tier: "mid",
     icon: `<img src="data/icons/Soul_Split.png" width="28" height="28" alt="Soul Split" loading="lazy" data-fallback="emoji" data-emoji="⚔️">`,
     color: "gold",
     label_pt: "Rumo ao Soul Split",
@@ -59,6 +90,7 @@ const GOALS = [
   },
   {
     id: "prifddinas",
+    tier: "mid",
     icon: `<img src="data/icons/Prifddinas_lodestone_icon.png" width="28" height="28" alt="Prifddinas" loading="lazy" data-fallback="emoji" data-emoji="🏰">`,
     color: "teal",
     label_pt: "Rumo a Prifddinas",
@@ -95,6 +127,7 @@ const GOALS = [
   },
   {
     id: "worldwakes",
+    tier: "mid",
     icon: `<img src="data/icons/Sunshine.png" width="28" height="28" alt="Sunshine" loading="lazy" data-fallback="emoji" data-emoji="☀️">`,
     color: "orange",
     label_pt: "The World Wakes",
@@ -120,6 +153,7 @@ const GOALS = [
   },
   {
     id: "invention",
+    tier: "mid",
     icon: `<img src="data/icons/Invention-icon.png" width="28" height="28" alt="Invention" loading="lazy" data-fallback="emoji" data-emoji="⚙️">`,
     color: "purple",
     label_pt: "Desbloquear Invenção",
@@ -140,6 +174,7 @@ const GOALS = [
   },
   {
     id: "rotm",
+    tier: "end",
     icon: `<img src="data/icons/Ritual_of_the_Mahjarrat.png" width="28" height="28" alt="Ritual of the Mahjarrat" loading="lazy" data-fallback="emoji" data-emoji="🔥">`,
     color: "purple",
     label_pt: "Ritual dos Mahjarrat",
@@ -244,6 +279,7 @@ const GOALS = [
 GOALS.push(
   {
     id: "sliske",
+    tier: "end",
     icon: `<span class="mg-emoji-icon" aria-hidden="true">🎭</span>`,
     color: "purple",
     label_pt: "Endgame de Sliske",
@@ -267,6 +303,7 @@ GOALS.push(
   },
   {
     id: "necromancy_99",
+    tier: "end",
     icon: `<img src="data/icons/Necromancy-icon.png" width="28" height="28" alt="Necromancy 99" loading="lazy" data-fallback="emoji" data-emoji="💀">`,
     color: "purple",
     label_pt: "Necromancia 99",
@@ -285,6 +322,7 @@ GOALS.push(
   },
   {
     id: "base_50",
+    tier: "early",
     icon: `<span class="mg-emoji-icon" aria-hidden="true">📊</span>`,
     color: "teal",
     label_pt: "Base 50 em tudo",
@@ -336,12 +374,48 @@ function goalIsRelevantForPlayer(goal, player) {
 }
 
 // ---- Storage ----
+// Backed by StorageManager (utils/storage.js) when loaded; falls back to raw
+// localStorage for backward-compat with existing `rs3lb-goals` payloads.
+// Key shapes:
+//   rs3lb-goals               → manual checkbox map { `${manualId}_${player}`: true }
+//   rs3lb-goals-tier-collapse → { [playerName]: { early:bool, mid:bool, end:bool } }
+//                               true = collapsed. Absent = use default state.
 const GOALS_STORAGE = "rs3lb-goals";
+const TIER_COLLAPSE_STORAGE = "rs3lb-goals-tier-collapse";
+
+function _hasStorage() { return typeof storage !== "undefined" && storage; }
+
 function goalsLoadManual() {
+  if (_hasStorage()) return storage.get("goals", {}) || {};
   try { return JSON.parse(localStorage.getItem(GOALS_STORAGE) || "{}"); }
   catch { return {}; }
 }
-function goalsSaveManual(s) { localStorage.setItem(GOALS_STORAGE, JSON.stringify(s)); }
+function goalsSaveManual(s) {
+  if (_hasStorage()) { storage.set("goals", s); return; }
+  try { localStorage.setItem(GOALS_STORAGE, JSON.stringify(s)); } catch {}
+}
+
+function goalsLoadTierCollapse() {
+  if (_hasStorage()) return storage.get("goals-tier-collapse", {}) || {};
+  try { return JSON.parse(localStorage.getItem(TIER_COLLAPSE_STORAGE) || "{}"); }
+  catch { return {}; }
+}
+function goalsSaveTierCollapse(s) {
+  if (_hasStorage()) { storage.set("goals-tier-collapse", s); return; }
+  try { localStorage.setItem(TIER_COLLAPSE_STORAGE, JSON.stringify(s)); } catch {}
+}
+function goalsTierIsCollapsed(playerName, tierId, defaultCollapsed) {
+  const all = goalsLoadTierCollapse();
+  const slot = all[playerName] || {};
+  if (Object.prototype.hasOwnProperty.call(slot, tierId)) return !!slot[tierId];
+  return !!defaultCollapsed;
+}
+function goalsSetTierCollapsed(playerName, tierId, collapsed) {
+  const all = goalsLoadTierCollapse();
+  if (!all[playerName]) all[playerName] = {};
+  all[playerName][tierId] = !!collapsed;
+  goalsSaveTierCollapse(all);
+}
 
 // ---- Progress calculation ----
 function goalProgress(goal, player) {
@@ -753,6 +827,67 @@ function goalsInjectStyles() {
 .gl-player-tab.active { border-color:var(--purple-dim); color:var(--purple); background:var(--purple-bg); }
 .gl-player-tab.p2.active { border-color:var(--gold-dim); color:var(--gold); background:var(--gold-bg); }
 
+/* ---- Tier groups ---- */
+.gl-tier {
+  margin: 0 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.gl-tier:hover { border-color: var(--border-glow); }
+.gl-tier-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  font-family: var(--font-display);
+  letter-spacing: .5px;
+}
+.gl-tier-head::-webkit-details-marker { display: none; }
+.gl-tier-caret {
+  display: inline-block;
+  font-size: 0.85rem;
+  color: var(--text-3);
+  transition: transform .2s ease;
+  width: 12px;
+  text-align: center;
+}
+.gl-tier[open] > .gl-tier-head .gl-tier-caret { transform: rotate(90deg); }
+.gl-tier-label {
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-1);
+}
+.gl-tier-count, .gl-tier-lock {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 100px;
+  background: rgba(255,255,255,0.04);
+  color: var(--text-2);
+  border: 1px solid var(--border);
+}
+.gl-tier-lock {
+  color: var(--text-3);
+  border-color: rgba(167,139,250,0.2);
+  background: rgba(167,139,250,0.04);
+}
+.gl-tier-allDone .gl-tier-label { color: var(--green); }
+.gl-tier-allDone .gl-tier-count { color: var(--green); border-color: rgba(74,222,128,0.3); }
+.gl-tier-locked .gl-tier-label { color: var(--text-2); }
+.gl-tier-locked .gl-tier-head { opacity: 0.78; }
+.gl-tier-body { padding: 0 8px 4px; }
+.gl-tier-body .gl-card { margin: 8px 4px 12px; }
+/* Color tiers by stage */
+.gl-tier-early > .gl-tier-head { border-left: 3px solid var(--teal-dim, rgba(94,234,212,0.5)); }
+.gl-tier-mid   > .gl-tier-head { border-left: 3px solid var(--gold-dim, rgba(252,211,77,0.55)); }
+.gl-tier-end   > .gl-tier-head { border-left: 3px solid var(--purple-dim, rgba(167,139,250,0.55)); }
+
 /* ---- Next Actions Panel ---- */
 .gl-next-actions {
   background:var(--bg-card);
@@ -1145,10 +1280,65 @@ function renderGoalsPage(players) {
   // Next Actions panel
   html += goalNextActionsPanel(player);
 
-  // Goal cards
+  // Goal cards grouped by tier
   let si = 1; // stagger index (0 is the next-actions panel)
-  for (const goal of GOALS) {
-    html += goalCard(goal, player, activeIdx, si++);
+  for (const tier of TIER_DEFS) {
+    const tierGoals = GOALS.filter(g => g.tier === tier.id);
+    if (!tierGoals.length) continue;
+
+    const tKey = tier.id === "early" ? "tierEarly" : tier.id === "mid" ? "tierMid" : "tierEnd";
+    const tierLabel = typeof t === "function" ? t(tKey) : (lang === "pt" ? tier.label_pt : tier.label_en);
+    const isLocked = !tier.gate(player);
+    const lockReason = isLocked
+      ? (typeof t === "function" ? t("tierLockedCombat") : (lang === "pt" ? tier.lock_pt : tier.lock_en))
+      : null;
+
+    // Compute counts. Always show every goal in its tier — done ones sort to
+    // the bottom and the tier collapses by default when everything is done.
+    let doneCount = 0, totalCount = 0;
+    const sortedGoals = [];
+    for (const g of tierGoals) {
+      const prog = typeof goalProgress === "function" ? goalProgress(g, player) : { pct: 0, capstoneDone: false };
+      const isDone = prog.capstoneDone || prog.pct >= 100;
+      totalCount++;
+      if (isDone) doneCount++;
+      sortedGoals.push({ goal: g, pct: prog.pct, isDone });
+    }
+
+    if (!totalCount) continue;
+
+    // Sort: in-progress (1-99) first DESC by pct, then not-started (0), then done last
+    sortedGoals.sort((a, b) => {
+      const ar = a.isDone ? 2 : (a.pct === 0 ? 1 : 0);
+      const br = b.isDone ? 2 : (b.pct === 0 ? 1 : 0);
+      if (ar !== br) return ar - br;
+      return b.pct - a.pct;
+    });
+
+    // Default collapse: locked, all done, OR all not-started → collapsed.
+    // Otherwise (has at least one in-progress) → open.
+    const allDone = doneCount === totalCount;
+    const noProgress = sortedGoals.every(s => s.pct === 0);
+    const defaultCollapsed = isLocked || allDone || noProgress;
+    const collapsed = goalsTierIsCollapsed(player.name, tier.id, defaultCollapsed);
+    const openAttr = collapsed ? "" : "open";
+
+    const doneWord = typeof t === "function" ? t("tierDone") : (lang === "pt" ? "feitas" : "done");
+    const lockedRow = lockReason
+      ? `<span class="gl-tier-lock">${typeof esc === "function" ? esc(lockReason) : lockReason}</span>`
+      : `<span class="gl-tier-count">${doneCount}/${totalCount} ${doneWord}</span>`;
+
+    html += `<details class="gl-tier gl-tier-${tier.id}${isLocked ? " gl-tier-locked" : ""}${allDone ? " gl-tier-allDone" : ""}" data-tier="${tier.id}" ${openAttr}>
+      <summary class="gl-tier-head">
+        <span class="gl-tier-caret" aria-hidden="true">▸</span>
+        <span class="gl-tier-label">${typeof esc === "function" ? esc(tierLabel) : tierLabel}</span>
+        ${lockedRow}
+      </summary>
+      <div class="gl-tier-body">`;
+    for (const { goal } of sortedGoals) {
+      html += goalCard(goal, player, activeIdx, si++);
+    }
+    html += `</div></details>`;
   }
 
   section.innerHTML = html;
@@ -1196,13 +1386,45 @@ function renderGoalsPage(players) {
     });
   });
 
-  // Event: manual checkboxes
-  section.addEventListener("change", function handler(e) {
-    if (!e.target.classList.contains("gl-check")) return;
-    const s = goalsLoadManual();
-    if (e.target.checked) s[e.target.dataset.key] = true;
-    else delete s[e.target.dataset.key];
-    goalsSaveManual(s);
-    renderGoalsPage(players);
-  }, { once: true });
+  // Event: tier collapse — persist per-player
+  section.querySelectorAll(".gl-tier").forEach(d => {
+    d.addEventListener("toggle", () => {
+      const tierId = d.dataset.tier;
+      if (!tierId) return;
+      goalsSetTierCollapsed(player.name, tierId, !d.open);
+    });
+  });
+
+  // Event: manual checkboxes + tab visibility — attach once per section mount.
+  // Re-renders preserve `section.dataset.glListenerAttached` so we don't double-bind.
+  if (section.dataset.glListenerAttached !== "1") {
+    section.addEventListener("change", function handler(e) {
+      if (!e.target.classList || !e.target.classList.contains("gl-check")) return;
+      const s = goalsLoadManual();
+      if (e.target.checked) s[e.target.dataset.key] = true;
+      else delete s[e.target.dataset.key];
+      goalsSaveManual(s);
+      // Re-render to refresh progress bars; the listener stays attached.
+      const sec = document.querySelector('[data-page="goals"]');
+      if (sec) renderGoalsPage(_glLastPlayers || players);
+    });
+    section.dataset.glListenerAttached = "1";
+  }
+  // Stash the latest `players` reference so the persistent change handler can
+  // call renderGoalsPage() without keeping the original closure's stale data.
+  _glLastPlayers = players;
 }
+
+// Cross-tab sync: when another tab toggles a manual checkbox or tier, refresh
+// the goals page so the two tabs stay in lockstep. Attached once at module load.
+let _glLastPlayers = null;
+(function attachStorageSync() {
+  if (typeof window === "undefined") return;
+  window.addEventListener("storage", (e) => {
+    if (!e || (e.key !== "rs3lb-goals" && e.key !== "rs3lb-goals-tier-collapse")) return;
+    const sec = document.querySelector('[data-page="goals"]');
+    if (sec && sec.classList.contains("active") && _glLastPlayers) {
+      renderGoalsPage(_glLastPlayers);
+    }
+  });
+})();

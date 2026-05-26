@@ -503,13 +503,51 @@ const MAX_PTS = JOURNAL.reduce((a, g) => a + g.pts, 0);
 // ---- State ----
 let data = [];
 let persistedSnapshot = null;
-// Load persisted snapshot from localStorage on init
-try {
-  const stored = localStorage.getItem('rs3lb-snapshot');
-  if (stored) persistedSnapshot = JSON.parse(stored);
-} catch (e) {
-  console.warn('Failed to load persisted snapshot:', e);
-}
+
+// ---- Cache hierarchy (3 tiers) ----
+//   1) _memCache      → in-memory, ~4.5 min, per-session (`memCacheGet/Set`)
+//   2) cacheStore     → localStorage, 24h TTL, snapshot only (this block)
+//   3) data/*.json    → GitHub Pages-served, ~30 min cron build
+// All three are independent; failures cascade down the list.
+const SNAPSHOT_TTL_MS = 24 * 60 * 60 * 1000;
+const cacheStore = {
+  set(key, value) {
+    const wrapped = { at: Date.now(), value };
+    if (typeof storage !== "undefined" && storage) { storage.set(key, wrapped); return; }
+    try { localStorage.setItem("rs3lb-" + key, JSON.stringify(wrapped)); } catch {}
+  },
+  get(key, ttlMs) {
+    let wrapped = null;
+    if (typeof storage !== "undefined" && storage) {
+      wrapped = storage.get(key, null);
+    } else {
+      try {
+        const raw = localStorage.getItem("rs3lb-" + key);
+        wrapped = raw ? JSON.parse(raw) : null;
+      } catch { wrapped = null; }
+    }
+    if (!wrapped || typeof wrapped !== "object") return null;
+    if (ttlMs != null && wrapped.at && Date.now() - wrapped.at > ttlMs) return null;
+    return wrapped.value !== undefined ? wrapped.value : wrapped;
+  },
+};
+
+// Load persisted snapshot (24h TTL). Reads the new wrapped shape; falls back
+// to the legacy `rs3lb-snapshot` raw payload for one transition window.
+(function _loadSnapshot() {
+  const fresh = cacheStore.get("snapshot", SNAPSHOT_TTL_MS);
+  if (fresh) { persistedSnapshot = fresh; return; }
+  try {
+    const stored = localStorage.getItem("rs3lb-snapshot");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      // Legacy shape was the raw snapshot; new shape is `{at, value}`.
+      persistedSnapshot = parsed && parsed.value ? parsed.value : parsed;
+    }
+  } catch (e) {
+    console.warn("Failed to load persisted snapshot:", e);
+  }
+})();
 let source = "";
 let timer = null;
 // Last-updated stamp: kind = "cached" with cacheAgeMin, or "live" with Date.
@@ -927,15 +965,24 @@ function renderActivity(players) {
       });
   });
   all.sort((a, b) => b.ts - a.ts);
-  
-  // Count only NEW activities since last view
-  const lastSeenTime = parseInt(localStorage.getItem("lastActivityTime") || "0", 10);
-  const newActivities = all.filter(a => a.ts > lastSeenTime);
-  $("#activity-count").textContent = newActivities.length;
-  
-  // Update last seen time to most recent activity
-  if (all.length > 0) {
-    localStorage.setItem("lastActivityTime", all[0].ts.toString());
+
+  // Feed each entry through the notification system. The persistent seen-set
+  // in notif.add() makes this safe across reloads — already-known entries are
+  // no-ops and never re-toast. The activity tab badge mirrors today's unseen
+  // count for backward compat with the existing #activity-count element.
+  if (typeof notif !== "undefined" && notif.add) {
+    for (const a of all) {
+      if (!a.ts) continue;
+      notif.add({
+        type: "activity",
+        ts: a.ts,
+        player: a.player,
+        payload: { text: a.text, classified: a.type },
+      });
+    }
+    const todayActs = notif.todayList ? notif.todayList().filter(e => e.type === "activity" && !e.seen).length : 0;
+    const badge = $("#activity-count");
+    if (badge) badge.textContent = String(todayActs);
   }
 
   if (!all.length) {
@@ -1668,6 +1715,113 @@ function hideError() {
   $("#error-banner").classList.add("hidden");
 }
 
+// ---- Codex hero: tier ribbon + era stamp ----
+// The ribbon shows global goal-progress per tier (early / mid / end).
+// Each sigil opens the goals page and scrolls to its tier section.
+// Renders against the FIRST player by default — average across players when
+// more than one is loaded so we don't show only Decxus's progress.
+const TIER_ARC_LEN = 150.796;  // 2π · 24 (matches r=24 in HTML svg)
+
+function _tierLabel(tierId) {
+  const key = tierId === "early" ? "tierEarly" : tierId === "mid" ? "tierMid" : "tierEnd";
+  return typeof t === "function" ? t(key) : tierId;
+}
+
+function _tierProgress(tierId, players) {
+  if (typeof GOALS === "undefined" || typeof goalProgress !== "function") return null;
+  const goalsInTier = GOALS.filter(g => g.tier === tierId);
+  if (!goalsInTier.length) return null;
+  let totalPct = 0, totalCount = 0;
+  for (const p of players) {
+    if (!p) continue;
+    for (const g of goalsInTier) {
+      const prog = goalProgress(g, p);
+      totalPct += prog.pct;
+      totalCount++;
+    }
+  }
+  return totalCount ? Math.round(totalPct / totalCount) : 0;
+}
+
+function _tierIsLocked(tierId, players) {
+  if (typeof TIER_DEFS === "undefined") return false;
+  const def = TIER_DEFS.find(t => t.id === tierId);
+  if (!def || typeof def.gate !== "function") return false;
+  // Locked only when EVERY active player fails the gate
+  return players.every(p => !def.gate(p));
+}
+
+function renderTierRibbon(players) {
+  const ribbon = document.getElementById("tier-ribbon");
+  if (!ribbon || !players || !players.length) return;
+  ribbon.querySelectorAll(".tier-sigil").forEach(sigil => {
+    const tier = sigil.dataset.tier;
+    const pct = _tierProgress(tier, players);
+    const locked = _tierIsLocked(tier, players);
+    sigil.classList.toggle("tier-locked", locked);
+    const nameEl = sigil.querySelector("[data-tier-name]");
+    if (nameEl) nameEl.textContent = _tierLabel(tier);
+    const pctEl = sigil.querySelector("[data-tier-pct]");
+    if (pctEl) pctEl.textContent = pct == null ? "—" : `${pct}%`;
+    const arc = sigil.querySelector("[data-tier-arc]");
+    if (arc) {
+      const offset = TIER_ARC_LEN * (1 - Math.max(0, Math.min(100, pct || 0)) / 100);
+      arc.style.strokeDashoffset = offset.toFixed(1);
+    }
+  });
+}
+
+// Era stamp: roman-numeral day + month abbreviation in the masthead.
+const _ROMAN = [
+  [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"],
+];
+function _toRoman(n) {
+  let out = "", x = n;
+  for (const [v, s] of _ROMAN) while (x >= v) { out += s; x -= v; }
+  return out || "I";
+}
+function renderEraStamp() {
+  const el = document.getElementById("era-stamp-date");
+  if (!el) return;
+  const d = new Date();
+  const months = ["JAN","FEB","MAR","APR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
+  const monthsEn = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+  const lang = typeof currentLang !== "undefined" ? currentLang : "en";
+  const mon = (lang === "pt" ? months : monthsEn)[d.getMonth()];
+  el.textContent = `${_toRoman(d.getDate())} · ${mon} · MMXXVI`.replace("MMXXVI", _yearRoman(d.getFullYear()));
+}
+function _yearRoman(y) {
+  // RS lore: Sixth Age — keep a stylized 4-digit Roman for current year.
+  const map = {1:"I",2:"II",3:"III",4:"IV",5:"V",6:"VI",7:"VII",8:"VIII",9:"IX"};
+  const M = "M".repeat(Math.floor(y / 1000));
+  const c = Math.floor((y % 1000) / 100);
+  const C = c === 9 ? "CM" : c >= 5 ? "D" + "C".repeat(c - 5) : c === 4 ? "CD" : "C".repeat(c);
+  const x = Math.floor((y % 100) / 10);
+  const X = x === 9 ? "XC" : x >= 5 ? "L" + "X".repeat(x - 5) : x === 4 ? "XL" : "X".repeat(x);
+  const u = y % 10;
+  const U = u === 9 ? "IX" : u >= 5 ? "V" + "I".repeat(u - 5) : u === 4 ? "IV" : "I".repeat(u);
+  return M + C + X + U;
+}
+
+// Ribbon click handler — jump to goals page + scroll to the chosen tier.
+if (typeof window !== "undefined") {
+  document.addEventListener("click", (e) => {
+    const sigil = e.target.closest(".tier-sigil");
+    if (!sigil) return;
+    const tier = sigil.dataset.tier;
+    if (!tier) return;
+    if (typeof launchSection === "function") launchSection("goals");
+    // Defer scroll until the goals page renders its tier <details> elements
+    setTimeout(() => {
+      const target = document.querySelector(`.gl-tier[data-tier="${tier}"]`);
+      if (target) {
+        if (target.tagName === "DETAILS" && !target.open) target.setAttribute("open", "");
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 250);
+  });
+}
+
 // ---- Lazy tab rendering ----
 const _renderers = {
   dashboard: (r) => {
@@ -1752,30 +1906,38 @@ function showToast(message, type) {
 }
 
 function renderAll(results) {
-  // Milestone notifications
-  if (results.length === 2) {
+  // Roll the notification window first so midnight crossings drop yesterday's
+  // events before we compute level-up / quest deltas.
+  if (typeof notif !== "undefined" && notif.purgeOld) notif.purgeOld();
+
+  // Milestone notifications routed through notif.add() so dedup is persistent
+  // across reloads (seen-set in localStorage). notif.add() handles toast +
+  // panel insertion + cross-tab badge update; we just feed it the delta events.
+  if (results.length === 2 && typeof notif !== "undefined") {
     for (let i = 0; i < 2; i++) {
-      // Use in-memory data first, fall back to persisted snapshot for cold load
       const old = data[i] || (persistedSnapshot && persistedSnapshot.players && persistedSnapshot.players[i]);
       const nw = results[i];
       if (!old || !nw) continue;
-      // Level-ups
+      // Level-ups: one event per skill level boundary crossed
       for (const sk of SKILLS) {
         const oldLvl = (old.skills[sk.id] || {}).level || 0;
         const newLvl = (nw.skills[sk.id] || {}).level || 0;
         if (newLvl > oldLvl && oldLvl > 0) {
-          showToast(
-            `🎉 ${nw.name} ${t("toastReached")} ${tSkill(sk.id)} ${newLvl}!`,
-            "level",
-          );
+          notif.add({
+            type: "levelup",
+            player: nw.name,
+            payload: { skillId: sk.id, skillName: tSkill(sk.id), level: newLvl },
+          });
         }
       }
-      // Quest completions
+      // Quest completion: net positive delta
       if (nw.questsDone > (old.questsDone || 0) && old.questsDone > 0) {
-        showToast(
-          `📜 ${nw.name}: +${nw.questsDone - old.questsDone} ${t("toastQuestsCompleted")}!`,
-          "quest",
-        );
+        const delta = nw.questsDone - old.questsDone;
+        notif.add({
+          type: "quest",
+          player: nw.name,
+          payload: { questName: `+${delta} ${t("toastQuestsCompleted")}`, delta },
+        });
       }
     }
   }
@@ -1786,6 +1948,10 @@ function renderAll(results) {
   );
   data = results;
   if (changed) _rendered.clear();
+
+  // Codex hero: refresh the tier ribbon + era stamp on every data render.
+  if (typeof renderTierRibbon === "function") renderTierRibbon(results);
+  if (typeof renderEraStamp === "function") renderEraStamp();
 
   // Surface a non-blocking warning when the quests endpoint silently failed.
   // Without a quest list, every hasQuest()-based goal/journal item under-counts.
@@ -1856,10 +2022,8 @@ async function load(forceLive) {
   if (haveAllCache) {
     renderAll(cachedResults);
     memCacheSet(cachedResults);
-    // Persist snapshot for cold-load level-up detection
-    try {
-      localStorage.setItem("rs3lb-snapshot", JSON.stringify({ at: Date.now(), players: cachedResults }));
-    } catch {}
+    // Persist snapshot for cold-load level-up detection (24h TTL via cacheStore)
+    cacheStore.set("snapshot", { at: Date.now(), players: cachedResults });
     const ageStr = cacheAgeMin != null ? ` (${cacheAgeMin}${t("agoMin")})` : "";
     setSource("", `${t("cached")}${ageStr}`, "cached", cacheAgeMin);
     _lastUpdated = { kind: "cached", cacheAgeMin };
@@ -1888,10 +2052,8 @@ async function load(forceLive) {
   if (liveResults.every(r => r !== null)) {
     const anyFromLive = liveSettled.some(r => r.status === "fulfilled");
     renderAll(liveResults);
-    // Persist snapshot for cold-load level-up detection
-    try {
-      localStorage.setItem("rs3lb-snapshot", JSON.stringify({ at: Date.now(), players: liveResults }));
-    } catch {}
+    // Persist snapshot for cold-load level-up detection (24h TTL via cacheStore)
+    cacheStore.set("snapshot", { at: Date.now(), players: liveResults });
     memCacheSet(liveResults);
     if (anyFromLive) {
       setSource("", t("live"), "live");
@@ -2002,6 +2164,46 @@ document.addEventListener("DOMContentLoaded", () => {
     scheduledLoad(true); // force-live: bypass the cache-fresh skip
   });
   $("#btn-dismiss-error").addEventListener("click", hideError);
+
+  // ---- Notification bell ----
+  // Toggle the panel; mark events as seen on open. Click-outside closes.
+  // Badge updates via notif's `notif:added` and `storage` listeners already.
+  const bellBtn = document.getElementById("notif-bell");
+  const notifPanel = document.getElementById("notif-panel");
+  if (bellBtn && notifPanel && typeof notif !== "undefined") {
+    const closePanel = () => {
+      notifPanel.hidden = true;
+      bellBtn.setAttribute("aria-expanded", "false");
+    };
+    const openPanel = () => {
+      notif.renderPanel(notifPanel);
+      notifPanel.hidden = false;
+      bellBtn.setAttribute("aria-expanded", "true");
+      // Mark seen after a tick so the unseen-dots render once before fading
+      setTimeout(() => {
+        notif.markAllSeen();
+        notif.updateBadge();
+      }, 600);
+    };
+    bellBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (notifPanel.hidden) openPanel(); else closePanel();
+    });
+    document.addEventListener("click", (e) => {
+      if (notifPanel.hidden) return;
+      if (notifPanel.contains(e.target) || bellBtn.contains(e.target)) return;
+      closePanel();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !notifPanel.hidden) closePanel();
+    });
+    window.addEventListener("notif:added", () => {
+      notif.updateBadge();
+      if (!notifPanel.hidden) notif.renderPanel(notifPanel);
+    });
+    notif.updateBadge();
+  }
+
   $("#lang-toggle").addEventListener("click", () => {
     setLang(currentLang === "pt" ? "en" : "pt");
     updateUIText();
