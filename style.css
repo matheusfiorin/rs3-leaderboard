@@ -1672,8 +1672,9 @@ a:focus-visible {
     0 18px 48px rgba(0,0,0,0.6),
     inset 0 1px 0 rgba(255,255,255,0.04),
     inset 0 -1px 0 rgba(212,168,67,0.08);
-  /* Decorative top edge — glint of gold */
-  position: relative;
+  /* Do NOT set `position` here — upstream rule pins it `absolute` so the
+     panel hangs below the bell. Overriding to `relative` collapses it into
+     the header flex flow (visible as a tiny box "inside" the navbar). */
 }
 .notif-panel::before {
   content: "";

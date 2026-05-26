@@ -307,12 +307,20 @@ function clearAllStorage() {
   return storage.clear();
 }
 
-export {
-  StorageManager,
-  storage,
-  setStorageItem,
-  getStorageItem,
-  removeStorageItem,
-  hasStorageItem,
-  clearAllStorage
-};
+// Module-context export — only runs in a real ESM/CommonJS environment.
+// Browsers load this file as a classic script (no `type=module`), so leaving
+// a bare `export {...}` here is a parse-time SyntaxError that kills the
+// whole file before `storage` ever reaches the global scope. The conditional
+// below stays compatible with Node test environments without breaking the
+// browser load path.
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    StorageManager,
+    storage,
+    setStorageItem,
+    getStorageItem,
+    removeStorageItem,
+    hasStorageItem,
+    clearAllStorage,
+  };
+}
