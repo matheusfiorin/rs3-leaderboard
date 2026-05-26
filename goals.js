@@ -1008,9 +1008,55 @@ function goalsInjectStyles() {
 .gl-q-wiki:hover { color:var(--gold); border-color:var(--gold-dim); }
 
 /* ---- Incomplete Manual Row ---- */
-.gl-manual-inc { display:flex; align-items:center; gap:8px; padding:4px 0; font-size:0.74rem; }
-.gl-manual-label { color:var(--text); font-weight:500; }
-.gl-check { accent-color:var(--gold); width:16px; height:16px; cursor:pointer; }
+.gl-manual-inc { display:flex; align-items:center; gap:10px; padding:6px 0; font-size:0.78rem; }
+.gl-manual-label { color:var(--text); font-weight:500; line-height:1.35; }
+/* Custom checkbox: dark fill, gold border, gold check on tick.
+   Default browser checkbox renders as white box which clashes with the
+   codex dark theme — looked like a "blank rectangle with white border".
+   appearance:none strips the OS skin; we draw the check via the ::after on
+   the input itself, sized to the same 18px box. */
+.gl-check {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px; height: 18px;
+  border: 1.5px solid rgba(212,168,67,0.45);
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.25));
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: border-color .15s, box-shadow .15s, background .15s;
+  display: inline-grid;
+  place-items: center;
+  margin: 0;
+}
+.gl-check:hover {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(212,168,67,0.10);
+}
+.gl-check:focus-visible {
+  outline: none;
+  border-color: var(--gold-bright);
+  box-shadow: 0 0 0 3px rgba(240,199,94,0.25);
+}
+.gl-check::after {
+  content: "";
+  width: 10px; height: 10px;
+  background-color: var(--gold-bright);
+  /* Inline SVG check mark; sized to box, masked via background. */
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 8.5 L7 12 L13 4' stroke='black' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>") center / contain no-repeat;
+          mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 8.5 L7 12 L13 4' stroke='black' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>") center / contain no-repeat;
+  transform: scale(0);
+  transition: transform .14s cubic-bezier(.22,1,.36,1);
+}
+.gl-check:checked {
+  border-color: var(--gold-bright);
+  background:
+    linear-gradient(180deg, rgba(212,168,67,0.18), rgba(212,168,67,0.04));
+  box-shadow: 0 0 12px -2px rgba(240,199,94,0.35);
+}
+.gl-check:checked::after { transform: scale(1); }
 
 /* ---- Completed Zone ---- */
 .gl-done-zone {
@@ -1049,7 +1095,8 @@ function goalsInjectStyles() {
 .gl-done-icon { color:var(--green); font-size:0.6rem; flex-shrink:0; }
 .gl-done-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .gl-done-val { font-family:var(--font-mono); margin-left:auto; flex-shrink:0; }
-.gl-manual-done .gl-check { width:13px; height:13px; opacity:0.5; }
+.gl-manual-done .gl-check { width:14px; height:14px; opacity:0.6; }
+.gl-manual-done .gl-check::after { width: 8px; height: 8px; }
 
 /* ---- Celebration ---- */
 .gl-celebration { text-align:center; padding:16px; font-size:0.88rem; font-weight:700; color:var(--green); background:var(--green-bg); border-radius:var(--radius-xs); }
