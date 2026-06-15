@@ -219,6 +219,14 @@ function renderMajorGoals(players) {
         .map((p, i) => (gate(g, p) ? i : -1))
         .filter((i) => i >= 0);
       if (relevantIdx.length === 0) continue; // hide card if nobody is in this tier
+      const count = mgGoalCount(g.id);
+      // Drop campaigns where every relevant player is already at 100% \u2014 the
+      // dashboard surface is for "what's still in flight," not victory laps.
+      const allDone = relevantIdx.every((i) => {
+        const c = count(players[i]);
+        return c.total > 0 && c.done >= c.total;
+      });
+      if (allDone) continue;
       goals.push({
         title: lang === "pt" ? g.label_pt : g.label_en,
         icon: g.icon || "\u2694\uFE0F",
@@ -227,7 +235,7 @@ function renderMajorGoals(players) {
         targetGoalId: g.id,
         ringColor: ringMap[theme] || "var(--gold-bright)",
         relevantIdx,
-        count: mgGoalCount(g.id),
+        count,
       });
     }
   }

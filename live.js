@@ -180,7 +180,22 @@ async function _liveTick() {
 // ---- Counter interpolation ----
 // Between polls, gently extrapolate the displayed XP up using the last
 // two samples' xp/hr. When a real poll lands, snap to truth.
+// Throttled to 4 Hz (250 ms) instead of rAF — the per-frame XP delta at any
+// reasonable rate is sub-pixel anyway, and 60 Hz on Android Chrome costs
+// ~3-5% CPU just to format numbers.
+let _liveLerpInterval = null;
+const _liveFmtCache = { pt: null, en: null };
+function _liveFmt(n) {
+  const lang = currentLang === "pt" ? "pt" : "en";
+  let f = _liveFmtCache[lang];
+  if (!f) {
+    f = new Intl.NumberFormat(lang === "pt" ? "pt-BR" : "en-US");
+    _liveFmtCache[lang] = f;
+  }
+  return f.format(n);
+}
 function _liveLerpLoop() {
+  if (_liveLerpInterval) clearInterval(_liveLerpInterval);
   cancelAnimationFrame(_liveLerpRAF);
   const tick = () => {
     if (!_liveActive) return;
@@ -189,13 +204,12 @@ function _liveLerpLoop() {
       const elapsedH = elapsedMs / 3600000;
       const interpTotal = _liveLerpPrev.totalXp + Math.round(_liveLerpRate.totalXph * elapsedH);
       const totalEl = document.getElementById("live-total-xp");
-      if (totalEl) totalEl.textContent = interpTotal.toLocaleString(currentLang === "pt" ? "pt-BR" : "en-US");
+      if (totalEl) totalEl.textContent = _liveFmt(interpTotal);
       const xphEl = document.getElementById("live-xp-rate");
       if (xphEl && _liveLerpRate.totalXph > 0) {
-        xphEl.textContent = `${Math.round(_liveLerpRate.totalXph).toLocaleString(currentLang === "pt" ? "pt-BR" : "en-US")} XP/h`;
+        xphEl.textContent = `${_liveFmt(Math.round(_liveLerpRate.totalXph))} XP/h`;
       }
     }
-    // Countdown to next poll — independent of lerp data, always useful.
     if (_liveLastPoll && _liveCadenceMs > 0) {
       const etaEl = document.getElementById("live-poll-eta");
       if (etaEl) {
@@ -204,9 +218,9 @@ function _liveLerpLoop() {
         etaEl.textContent = `${remaining}s`;
       }
     }
-    _liveLerpRAF = requestAnimationFrame(tick);
   };
-  _liveLerpRAF = requestAnimationFrame(tick);
+  tick();
+  _liveLerpInterval = setInterval(tick, 250);
 }
 
 // ---- Detect level-ups for confetti / toast ----
@@ -534,6 +548,7 @@ function liveStop() {
   _liveActive = false;
   if (_liveTimer) clearTimeout(_liveTimer);
   cancelAnimationFrame(_liveLerpRAF);
+  if (_liveLerpInterval) { clearInterval(_liveLerpInterval); _liveLerpInterval = null; }
   if (_liveAbortCtrl) _liveAbortCtrl.abort();
   _liveAbortCtrl = null;
 }

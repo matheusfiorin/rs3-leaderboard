@@ -752,9 +752,19 @@ async function fetchLive(n) {
 }
 
 // ---- Formatting ----
+// Intl.NumberFormat per locale, lazy-built and cached. Called thousands of
+// times during a full render \u2014 allocating a new locale string per call was
+// a measurable hot spot.
+const _fmtCache = { pt: null, en: null };
 function fmt(n) {
   if (n == null) return "\u2014";
-  return n.toLocaleString(currentLang === "pt" ? "pt-BR" : "en-US");
+  const lang = currentLang === "pt" ? "pt" : "en";
+  let f = _fmtCache[lang];
+  if (!f) {
+    f = new Intl.NumberFormat(lang === "pt" ? "pt-BR" : "en-US");
+    _fmtCache[lang] = f;
+  }
+  return f.format(n);
 }
 function fmtShort(n) {
   if (n >= 1e6) return (n / 1e6).toFixed(1) + "M";
@@ -1282,7 +1292,15 @@ function updateUIText() {
   const p = (id, text) => { const el = document.getElementById(id); if (el) el.placeholder = text; };
 
   // Header
-  h("logo-text", `RS3 <span class="accent">${t("title").replace("RS3 ", "")}</span>`);
+  // Brand wordmark: "Sexta" + accented "Era". Split on the last word so a
+  // future i18n title still highlights the trailing word.
+  h("logo-text", (() => {
+    const full = t("title") || "Sexta Era";
+    const parts = full.split(" ");
+    const head = parts.slice(0, -1).join(" ");
+    const tail = parts.slice(-1)[0];
+    return head ? `${head} <span class="accent">${tail}</span>` : `<span class="accent">${tail}</span>`;
+  })());
   s("subtitle-text", t("subtitle"));
   s("lang-label", lang === "pt" ? "EN" : "PT");
   document.documentElement.lang = lang === "pt" ? "pt-BR" : "en";
@@ -1468,6 +1486,9 @@ function launchSection(page) {
   // Lazy render
   if (page === "lookup") {
     if (!_rendered.has(page)) renderTab(page, data);
+  } else if (page === "archive") {
+    // Archive sub-route: render the In Memoriam tribute (frozen Fiorovizk data).
+    if (typeof renderMemorial === "function") renderMemorial();
   } else if (page === "live") {
     // Live tab is stateful; always re-render so it remounts and resumes polling.
     _rendered.delete("live");
@@ -1753,14 +1774,8 @@ function _toRoman(n) {
   return out || "I";
 }
 function renderEraStamp() {
-  const el = document.getElementById("era-stamp-date");
-  if (!el) return;
-  const d = new Date();
-  const months = ["JAN","FEB","MAR","APR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
-  const monthsEn = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
-  const lang = typeof currentLang !== "undefined" ? currentLang : "en";
-  const mon = (lang === "pt" ? months : monthsEn)[d.getMonth()];
-  el.textContent = `${_toRoman(d.getDate())} · ${mon} · MMXXVI`.replace("MMXXVI", _yearRoman(d.getFullYear()));
+  // Era stamp now serves as the In Memoriam archive entry — static text in
+  // markup. Kept as a no-op so legacy callers don't break.
 }
 function _yearRoman(y) {
   // RS lore: Sixth Age — keep a stylized 4-digit Roman for current year.

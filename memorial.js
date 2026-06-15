@@ -10,7 +10,7 @@ const MEMORIAL_CONFIG = {
   name: "Fiorovizk",
   profilePath: "data/fiorovizk_profile.json",
   hiscoresPath: "data/fiorovizk_hiscores.json",
-  mountId: "memorial-mount",
+  mountId: "archive-content",
 };
 
 // Frozen tribute data — derived once from MEMORIAL_CONFIG fetches.
@@ -251,8 +251,8 @@ function injectMemorialStyles() {
 }
 
 const MEMORIAL_CSS = `
-#memorial-mount[hidden] { display: none; }
-#memorial-mount { display: block; }
+#archive-content[hidden] { display: none; }
+#archive-content { display: block; }
 
 .mem-frame {
   margin: 8px 0 28px;

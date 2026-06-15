@@ -124,14 +124,18 @@ test.describe('RS3 Leaderboard Smoke Tests', () => {
     expect(bodyText).not.toContain('memorialTitle'); // memorial keys must resolve
   });
 
-  test('memorial section renders with Fiorovizk vitals', async ({ page }) => {
+  test('memorial archive sub-route renders Fiorovizk vitals', async ({ page }) => {
     await page.goto('/');
-    // Memorial loads async via cacheFetch — give it a moment.
-    await page.waitForSelector('#memorial-mount .mem-name', { timeout: 5000 });
-    const name = await page.locator('#memorial-mount .mem-name').textContent();
+    await page.waitForLoadState('domcontentloaded');
+    // Memorial lives on its own sub-route now (off-dock). Launch it.
+    await page.evaluate(() => {
+      if (typeof launchSection === 'function') launchSection('archive');
+    });
+    await page.waitForSelector('#archive-content .mem-name', { timeout: 5000 });
+    const name = await page.locator('#archive-content .mem-name').textContent();
     expect(name.trim()).toBe('Fiorovizk');
-    const combatStat = await page.locator('#memorial-mount .mem-vital dd').first().textContent();
-    expect(combatStat.trim()).toMatch(/^\d+$/); // numeric combat level
+    const combatStat = await page.locator('#archive-content .mem-vital dd').first().textContent();
+    expect(combatStat.trim()).toMatch(/^\d+$/);
   });
 
   test('active dashboard shows Decxus and Soclopata', async ({ page }) => {

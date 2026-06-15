@@ -1,79 +1,117 @@
 /* =============================================
-   RS3 Leaderboard — Volcanic Manuscript
-   Obsidian depth · Amber light · Carved stone
+   Sexta Era — Sixth Age tracker
+   Senntisten basalt · Soul Split crimson · Prayer azure · Ash violet
    ============================================= */
 
 /* ---- Design Tokens ---- */
 :root {
-  /* Volcanic obsidian — warm undertones, high contrast */
-  --bg: #050508;
-  --bg-card: #12101c;
-  --bg-card-alt: #161322;
-  --bg-raised: #1e1a2a;
-  --bg-hover: #262234;
-  --bg-glass: rgba(10, 8, 16, 0.94);
-  --border: rgba(212,168,67,0.08);
-  --border-hover: rgba(212,168,67,0.16);
+  /* Cold temple stone — pulls blue, not brown */
+  --bg: #06080F;
+  --bg-card: #0C1019;
+  --bg-card-alt: #141826;
+  --bg-raised: #141826;
+  --bg-hover: #1B1F2E;
+  --bg-glass: rgba(8, 10, 18, 0.88);
+  --border: rgba(180,196,224,0.07);
+  --border-hover: rgba(180,196,224,0.18);
+  --border-lit: rgba(180,196,224,0.22);
   --border-subtle: rgba(255,255,255,0.04);
+  --border-glow: rgba(230,57,80,0.30);
 
-  /* Molten gold — amber light through cracks */
-  --gold: #d4a843;
-  --gold-bright: #f0c75e;
-  --gold-dim: #9e7a2e;
-  --gold-bg: rgba(212, 168, 67, 0.07);
-  --gold-glow: rgba(212, 168, 67, 0.15);
+  /* Soul Split crimson — Player 1 (Decxus), urgency, primary ritual light */
+  --soul: #E63950;
+  --soul-bright: #FF6478;
+  --soul-dim: #A8232F;
+  --soul-bg: rgba(230,57,80,0.08);
+  --soul-glow: rgba(230,57,80,0.18);
 
-  /* Crystal teal */
-  --teal: #22d3bb;
-  --teal-bright: #5eead4;
-  --teal-dim: #0f9e8e;
-  --teal-bg: rgba(34, 211, 187, 0.07);
+  /* Prayer azure — Player 2 (Soclopata), divine light, secondary ritual light */
+  --prayer: #5BA3FF;
+  --prayer-bright: #8AC0FF;
+  --prayer-dim: #2E6FB8;
+  --prayer-bg: rgba(91,163,255,0.08);
+  --prayer-glow: rgba(91,163,255,0.18);
 
-  /* Parchment text — boosted for readability */
-  --text: #ede7db;
-  --text-2: #ada598;
-  --text-3: #9c948a;
+  /* Ash violet — Sliske / Necromancy / endgame milestones. Used sparingly. */
+  --ash: #B388F5;
+  --ash-bright: #D4B8FF;
+  --ash-dim: #7C5ED1;
+  --ash-bg: rgba(179,136,245,0.08);
+  --ash-glow: rgba(179,136,245,0.18);
+
+  /* Legacy aliases — every existing reference resolves to the new palette
+     without a per-class rewrite. New code should use the canonical names. */
+  --gold: var(--prayer);
+  --gold-bright: var(--prayer-bright);
+  --gold-dim: var(--prayer-dim);
+  --gold-bg: var(--prayer-bg);
+  --gold-glow: var(--prayer-glow);
+  --teal: var(--ash);
+  --teal-bright: var(--ash-bright);
+  --teal-dim: var(--ash-dim);
+  --teal-bg: var(--ash-bg);
+  --purple: var(--soul);
+  --purple-bright: var(--soul-bright);
+  --purple-dim: var(--soul-dim);
+  --purple-bg: var(--soul-bg);
+  --purple-glow: var(--soul-glow);
+
+  /* Cold ivory text scale — AA contrast against --bg verified */
+  --text: #ECEEF5;
+  --text-2: #9AA3B8;
+  --text-3: #6B7388;
+  --text-faint: #454B5C;
 
   /* Status */
-  --green: #3dd68c;
-  --green-bg: rgba(61, 214, 140, 0.08);
-  --red: #f87171;
-  --red-bg: rgba(248, 113, 113, 0.06);
-  --orange: #f0a030;
-  --purple: #a78bfa;
-  --purple-bg: rgba(167, 139, 250, 0.08);
-  --purple-dim: #7c5ec4;
+  --green: #3FD693;
+  --green-bg: rgba(63,214,147,0.08);
+  --red: #FF5470;
+  --red-bg: rgba(255,84,112,0.06);
+  --orange: #F0A030;
+  --orange-bg: rgba(240,160,48,0.08);
 
-  /* Skill categories */
-  --cat-combat: #e03535;
-  --cat-gathering: #22a352;
-  --cat-artisan: #d4890a;
-  --cat-support: #3b7bef;
+  /* Skill categories — pulled toward the ritual palette, dropped saturation */
+  --cat-combat: var(--soul);
+  --cat-gathering: var(--success, #3FD693);
+  --cat-artisan: var(--orange);
+  --cat-support: var(--prayer);
 
   /* Spatial */
-  --radius: 8px;
+  --radius: 10px;
   --radius-sm: 6px;
   --radius-xs: 4px;
   --max-w: 1100px;
 
-  /* Player binding */
-  --p1: var(--gold); --p1-bg: var(--gold-bg);
-  --p2: var(--teal); --p2-bg: var(--teal-bg);
+  /* Player binding — the comparison bars now read as two prayers facing
+     each other across the altar. */
+  --p1: var(--soul);
+  --p1-bg: var(--soul-bg);
+  --p1-glow: var(--soul-glow);
+  --p2: var(--prayer);
+  --p2-bg: var(--prayer-bg);
+  --p2-glow: var(--prayer-glow);
 
-  /* Typography — Cinzel (carved stone headers), Sora (humanist body), JetBrains (data) */
+  /* Typography — Fraunces (modern grimoire), Sora (humanist body),
+     JetBrains (data). Cinzel dropped. */
   --font: "Sora", system-ui, sans-serif;
-  --font-display: "Cinzel", "Palatino Linotype", serif;
+  --font-display: "Fraunces", "Cormorant Garamond", "Palatino Linotype", serif;
   --font-mono: "JetBrains Mono", "SF Mono", monospace;
 
   /* 4px base spacing */
   --sp-1: 4px; --sp-2: 8px; --sp-3: 12px;
   --sp-4: 16px; --sp-5: 20px; --sp-6: 24px; --sp-8: 32px;
 
-  /* Depth — warm shadows */
-  --shadow-sm: 0 1px 4px rgba(6,5,10,0.5);
-  --shadow-md: 0 4px 20px rgba(6,5,10,0.6);
-  --shadow-lg: 0 12px 44px rgba(6,5,10,0.7);
-  --shadow-glow: 0 0 30px -8px var(--gold-glow);
+  /* Motion — single curve everywhere. Three durations. */
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-fast: 120ms;
+  --dur: 220ms;
+  --dur-slow: 480ms;
+
+  /* Depth — cool shadows */
+  --shadow-sm: 0 1px 4px rgba(2,4,10,0.55);
+  --shadow-md: 0 4px 20px rgba(2,4,10,0.6);
+  --shadow-lg: 0 12px 44px rgba(2,4,10,0.7);
+  --shadow-glow: 0 0 30px -8px var(--prayer-glow);
 }
 
 /* ---- Reset ---- */
@@ -92,31 +130,37 @@ body {
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
-a { color: var(--gold); text-decoration: none; }
-a:hover { color: var(--gold-bright); }
+a { color: var(--prayer); text-decoration: none; }
+a:hover { color: var(--prayer-bright); }
 
-/* ---- Volcanic atmosphere ---- */
-/* Layer 1: Warm amber light bleeding from edges */
+/* ---- Sixth Age atmosphere ---- */
+/* Subtle ritual-light bleed: soul-crimson from one corner, prayer-azure from
+   the other. Static gradient — never animated. */
 body::before {
   content: ""; position: fixed; inset: 0; z-index: -2;
   background:
-    radial-gradient(ellipse 70% 50% at 5% -15%, rgba(212,168,67,0.06) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 40% at 95% 110%, rgba(34,211,187,0.04) 0%, transparent 45%),
-    radial-gradient(ellipse 100% 80% at 50% 50%, rgba(22,19,31,0.4) 0%, transparent 70%);
+    radial-gradient(ellipse 70% 50% at 6% -10%, rgba(230,57,80,0.045) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 45% at 94% 110%, rgba(91,163,255,0.05) 0%, transparent 55%),
+    radial-gradient(ellipse 100% 80% at 50% 50%, rgba(8,10,18,0.35) 0%, transparent 75%);
 }
 /* ===== HEADER ===== */
 .header {
   position: sticky; top: 0; z-index: 100;
   background: var(--bg-glass);
-  backdrop-filter: blur(24px) saturate(1.6);
-  -webkit-backdrop-filter: blur(24px) saturate(1.6);
   border-bottom: 1px solid var(--border);
-  box-shadow: 0 1px 20px rgba(6,5,10,0.5);
 }
-/* Amber wire — light bleeding through the seam */
+/* Backdrop blur is expensive on phones — gate it to non-touch pointers and
+   wide viewports. Touch devices get a solid glass surface instead. */
+@media (hover: hover) and (min-width: 1024px) {
+  .header {
+    backdrop-filter: blur(14px) saturate(1.2);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  }
+}
+/* Cool ivory wire — replaces the amber bleed */
 .header::after {
   content: ""; position: absolute; bottom: -1px; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent 8%, rgba(212,168,67,0.2) 35%, rgba(212,168,67,0.35) 50%, rgba(212,168,67,0.2) 65%, transparent 92%);
+  background: linear-gradient(90deg, transparent 8%, var(--border-lit) 50%, transparent 92%);
 }
 .header-content {
   max-width: var(--max-w); margin: 0 auto;
@@ -142,63 +186,51 @@ body::before {
 }
 .logo {
   font-family: var(--font-display);
-  font-size: 1.25rem; font-weight: 800;
-  letter-spacing: 3px; text-transform: uppercase;
+  font-size: 1.5rem; font-weight: 700;
+  letter-spacing: -0.02em;
   line-height: 1;
-  /* Subtle ink-on-vellum gradient — readable, not a flat slab */
-  background: linear-gradient(180deg, var(--text) 0%, #cbbe9c 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: 0 1px 0 rgba(212,168,67,0.04);
+  color: var(--text);
+  font-optical-sizing: auto;
 }
 .accent {
-  color: var(--gold-bright);
-  background: linear-gradient(180deg, var(--gold-bright) 0%, var(--gold) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
+  color: var(--soul-bright);
+  font-style: italic;
+  font-weight: 700;
 }
 .subtitle {
-  font-size: 0.58rem; color: var(--text-3);
-  margin-top: 4px; letter-spacing: 3.5px;
+  font-size: 0.72rem; color: var(--text-3);
+  margin-top: 4px; letter-spacing: 0.18em;
   text-transform: uppercase; font-weight: 500;
   font-family: var(--font-mono);
 }
 .header-right { display: flex; align-items: center; gap: 8px; }
 
-/* Era stamp: chiseled metadata block, only renders on wider screens */
+/* Era stamp: a quiet metadata block. Click to visit the In Memoriam archive. */
 .era-stamp {
   display: none;
   flex-direction: column;
   align-items: flex-end;
   gap: 1px;
-  padding: 3px 12px;
+  padding: 4px 12px;
   margin-right: 4px;
-  border-left: 1px solid rgba(212,168,67,0.16);
-  border-right: 1px solid rgba(212,168,67,0.16);
-  position: relative;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease);
 }
-.era-stamp::before,
-.era-stamp::after {
-  content: "";
-  position: absolute;
-  left: 4px; right: 4px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(212,168,67,0.4), transparent);
-}
-.era-stamp::before { top: 0; }
-.era-stamp::after  { bottom: 0; }
+.era-stamp:hover { border-color: var(--border-lit); }
 .era-stamp-label {
   font-family: var(--font-display);
-  font-size: 0.55rem; font-weight: 700;
-  letter-spacing: 2.5px; text-transform: uppercase;
-  color: var(--gold-bright);
+  font-size: 0.7rem; font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-2);
   line-height: 1.1;
+  font-style: italic;
 }
 .era-stamp-date {
   font-family: var(--font-mono);
-  font-size: 0.62rem; font-weight: 500;
-  letter-spacing: 2px;
+  font-size: 0.65rem; font-weight: 500;
+  letter-spacing: 0.12em;
   color: var(--text-3);
 }
 @media (min-width: 768px) { .era-stamp { display: flex; } }
@@ -707,7 +739,11 @@ body::before {
   padding: 6px 10px; background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xs); font-size: 0.72rem;
-  transition: all 0.15s;
+  transition: background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+  /* Skip layout + paint for off-screen rows in the 362-quest list. Browsers
+     that don't support content-visibility ignore both properties. */
+  content-visibility: auto;
+  contain-intrinsic-size: 0 44px;
 }
 .ql-row:hover { background: var(--bg-hover); border-color: var(--border); }
 /* Completed-quest rows: drop saturation via text color, not opacity. Opacity
@@ -803,10 +839,10 @@ body::before {
   border-radius: var(--radius-sm); padding: var(--sp-3);
   border-left: 3px solid var(--text-3);
 }
-.combat-style-card[data-style="melee"] { border-left-color: #dc2626; }
-.combat-style-card[data-style="ranged"] { border-left-color: #16a34a; }
-.combat-style-card[data-style="magic"] { border-left-color: #2563eb; }
-.combat-style-card[data-style="necromancy"] { border-left-color: #7c3aed; }
+.combat-style-card[data-style="melee"] { border-left-color: var(--soul); }
+.combat-style-card[data-style="ranged"] { border-left-color: var(--success); }
+.combat-style-card[data-style="magic"] { border-left-color: var(--prayer); }
+.combat-style-card[data-style="necromancy"] { border-left-color: var(--ash); }
 .combat-style-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .combat-style-name { font-family: var(--font-display); font-size: 0.85rem; font-weight: 700; }
 .combat-player-block { margin-bottom: 8px; }
@@ -1064,20 +1100,27 @@ body::before {
 .dock {
   position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
   z-index: 150; display: flex; gap: 2px;
-  background: rgba(13,11,20,0.92);
-  backdrop-filter: blur(28px) saturate(1.8);
-  -webkit-backdrop-filter: blur(28px) saturate(1.8);
-  border: 1px solid rgba(212,168,67,0.08);
+  /* Opaque-by-default for mobile perf. Desktop/hover capability adds the
+     blur via @supports below. */
+  background: rgba(10,13,22,0.95);
+  border: 1px solid var(--border);
   border-radius: 20px; padding: 6px 10px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.02);
   opacity: 0; pointer-events: none;
-  transition: opacity 0.4s cubic-bezier(0.22,1,0.36,1);
+  transition: opacity var(--dur-slow) var(--ease);
+}
+@media (hover: hover) and (min-width: 1024px) {
+  .dock {
+    background: var(--bg-glass);
+    backdrop-filter: blur(14px) saturate(1.2);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  }
 }
 .dock.visible { opacity: 1; pointer-events: auto; }
-/* Top edge amber accent */
+/* Cool ivory hairline (replaces amber accent) */
 .dock::before {
   content: ""; position: absolute; top: -1px; left: 20%; right: 20%; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(212,168,67,0.25), transparent);
+  background: linear-gradient(90deg, transparent, var(--border-lit), transparent);
   border-radius: 1px;
 }
 .dock-btn {
@@ -1114,6 +1157,24 @@ body::before {
   max-width: var(--max-w); margin: 0 auto;
 }
 .footer-meta { margin-top: 4px; }
+.footer-memorial { margin-top: 14px; }
+.footer-memorial-link {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-3);
+  font-family: var(--font);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.footer-memorial-link:hover {
+  color: var(--text-2);
+  border-color: var(--border-lit);
+}
 
 /* ===== GOALS PAGE ===== */
 .goals-hero { text-align: center; padding: var(--sp-4); }
@@ -1418,28 +1479,22 @@ a:focus-visible {
 }
 
 /* ============================================================
-   Player palette override — Decxus (p1) → purple, Soclopata (p2) → gold.
-   Added 2026-05-22 alongside player swap. Appends after the legacy
-   gold/teal player rules so the cascade wins without touching them.
+   Player binding — Decxus (p1) → soul, Soclopata (p2) → prayer.
    ============================================================ */
-:root {
-  --purple-bright: #c4a8ff;
-  --purple-glow: rgba(167, 139, 250, 0.15);
-}
 
-.p-card.p1::before { background: linear-gradient(90deg, var(--purple-dim), var(--purple), var(--purple-dim)); }
-.p-card.p1 .p-card-name { color: var(--purple-bright); }
-.p-card.p2::before { background: linear-gradient(90deg, var(--gold-dim), var(--gold), var(--gold-dim)); }
-.p-card.p2 .p-card-name { color: var(--gold-bright); }
+.p-card.p1::before { background: linear-gradient(90deg, var(--soul-dim), var(--soul), var(--soul-dim)); }
+.p-card.p1 .p-card-name { color: var(--soul-bright); }
+.p-card.p2::before { background: linear-gradient(90deg, var(--prayer-dim), var(--prayer), var(--prayer-dim)); }
+.p-card.p2 .p-card-name { color: var(--prayer-bright); }
 
 .h2h-row .h2h-bar-wrap.left .h2h-bar,
-.h2h-row .h2h-bar-wrap.winner .h2h-bar { background: var(--purple-dim); }
-.h2h-row .h2h-bar-wrap.right .h2h-bar { background: var(--gold-dim); }
-.h2h-name.p1 { color: var(--purple); }
-.h2h-name.p2 { color: var(--gold); }
+.h2h-row .h2h-bar-wrap.winner .h2h-bar { background: var(--soul-dim); }
+.h2h-row .h2h-bar-wrap.right .h2h-bar { background: var(--prayer-dim); }
+.h2h-name.p1 { color: var(--soul); }
+.h2h-name.p2 { color: var(--prayer); }
 
-.legend-swatch.p1 { background: var(--purple); }
-.legend-swatch.p2 { background: var(--gold); }
+.legend-swatch.p1 { background: var(--soul); }
+.legend-swatch.p2 { background: var(--prayer); }
 
 /* ============================================================
    ILLUMINATED CODEX — masthead, tier ribbon, ornaments
@@ -1461,14 +1516,13 @@ a:focus-visible {
   width: 8%;
   background: linear-gradient(90deg, transparent, rgba(212,168,67,0.25));
 }
-.tier-ribbon::before { left: 6%; transform: scaleX(-1); }
-.tier-ribbon::after  { right: 6%; }
+.tier-ribbon::before { left: 6%; transform: scaleX(-1); background: linear-gradient(90deg, transparent, var(--border-lit)); }
+.tier-ribbon::after  { right: 6%; background: linear-gradient(90deg, transparent, var(--border-lit)); }
 
 .tier-sigil {
   appearance: none;
-  background: linear-gradient(180deg, rgba(212,168,67,0.04), rgba(255,255,255,0)) ,
-              radial-gradient(ellipse 80% 60% at 50% 0%, rgba(212,168,67,0.10), transparent 70%);
-  border: 1px solid rgba(212,168,67,0.18);
+  background: var(--bg-surface, var(--bg-card));
+  border: 1px solid var(--border);
   border-radius: 14px;
   color: var(--text-2);
   cursor: pointer;
@@ -1479,23 +1533,22 @@ a:focus-visible {
   gap: 12px;
   font-family: var(--font);
   position: relative;
-  transition: transform .25s cubic-bezier(.22,1,.36,1), border-color .2s, box-shadow .25s;
+  transition: transform var(--dur) var(--ease), border-color var(--dur-fast) var(--ease), box-shadow var(--dur) var(--ease);
   min-block-size: 56px;
 }
 .tier-sigil:hover {
-  border-color: rgba(212,168,67,0.42);
-  box-shadow: 0 8px 30px -10px var(--gold-glow), inset 0 1px 0 rgba(255,255,255,0.04);
+  border-color: var(--border-lit);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
   transform: translateY(-1px);
 }
 .tier-sigil:active { transform: translateY(0) scale(0.985); }
 .tier-sigil-rune {
   font-family: var(--font-display);
-  font-size: 1.05rem; font-weight: 800;
-  letter-spacing: 2px;
-  color: var(--gold-bright);
+  font-size: 1.1rem; font-weight: 700;
+  letter-spacing: 0.02em;
+  font-style: italic;
+  color: var(--text-2);
   text-align: center;
-  /* Slight stone-carved feel */
-  text-shadow: 0 1px 0 rgba(0,0,0,0.6), 0 0 14px rgba(212,168,67,0.25);
 }
 .tier-sigil-meta {
   display: flex; flex-direction: column;
@@ -1505,14 +1558,14 @@ a:focus-visible {
 }
 .tier-sigil-name {
   font-family: var(--font-display);
-  font-size: 0.74rem; font-weight: 700;
-  letter-spacing: 2.5px; text-transform: uppercase;
+  font-size: 0.78rem; font-weight: 700;
+  letter-spacing: 0.04em;
   color: var(--text);
 }
 .tier-sigil-pct {
   font-family: var(--font-mono);
-  font-size: 0.84rem; font-weight: 700;
-  color: var(--gold-bright);
+  font-size: 0.86rem; font-weight: 700;
+  color: var(--text);
   margin-top: 4px;
   letter-spacing: 0.04em;
 }
@@ -1523,20 +1576,25 @@ a:focus-visible {
 }
 .tier-sigil-arc-track {
   fill: none;
-  stroke: rgba(212,168,67,0.10);
+  stroke: var(--border);
   stroke-width: 3;
 }
 .tier-sigil-arc-fill {
   fill: none;
-  stroke: var(--gold);
+  stroke: var(--ash);
   stroke-width: 3;
   stroke-linecap: round;
-  /* Set via inline style at render time: dasharray=arc length, dashoffset=arc gap */
   stroke-dasharray: 150.8;
   stroke-dashoffset: 150.8;
-  transition: stroke-dashoffset .9s cubic-bezier(.22,1,.36,1);
-  filter: drop-shadow(0 0 4px rgba(240,199,94,0.45));
+  transition: stroke-dashoffset var(--dur-slow) var(--ease);
 }
+/* Each tier gets its own ritual light. */
+.tier-sigil[data-tier="early"]  .tier-sigil-arc-fill { stroke: var(--prayer); }
+.tier-sigil[data-tier="early"]  .tier-sigil-rune { color: var(--prayer); }
+.tier-sigil[data-tier="mid"]    .tier-sigil-arc-fill { stroke: var(--soul); }
+.tier-sigil[data-tier="mid"]    .tier-sigil-rune { color: var(--soul); }
+.tier-sigil[data-tier="end"]    .tier-sigil-arc-fill { stroke: var(--ash); }
+.tier-sigil[data-tier="end"]    .tier-sigil-rune { color: var(--ash); }
 
 /* Tier-specific accents */
 .tier-sigil[data-tier="early"] .tier-sigil-rune { color: var(--teal-bright); text-shadow: 0 1px 0 rgba(0,0,0,0.6), 0 0 14px rgba(34,211,187,0.25); }

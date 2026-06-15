@@ -827,25 +827,25 @@ const STYLE_INFO = {
   melee: {
     icon: "\u2694\uFE0F",
     skillIds: [0, 2],
-    color: "#dc2626",
+    color: "var(--soul)",
     label: { pt: "Corpo a Corpo", en: "Melee" },
   },
   ranged: {
     icon: "\uD83C\uDFF9",
     skillIds: [4],
-    color: "#16a34a",
+    color: "var(--success)",
     label: { pt: "Combate \u00e0 Dist\u00e2ncia", en: "Ranged" },
   },
   magic: {
     icon: "\u2728",
     skillIds: [6],
-    color: "#2563eb",
+    color: "var(--prayer)",
     label: { pt: "Magia", en: "Magic" },
   },
   necro: {
     icon: "\uD83D\uDC80",
     skillIds: [28],
-    color: "#a78bfa",
+    color: "var(--ash)",
     label: { pt: "Necromancia", en: "Necromancy" },
   },
 };

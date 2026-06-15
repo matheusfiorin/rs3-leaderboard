@@ -6,8 +6,8 @@
 const LANG = {
   pt: {
     // Header
-    title: "RS3 Placar",
-    subtitle: "Jornada cooperativa em tempo real",
+    title: "Sexta Era",
+    subtitle: "Acompanhamento da Sexta Era",
     refresh: "Atualizar",
     loading: "Carregando...",
     refreshing: "Atualizando...",
@@ -309,8 +309,8 @@ const LANG = {
   },
 
   en: {
-    title: "RS3 Leaderboard",
-    subtitle: "Co-op adventure tracker",
+    title: "Sexta Era",
+    subtitle: "Sixth Age tracker",
     refresh: "Refresh",
     loading: "Loading...",
     refreshing: "Refreshing...",
