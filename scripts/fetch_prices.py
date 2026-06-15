@@ -33,7 +33,7 @@ ITEMS = {
 
     # ---- Cooking ----
     317: 'Raw shrimps', 315: 'Shrimps',
-    329: 'Raw salmon', 329: 'Raw salmon',
+    329: 'Raw salmon', 331: 'Salmon',
     335: 'Raw trout', 333: 'Trout',
     349: 'Raw pike', 351: 'Pike',
     359: 'Raw tuna', 361: 'Tuna',
@@ -84,31 +84,62 @@ def parse_price(price_str):
             return int(float(s[:-1]) * mult)
     return int(float(s))
 
-def main():
-    prices = {}
-    total = len(ITEMS)
-    for i, (item_id, name) in enumerate(ITEMS.items()):
+def fetch_one(item_id, name, attempts=3):
+    """Fetch a single item with light retry on transient errors (429, 5xx)."""
+    url = f'https://secure.runescape.com/m=itemdb_rs/api/catalogue/detail.json?item={item_id}'
+    req = urllib.request.Request(url, headers={'User-Agent': 'RS3-Leaderboard/1.0'})
+    for attempt in range(attempts):
         try:
-            url = f'https://secure.runescape.com/m=itemdb_rs/api/catalogue/detail.json?item={item_id}'
-            req = urllib.request.Request(url, headers={'User-Agent': 'RS3-Leaderboard/1.0'})
             with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.loads(resp.read())
-                price = parse_price(data['item']['current']['price'])
+                return parse_price(data['item']['current']['price'])
+        except Exception as e:
+            if attempt == attempts - 1:
+                raise
+            # Exponential backoff on transient failure
+            time.sleep(0.5 * (2 ** attempt))
+    return None
+
+def load_existing_cache(path):
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+def main():
+    cache_path = 'data/ge_prices.json'
+    # Start from previous cache so transient 429s for individual items don't
+    # drop them from the cache on the next successful run.
+    prices = load_existing_cache(cache_path)
+    total = len(ITEMS)
+    fetched = 0
+    for i, (item_id, name) in enumerate(ITEMS.items()):
+        try:
+            price = fetch_one(item_id, name)
+            if price is not None:
                 prices[str(item_id)] = {'name': name, 'price': price}
+                fetched += 1
         except Exception as e:
             print(f'Skip {item_id} ({name}): {e}', file=sys.stderr)
         # Rate limit: small delay every 10 items
         if (i + 1) % 10 == 0:
             time.sleep(0.5)
 
-    # Validator: require >70% of items to succeed before overwriting cache
-    if len(prices) < total * 0.7:
-        print(f'ERROR: Only {len(prices)}/{total} prices fetched (<70% threshold). Preserving cache.', file=sys.stderr)
+    # Validator: require >70% of items to succeed before overwriting cache.
+    # Failure here preserves the previous cache untouched.
+    if fetched < total * 0.7:
+        print(f'ERROR: Only {fetched}/{total} prices fetched (<70% threshold). Preserving cache.', file=sys.stderr)
         sys.exit(1)
 
-    with open('data/ge_prices.json', 'w') as f:
+    # Drop any cached items that are no longer in the declared list so the
+    # cache shape tracks the canonical ITEMS map.
+    declared = {str(k) for k in ITEMS}
+    prices = {k: v for k, v in prices.items() if k in declared}
+
+    with open(cache_path, 'w') as f:
         json.dump(prices, f)
-    print(f'Cached {len(prices)}/{total} item prices')
+    print(f'Cached {len(prices)}/{total} item prices ({fetched} fresh)')
 
 if __name__ == '__main__':
     main()

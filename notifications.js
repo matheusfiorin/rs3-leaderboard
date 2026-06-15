@@ -10,7 +10,9 @@
 
 const NOTIF_MAX_EVENTS = 80;   // hard cap; should fit comfortably under quota
 const NOTIF_SEEN_CAP = 500;    // ~2 weeks of activity across both players
-const NOTIF_TOAST_TYPES = new Set(["levelup", "quest", "goal", "milestone"]);
+// Toast set kept narrow on purpose — only types whose callers actually exist
+// today get surfaced as toasts.
+const NOTIF_TOAST_TYPES = new Set(["levelup", "quest"]);
 
 function _notifStorageHas() { return typeof storage !== "undefined" && storage; }
 
@@ -34,7 +36,7 @@ function _notifIsToday(ts) {
   return _notifTodayKey(ts) === _notifTodayKey();
 }
 
-function _notifDeriveId(type, player, payload) {
+function _notifDeriveId(type, player, payload, ts) {
   const date = _notifTodayKey();
   let detail = "x";
   switch (type) {
@@ -50,9 +52,14 @@ function _notifDeriveId(type, player, payload) {
     case "milestone":
       detail = `${payload && payload.kind || "?"}:${payload && payload.value || 0}`;
       break;
-    case "activity":
-      detail = (payload && payload.text || "?").slice(0, 60).replace(/\s+/g, " ");
+    case "activity": {
+      // Same first-60-chars detail PLUS the minute bucket: keeps RuneMetrics's
+      // many near-identical "Levelled up X." rows distinct when they share a
+      // text but happen at different times.
+      const minute = ts ? Math.floor(ts / 60000) : 0;
+      detail = `${(payload && payload.text || "?").slice(0, 60).replace(/\s+/g, " ")}@${minute}`;
       break;
+    }
     default:
       detail = JSON.stringify(payload || {}).slice(0, 60);
   }
@@ -93,7 +100,7 @@ const notif = (function () {
     _ensureLoaded();
     if (!input || !input.type) return false;
     const ts = input.ts || Date.now();
-    const id = input.id || _notifDeriveId(input.type, input.player, input.payload);
+    const id = input.id || _notifDeriveId(input.type, input.player, input.payload, ts);
 
     // Drop events that aren't from today — keep them dedup-able via seen-set,
     // but never surface in panel/toast. Edge case: backfilled level-ups from a
@@ -103,29 +110,32 @@ const notif = (function () {
     if (_seen.has(id)) return false;
     if (_events.some(e => e.id === id)) return false;
 
+    // Backfilled / non-today events: do not seed _seen with them. If the same
+    // event resurfaces tomorrow with a corrected timestamp it should still be
+    // eligible to toast. Today-dedup is handled by _events.some(e=>e.id===id).
+    if (!isToday) return false;
+
     const event = {
       id, type: input.type, ts, player: input.player || null,
       payload: input.payload || null,
       seen: false,
     };
     _seen.add(id);
-    if (isToday) {
-      _events.push(event);
-      // Cap event buffer in case of a sudden flood
-      if (_events.length > NOTIF_MAX_EVENTS) {
-        _events.splice(0, _events.length - NOTIF_MAX_EVENTS);
-      }
+    _events.push(event);
+    // Cap event buffer in case of a sudden flood
+    if (_events.length > NOTIF_MAX_EVENTS) {
+      _events.splice(0, _events.length - NOTIF_MAX_EVENTS);
     }
     _capSeen();
     _persist();
 
     // Side-effects: toast for high-signal types only, dispatch event
-    if (isToday && NOTIF_TOAST_TYPES.has(event.type) && typeof showToast === "function") {
+    if (NOTIF_TOAST_TYPES.has(event.type) && typeof showToast === "function") {
       const msg = _notifToastText(event);
       if (msg) showToast(msg, event.type);
     }
     if (typeof window !== "undefined") {
-      try { window.dispatchEvent(new CustomEvent("notif:added", { detail: { event } })); } catch {}
+      window.dispatchEvent(new CustomEvent("notif:added", { detail: { event } }));
     }
     return true;
   }
@@ -177,7 +187,7 @@ const notif = (function () {
         if (b) { b.hidden = true; b.textContent = "0"; }
       }
       if (typeof window !== "undefined") {
-        try { window.dispatchEvent(new CustomEvent("notif:seen-changed")); } catch {}
+        window.dispatchEvent(new CustomEvent("notif:seen-changed"));
       }
     }
   }
@@ -200,7 +210,7 @@ const notif = (function () {
   }
 
   function _iconFor(type) {
-    return { levelup: "⬆️", quest: "📜", boss: "⚔️", dungeon: "🏰", goal: "🎯", milestone: "🏆", activity: "💬" }[type] || "🔔";
+    return { levelup: "⬆️", quest: "📜", goal: "🎯", milestone: "🏆", activity: "💬" }[type] || "🔔";
   }
 
   function _rowText(e) {

@@ -114,29 +114,41 @@ function animateCounter(el, from, to, duration) {
 }
 
 // ---- Skills ----
+// Caps reflect mid-2026 RS3 state:
+//   Attack/Strength/Defence/Constitution/Ranged/Magic — 120 (Combat Style
+//     Modernisation, 2025-09); Prayer stayed 99.
+//   Mining/Smithing — 110 (Aug 2024).
+//   Woodcutting/Fletching/Firemaking — 110 (Dec 2024).
+//   Runecrafting — 110 (Mar 2025).
+//   Crafting — 110 (Jun 2025).
+//   Thieving — 120 (Nov 2025).
+//   Hunter — 110 (Mar 2026).
+// Cosmetic-max caps (Cooking/Fishing/Farming/Agility/Construction/Summoning/
+// Herblore/Slayer/Dungeoneering/Divination/Archaeology/Necromancy/Invention)
+// kept at their existing values.
 const SKILLS = [
-  { id: 0, abbr: "ATK", cat: "combat", max: 99 },
-  { id: 1, abbr: "DEF", cat: "combat", max: 99 },
-  { id: 2, abbr: "STR", cat: "combat", max: 99 },
-  { id: 3, abbr: "HP", cat: "combat", max: 99 },
-  { id: 4, abbr: "RNG", cat: "combat", max: 99 },
+  { id: 0, abbr: "ATK", cat: "combat", max: 120 },
+  { id: 1, abbr: "DEF", cat: "combat", max: 120 },
+  { id: 2, abbr: "STR", cat: "combat", max: 120 },
+  { id: 3, abbr: "HP", cat: "combat", max: 120 },
+  { id: 4, abbr: "RNG", cat: "combat", max: 120 },
   { id: 5, abbr: "PRA", cat: "combat", max: 99 },
-  { id: 6, abbr: "MAG", cat: "combat", max: 99 },
+  { id: 6, abbr: "MAG", cat: "combat", max: 120 },
   { id: 7, abbr: "COK", cat: "artisan", max: 99 },
-  { id: 8, abbr: "WC", cat: "gathering", max: 99 },
-  { id: 9, abbr: "FLE", cat: "artisan", max: 99 },
+  { id: 8, abbr: "WC", cat: "gathering", max: 110 },
+  { id: 9, abbr: "FLE", cat: "artisan", max: 110 },
   { id: 10, abbr: "FSH", cat: "gathering", max: 99 },
-  { id: 11, abbr: "FM", cat: "artisan", max: 99 },
-  { id: 12, abbr: "CRA", cat: "artisan", max: 99 },
-  { id: 13, abbr: "SMI", cat: "artisan", max: 99 },
-  { id: 14, abbr: "MIN", cat: "gathering", max: 99 },
+  { id: 11, abbr: "FM", cat: "artisan", max: 110 },
+  { id: 12, abbr: "CRA", cat: "artisan", max: 110 },
+  { id: 13, abbr: "SMI", cat: "artisan", max: 110 },
+  { id: 14, abbr: "MIN", cat: "gathering", max: 110 },
   { id: 15, abbr: "HER", cat: "artisan", max: 120 },
   { id: 16, abbr: "AGI", cat: "support", max: 99 },
-  { id: 17, abbr: "THI", cat: "support", max: 99 },
+  { id: 17, abbr: "THI", cat: "support", max: 120 },
   { id: 18, abbr: "SLA", cat: "support", max: 120 },
   { id: 19, abbr: "FAR", cat: "gathering", max: 120 },
-  { id: 20, abbr: "RC", cat: "artisan", max: 99 },
-  { id: 21, abbr: "HUN", cat: "gathering", max: 99 },
+  { id: 20, abbr: "RC", cat: "artisan", max: 110 },
+  { id: 21, abbr: "HUN", cat: "gathering", max: 110 },
   { id: 22, abbr: "CON", cat: "artisan", max: 99 },
   { id: 23, abbr: "SUM", cat: "support", max: 99 },
   { id: 24, abbr: "DG", cat: "support", max: 120 },
@@ -571,46 +583,6 @@ function renderLastUpdated() {
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
 
-// ---- Event Listener & Timer Tracking (Memory Leak Prevention) ----
-const _trackedListeners = new Map();
-const _trackedTimers = new Map();
-
-function addTrackedListener(el, event, handler) {
-  if (!el) return;
-  el.addEventListener(event, handler);
-  if (!_trackedListeners.has(el)) _trackedListeners.set(el, []);
-  _trackedListeners.get(el).push({ event, handler });
-}
-
-function trackedSetTimeout(fn, ms) {
-  const id = setTimeout(() => { fn(); _trackedTimers.delete(id); }, ms);
-  _trackedTimers.set(id, { type: 'timeout' });
-  return id;
-}
-
-function trackedSetInterval(fn, ms) {
-  const id = setInterval(fn, ms);
-  _trackedTimers.set(id, { type: 'interval' });
-  return id;
-}
-
-function cleanupAllTrackedResources() {
-  _trackedTimers.forEach((meta, id) => {
-    if (meta.type === 'timeout') clearTimeout(id);
-    else if (meta.type === 'interval') clearInterval(id);
-  });
-  _trackedTimers.clear();
-  
-  _trackedListeners.forEach((listeners, el) => {
-    listeners.forEach(({ event, handler }) => {
-      el.removeEventListener(event, handler);
-    });
-  });
-  _trackedListeners.clear();
-}
-
-window.addEventListener('beforeunload', cleanupAllTrackedResources);
-
 // ---- Fetch ----
 // On GitHub Pages, direct fetch to runescape.com is always CORS-blocked, so
 // we skip it entirely in the browser and race multiple CORS proxies. Local
@@ -684,7 +656,10 @@ async function cacheFetch(path) {
 // ---- In-memory data cache ----
 let _memCache = {}; // keyed by player name → parsed player object
 let _memCacheTime = 0;
-const MEM_CACHE_TTL = 4.5 * 60 * 1000; // 4.5 min (just under REFRESH_MS)
+// TTL must outlive REFRESH_MS so memCache is still valid when the next
+// scheduled load lands; otherwise a tab open >5 min always re-fetches even
+// though a refresh just finished.
+const MEM_CACHE_TTL = REFRESH_MS + 30_000;
 
 function memCacheGet(name) {
   if (Date.now() - _memCacheTime > MEM_CACHE_TTL) return null;
@@ -692,7 +667,11 @@ function memCacheGet(name) {
 }
 
 function memCacheSet(results) {
-  _memCache = Object.fromEntries(PLAYERS.map((n, i) => [n, results[i]]));
+  // Preserve truthy entries instead of stomping the whole map; if only one
+  // player's live fetch succeeds we still want the other's cached snapshot.
+  for (let i = 0; i < PLAYERS.length; i++) {
+    if (results[i]) _memCache[PLAYERS[i]] = results[i];
+  }
   _memCacheTime = Date.now();
 }
 
@@ -740,25 +719,36 @@ function parse(profile, hiscores, quests) {
     ),
   };
 }
+// Dedup concurrent fetchLive(name) calls so a fast double-click on Refresh
+// doesn't fan out to 12 parallel proxy requests.
+const _fetchLiveInflight = new Map();
 async function fetchLive(n) {
-  // Fetch all three live AND read cache in parallel; fall back to cached
-  // pieces when individual live calls fail (e.g. quests endpoint timing
-  // out via proxy while profile succeeds).
-  const [p, h, q, cp, ch, cq] = await Promise.allSettled([
-    liveFetch(API.profile(n)),
-    liveFetch(API.hiscores(n)),
-    liveFetch(API.quests(n)),
-    cacheFetch(CACHE.profile(n)),
-    cacheFetch(CACHE.hiscores(n)),
-    cacheFetch(CACHE.quests(n)),
-  ]);
-  // Profile is the load-bearing piece. If live profile fails, signal failure
-  // so the outer flow can try cache-only.
-  if (p.status === "rejected") throw new Error("live_fail");
-  const profile = p.value;
-  const hiscores = h.status === "fulfilled" ? h.value : (ch.status === "fulfilled" ? ch.value : null);
-  const quests   = q.status === "fulfilled" ? q.value   : (cq.status === "fulfilled" ? cq.value : null);
-  return parse(profile, hiscores, quests);
+  if (_fetchLiveInflight.has(n)) return _fetchLiveInflight.get(n);
+  const promise = (async () => {
+    // Fetch all three live AND read cache in parallel; fall back to cached
+    // pieces when individual live calls fail (e.g. quests endpoint timing
+    // out via proxy while profile succeeds).
+    const [p, h, q, cp, ch, cq] = await Promise.allSettled([
+      liveFetch(API.profile(n)),
+      liveFetch(API.hiscores(n)),
+      liveFetch(API.quests(n)),
+      cacheFetch(CACHE.profile(n)),
+      cacheFetch(CACHE.hiscores(n)),
+      cacheFetch(CACHE.quests(n)),
+    ]);
+    // Profile is the load-bearing piece. If live profile fails, fall back to
+    // cached profile when present so we don't discard hiscores+quests data
+    // that already came in. Only throw when no profile source resolved.
+    let profile = null;
+    if (p.status === "fulfilled") profile = p.value;
+    else if (cp.status === "fulfilled") profile = cp.value;
+    if (!profile) throw new Error("live_fail");
+    const hiscores = h.status === "fulfilled" ? h.value : (ch.status === "fulfilled" ? ch.value : null);
+    const quests   = q.status === "fulfilled" ? q.value   : (cq.status === "fulfilled" ? cq.value : null);
+    return parse(profile, hiscores, quests);
+  })().finally(() => _fetchLiveInflight.delete(n));
+  _fetchLiveInflight.set(n, promise);
+  return promise;
 }
 
 // ---- Formatting ----
@@ -1308,7 +1298,6 @@ function updateUIText() {
   h("tab-money", "\uD83D\uDCB0 " + t("navMoney"));
   h("tab-lookup", "\uD83D\uDD0D " + t("navLookup"));
   h("tab-senntisten", "\u2694\uFE0F " + t("navSenntisten"));
-  h("tab-prifddinas", "\uD83C\uDFF0 " + t("navPrifddinas"));
 
   // Combat section
   h("combat-title", "\u2694\uFE0F " + t("navCombat") + " & Revolution");
@@ -1376,7 +1365,6 @@ function updateUIText() {
   s("hc-goals", t("navGoals"));
   s("hc-skills", t("navSkills"));
   s("hc-senntisten", t("navSenntisten"));
-  s("hc-prifddinas", t("navPrifddinas"));
   s("hc-lookup", t("navLookup"));
   s("hc-quests", t("navQuests"));
   s("hc-activity", t("navActivity"));
@@ -1513,11 +1501,26 @@ function initNavigation() {
 // These dashboard elements don't exist in current index.html
 
 // ---- Filters ----
+// Marks one button in a pill group active + sets aria-pressed on the whole
+// group so SR users hear the toggle state without title= guesses.
+function _activatePill(groupSel, btn) {
+  $$(groupSel + " .pill").forEach((x) => {
+    const on = x === btn;
+    x.classList.toggle("active", on);
+    x.setAttribute("aria-pressed", on ? "true" : "false");
+  });
+}
+
 function initFilters() {
+  // Initial aria-pressed sync for groups that come pre-active in markup.
+  for (const g of ["#skill-filters", "#skill-sort", "#journal-filters",
+                   "#quest-filters", "#activity-filters"]) {
+    const active = $(g + " .pill.active");
+    if (active) _activatePill(g, active);
+  }
   $$("#skill-filters .pill").forEach((b) =>
     b.addEventListener("click", () => {
-      $$("#skill-filters .pill").forEach((x) => x.classList.remove("active"));
-      b.classList.add("active");
+      _activatePill("#skill-filters", b);
       $$(".skill-row").forEach((r) =>
         r.classList.toggle(
           "hidden",
@@ -1528,8 +1531,7 @@ function initFilters() {
   );
   $$("#journal-filters .pill").forEach((b) =>
     b.addEventListener("click", () => {
-      $$("#journal-filters .pill").forEach((x) => x.classList.remove("active"));
-      b.classList.add("active");
+      _activatePill("#journal-filters", b);
       $$(".j-row").forEach((r) =>
         r.classList.toggle(
           "hidden",
@@ -1540,8 +1542,7 @@ function initFilters() {
   );
   $$("#skill-sort .pill").forEach((b) =>
     b.addEventListener("click", () => {
-      $$("#skill-sort .pill").forEach((x) => x.classList.remove("active"));
-      b.classList.add("active");
+      _activatePill("#skill-sort", b);
       const grid = document.getElementById("skills-grid");
       const rows = Array.from(grid.querySelectorAll(".skill-row"));
       const sortType = b.dataset.sort;
@@ -1582,8 +1583,7 @@ function initFilters() {
   );
   $$("#quest-filters .pill").forEach((b) =>
     b.addEventListener("click", () => {
-      $$("#quest-filters .pill").forEach((x) => x.classList.remove("active"));
-      b.classList.add("active");
+      _activatePill("#quest-filters", b);
       applyQuestFilters();
     }),
   );
@@ -1597,10 +1597,7 @@ function initFilters() {
   }
   $$("#activity-filters .pill").forEach((b) =>
     b.addEventListener("click", () => {
-      $$("#activity-filters .pill").forEach((x) =>
-        x.classList.remove("active"),
-      );
-      b.classList.add("active");
+      _activatePill("#activity-filters", b);
       const filter = b.dataset.afilter;
       $$(".feed-item").forEach((r) => {
         if (filter === "all") {
@@ -1611,31 +1608,6 @@ function initFilters() {
       });
     }),
   );
-}
-
-// ---- Next Steps: auto-generated suggestions per player ----
-function renderNextSteps(players) {
-  const el = $("#next-steps");
-  if (!el) return;
-  const lang = currentLang;
-  const items = [];
-  for (const p of players) {
-    const pi = players.indexOf(p);
-    const c = pi === 0 ? "p1" : "p2";
-    // Suggest lowest skills to train
-    const lowSkills = SKILLS
-      .map(sk => ({ sk, lvl: (p.skills[sk.id] || {}).level || 1 }))
-      .sort((a, b) => a.lvl - b.lvl)
-      .slice(0, 2);
-    for (const ls of lowSkills) {
-      items.push(`<div class="ns-item"><span class="ns-icon">📈</span><span class="ns-tag ${c}">${esc(p.name)}</span><span class="ns-text">${tSkill(ls.sk.id)}: ${lang === "pt" ? "treinar de" : "train from"} ${ls.lvl}</span><span class="ns-detail">${lang === "pt" ? "menor hab." : "lowest skill"}</span></div>`);
-    }
-    // Suggest quests if few done
-    if (p.questsDone < 50) {
-      items.push(`<div class="ns-item"><span class="ns-icon">📜</span><span class="ns-tag ${c}">${esc(p.name)}</span><span class="ns-text">${lang === "pt" ? "Fazer mais missões" : "Do more quests"} (${p.questsDone}/${p.totalQuests})</span><span class="ns-detail">${lang === "pt" ? "progresso" : "progress"}</span></div>`);
-    }
-  }
-  el.innerHTML = items.join("") || `<div style="color:var(--text-3);font-size:0.78rem;text-align:center;padding:16px">${lang === "pt" ? "Nenhuma sugestão" : "No suggestions"}</div>`;
 }
 
 // Quest filter pills + search box share a single re-apply function so they
@@ -2159,11 +2131,13 @@ document.addEventListener("DOMContentLoaded", () => {
   scheduledLoad();
   // Background tasks: GE prices (used by money page).
   loadGEPrices();
-  $("#btn-refresh").addEventListener("click", () => {
+  const refreshBtn = $("#btn-refresh");
+  if (refreshBtn) refreshBtn.addEventListener("click", () => {
     clearTimeout(timer);
     scheduledLoad(true); // force-live: bypass the cache-fresh skip
   });
-  $("#btn-dismiss-error").addEventListener("click", hideError);
+  const dismissBtn = $("#btn-dismiss-error");
+  if (dismissBtn) dismissBtn.addEventListener("click", hideError);
 
   // ---- Notification bell ----
   // Toggle the panel; mark events as seen on open. Click-outside closes.
@@ -2204,7 +2178,8 @@ document.addEventListener("DOMContentLoaded", () => {
     notif.updateBadge();
   }
 
-  $("#lang-toggle").addEventListener("click", () => {
+  const langBtn = $("#lang-toggle");
+  if (langBtn) langBtn.addEventListener("click", () => {
     setLang(currentLang === "pt" ? "en" : "pt");
     updateUIText();
     // Force re-render of every cached tab so pills/footer/show-more strings

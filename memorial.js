@@ -42,6 +42,20 @@ function memEsc(s) {
   return s == null ? "" : String(s).replace(/[&<>"']/g, (c) => _MEM_ESC[c]);
 }
 
+// ---- Roman numeral year from ISO date (memorial header). ----
+function toRomanYear(iso) {
+  const y = iso && /^\d{4}/.test(iso) ? parseInt(iso.slice(0, 4), 10) : null;
+  if (!y) return "MMXXVI";
+  const map = [
+    [1000, "M"], [900, "CM"], [500, "D"], [400, "CD"],
+    [100,  "C"], [90,  "XC"], [50,  "L"], [40,  "XL"],
+    [10,   "X"], [9,   "IX"], [5,   "V"], [4,   "IV"], [1, "I"],
+  ];
+  let out = "", n = y;
+  for (const [val, sym] of map) while (n >= val) { out += sym; n -= val; }
+  return out;
+}
+
 // ---- Parse a RuneMetrics activity date string into ISO + locale-aware label ----
 function memFormatActivityDate(raw) {
   // RuneMetrics returns "DD-Mon-YYYY HH:MM" e.g. "03-May-2026 07:51"
@@ -107,7 +121,7 @@ async function loadMemorialData() {
     combat: profile.combatlevel ?? "—",
     totalLevel: profile.totalskill,
     totalXp: profile.totalxp,
-    qp: Array.isArray(profile.activities) ? null : null,  // computed below
+    qp: null,  // computed below from quests file
     quests: profile.questscomplete,
     top,
     lastSeenISO: lastDate.iso,
@@ -152,7 +166,7 @@ function memorialTemplate(MEM) {
         <h2 id="mem-name" class="mem-name">${memEsc(MEM.name)}</h2>
       </div>
       <p class="mem-dates">
-        <span class="mem-roman">MMXXVI</span>
+        <span class="mem-roman">${memEsc(toRomanYear(MEM.lastSeenISO))}</span>
         <span class="mem-dot" aria-hidden="true">&middot;</span>
         <span class="mem-sub">${memEsc(memT("memorialSub"))}</span>
       </p>
@@ -219,10 +233,12 @@ async function renderMemorial() {
     // collapses cleanly when archive files are missing.
     mount.innerHTML = "";
     mount.hidden = true;
+    mount.removeAttribute("aria-busy");
     return;
   }
   mount.hidden = false;
   mount.innerHTML = memorialTemplate(data);
+  mount.removeAttribute("aria-busy");
 }
 
 // ---- Scoped style injection (idempotent, mirrors mgInjectStyles pattern) ----
@@ -238,7 +254,7 @@ const MEMORIAL_CSS = `
 #memorial-mount[hidden] { display: none; }
 #memorial-mount { display: block; }
 
-.mem {
+.mem-frame {
   margin: 8px 0 28px;
   --mem-parchment:   color-mix(in oklch, var(--bg-card) 78%, #1f1608);
   --mem-parchment-2: color-mix(in oklch, var(--bg-card) 86%, #34250e);

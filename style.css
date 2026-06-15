@@ -360,7 +360,7 @@ body::before {
 }
 .notif-row:last-child { border-bottom: none; }
 .notif-row .notif-icon { font-size: 1rem; line-height: 1; text-align: center; }
-.notif-row .notif-text { color: var(--text-1); }
+.notif-row .notif-text { color: var(--text); }
 .notif-row .notif-time { font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-3); }
 .notif-row.notif-unseen { background: rgba(252,211,77,0.05); }
 .notif-row.notif-unseen .notif-text { color: var(--gold-bright); font-weight: 600; }
@@ -486,7 +486,7 @@ body::before {
   padding: 2px 8px; border-radius: 10px;
 }
 .wiki-link {
-  font-size: 0.62rem; color: var(--text-3);
+  font-size: 0.75rem; color: var(--text-2);
   margin-left: auto;
 }
 
@@ -557,7 +557,10 @@ body::before {
 }
 .stat-val { font-family: var(--font-mono); font-weight: 800; font-size: 0.72rem; display: block; color: var(--text); }
 .stat-label { color: var(--text-3); display: block; margin-top: 1px; }
-.p-card-combat { display: none; }
+/* Dashboard player cards hide the combat shield (rendered elsewhere on those
+   cards), but the same .p-card markup is reused on lookup results where the
+   shield IS the only combat-level surface — keep it visible there. */
+#player-cards .p-card-combat { display: none; }
 
 /* ===== H2H ===== */
 .h2h-container { display: flex; flex-direction: column; gap: 3px; }
@@ -707,8 +710,11 @@ body::before {
   transition: all 0.15s;
 }
 .ql-row:hover { background: var(--bg-hover); border-color: var(--border); }
-.ql-row[data-qcat="both-done"] { opacity: 0.4; }
-.ql-row[data-qcat="both-done"]:hover { opacity: 0.6; }
+/* Completed-quest rows: drop saturation via text color, not opacity. Opacity
+   on the whole row dropped text contrast below WCAG 1.4.3. */
+.ql-row[data-qcat="both-done"] { color: var(--text-3); }
+.ql-row[data-qcat="both-done"] .ql-name a { color: var(--text-3); }
+.ql-row[data-qcat="both-done"]:hover { background: var(--bg-hover); }
 .ql-name { font-weight: 600; }
 .ql-name a { color: var(--text); text-decoration: none; }
 .ql-name a:hover { color: var(--gold); }
@@ -921,7 +927,9 @@ body::before {
 .lk-input {
   flex: 1; background: var(--bg-card); border: 1px solid var(--border);
   border-radius: var(--radius-sm); padding: 10px 14px;
-  color: var(--text); font-size: 1rem; font-family: var(--font);
+  /* 16px not rem — iOS auto-zooms any text input below 16px on focus, and
+     mobile breakpoints shrink the root size to 14px, which would trigger it. */
+  color: var(--text); font-size: 16px; font-family: var(--font);
   transition: border-color 0.2s;
   /* iOS fix: font-size <16px triggers auto-zoom on focus */
 }
@@ -1292,7 +1300,21 @@ body::before {
     scroll-behavior: auto !important;
   }
   .gl-stagger, .pageIn, .gl-pq-next .gl-pq-icon { animation: none !important; }
+  /* Block decorative hover-transform jumps too — bare durations cap them but
+     the position still snaps without this. */
+  .skill-row:hover, .feed-item:hover, .ql-row:hover, .j-row:hover,
+  .money-card:hover, .p-card:hover, .q-card:hover, .tier-sigil:hover,
+  .notif-bell:hover, .back-btn:hover { transform: none !important; }
 }
+
+html { scrollbar-gutter: stable; }
+.skip-link {
+  position: absolute; left: -9999px; top: 0; z-index: 9999;
+  background: var(--bg-card); color: var(--gold-bright);
+  padding: 8px 14px; border-radius: var(--radius-sm);
+  font-weight: 700; text-decoration: none;
+}
+.skip-link:focus { left: 8px; top: 8px; outline: 2px solid var(--gold-bright); }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 

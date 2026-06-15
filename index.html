@@ -6,9 +6,10 @@
     <title>RS3 Placar — Decxus &amp; Soclopata</title>
     <meta name="description" content="Acompanhamento em tempo real de jogadores de RuneScape 3" />
     <meta name="theme-color" content="#07070d" />
+    <meta name="color-scheme" content="dark" />
     <meta http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://apps.runescape.com https://secure.runescape.com https://api.allorigins.win https://api.codetabs.com https://api.weirdgloop.org" />
-    <link rel="stylesheet" href="style.css?v=34" />
+    <link rel="stylesheet" href="style.css?v=35" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <!-- Preload data cache so it streams in parallel with JS, not after it. -->
@@ -27,6 +28,7 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9876;</text></svg>" />
   </head>
   <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
     <div id="app">
       <!-- HEADER -->
       <header class="header" role="banner">
@@ -153,7 +155,7 @@
         <!-- PAGE 1: DASHBOARD -->
         <section class="page active" data-page="dashboard">
           <!-- In Memoriam: tribute card for retired players (rendered by memorial.js) -->
-          <div id="memorial-mount"></div>
+          <div id="memorial-mount" aria-busy="true"></div>
           <!-- Mission Control: dynamic next-steps panel -->
           <div id="mission-control"></div>
           <!-- Major goals summary -->
@@ -324,17 +326,17 @@
     </nav>
 
     <script defer src="utils/storage.js?v=2"></script>
-    <script defer src="i18n.js?v=34"></script>
-    <script defer src="notifications.js?v=2"></script>
+    <script defer src="i18n.js?v=35"></script>
+    <script defer src="notifications.js?v=3"></script>
     <script defer src="combat.js?v=33"></script>
     <script defer src="lookup.js?v=33"></script>
-    <script defer src="major-goals.js?v=33"></script>
-    <script defer src="goals.js?v=35"></script>
-    <script defer src="money.js?v=33"></script>
-    <script defer src="next-steps.js?v=33"></script>
-    <script defer src="tips.js?v=3"></script>
-    <script defer src="live.js?v=3"></script>
-    <script defer src="memorial.js?v=3"></script>
-    <script defer src="script.js?v=34"></script>
+    <script defer src="major-goals.js?v=34"></script>
+    <script defer src="goals.js?v=36"></script>
+    <script defer src="money.js?v=34"></script>
+    <script defer src="next-steps.js?v=34"></script>
+    <script defer src="tips.js?v=4"></script>
+    <script defer src="live.js?v=4"></script>
+    <script defer src="memorial.js?v=4"></script>
+    <script defer src="script.js?v=35"></script>
   </body>
 </html>

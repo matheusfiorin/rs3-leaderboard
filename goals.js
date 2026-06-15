@@ -30,7 +30,7 @@ const TIER_DEFS = [
     label_en: "End Game",
     lock_pt: "Bloqueado — Combate 95+ recomendado",
     lock_en: "Locked — Combat 95+ recommended",
-    gate: (p) => (p && p.combatLevel || 0) >= 95,
+    gate: (p) => ((p && p.combatLevel) || 0) >= 95,
   },
 ];
 
@@ -53,12 +53,13 @@ const GOALS = [
       { id: 14, required: 64, reason: "The Curse of Arrav" },
       { id: 2,  required: 64, reason: "The Curse of Arrav" },
       { id: 4,  required: 64, reason: "The Curse of Arrav" },
-      { id: 13, required: 65, reason: "The Curse of Arrav" },
+      { id: 13, required: 65, reason: "Devious Minds" },
       { id: 17, required: 66, reason: "The Curse of Arrav" },
       { id: 23, required: 41, reason: "The Curse of Arrav" },
+      { id: 18, required: 37, reason: "The Curse of Arrav" },
       { id: 21, required: 51, reason: "Defender of Varrock" },
-      // From Desert Treasure / Devious Minds
-      { id: 6,  required: 62, reason: "Desert Treasure" },
+      // From Desert Treasure / Devious Minds / Family Crest
+      { id: 6,  required: 59, reason: "Family Crest" },
       { id: 11, required: 50, reason: "Desert Treasure" },
       { id: 9,  required: 50, reason: "Devious Minds" },
       { id: 20, required: 50, reason: "Devious Minds" },
@@ -68,6 +69,9 @@ const GOALS = [
       { id: 12, required: 45, reason: "Missing My Mummy 100%" },
       // Other chain requirements
       { id: 5,  required: 50, reason: "Temple at Senntisten" },
+      // Soul Split itself is a Prayer-92 ability — the temple unlocks the
+      // curse altar but the player still needs the level to use it.
+      { id: 5,  required: 92, reason: "Soul Split (ability)" },
       { id: 19, required: 25, reason: "Garden of Tranquillity" },
     ],
     quests: [
@@ -78,6 +82,8 @@ const GOALS = [
       "Garden of Tranquillity", "Family Crest", "What Lies Below", "Troll Stronghold",
       "Icthlarin's Little Helper", "Missing My Mummy", "Wanted!",
       "Devious Minds", "Desert Treasure", "Defender of Varrock", "The Curse of Arrav",
+      "Shield of Arrav", "The Knight's Sword", "Recruitment Drive",
+      "What's Mine is Yours", "The Restless Ghost",
       "The Temple at Senntisten",
     ],
     manual: [
@@ -209,8 +215,8 @@ const GOALS = [
           "Dragon Slayer", "Heroes' Quest", "Legends' Quest",
           "Tree Gnome Village", "The Grand Tree", "Waterfall Quest",
           "The Eyes of Glouphrie", "The Path of Glouphrie",
-          "Tears of Guthix", "Enter the Abyss",
-          "Wanted!", "The Hunt for Surok",
+          "Tears of Guthix", "Enter the Abyss (miniquest)",
+          "Wanted!", "The Hunt for Surok (miniquest)",
           "While Guthix Sleeps",
         ],
       },
@@ -224,6 +230,8 @@ const GOALS = [
           "A Fairy Tale I - Growing Pains", "A Fairy Tale II - Cure a Queen",
           "Pirate's Treasure", "Rum Deal", "Cabin Fever",
           "A Tail of Two Cats", "Fight Arena",
+          "The General's Shadow (miniquest)",
+          "The Curse of Zaros (miniquest)",
         ],
       },
       {
@@ -287,14 +295,33 @@ GOALS.push(
     sub_pt: "Capstone do Sexto Era — arco Mahjarrat",
     sub_en: "Sixth Age capstone — Mahjarrat arc",
     capstone: "Sliske's Endgame",
+    // Skill aggregate spans The Light Within / Children of Mah / Fate of the
+    // Gods. Endgame itself has no new skill gate beyond completing those.
     skills: [
-      { id: 5, required: 75, reason: "Sliske's Endgame" },
+      { id: 5,  required: 80, reason: "The Light Within" },
       { id: 16, required: 80, reason: "Sliske's Endgame" },
+      { id: 12, required: 80, reason: "Children of Mah" },
+      { id: 9,  required: 80, reason: "Children of Mah" },
+      { id: 13, required: 80, reason: "Children of Mah" },
+      { id: 14, required: 80, reason: "Children of Mah" },
+      { id: 18, required: 80, reason: "Children of Mah" },
+      { id: 25, required: 80, reason: "Children of Mah" },
+      { id: 6,  required: 79, reason: "Fate of the Gods" },
+      { id: 17, required: 75, reason: "Children of Mah" },
+      { id: 22, required: 75, reason: "Children of Mah" },
     ],
     quests: [
-      "Ritual of the Mahjarrat", "Missing, Presumed Death",
-      "The Branches of Darkmeyer", "The Light Within", "Fate of the Gods",
-      "Children of Mah", "Sliske's Endgame",
+      "Missing, Presumed Death", "The World Wakes",
+      "Ritual of the Mahjarrat",
+      "The Branches of Darkmeyer", "The Light Within",
+      "Fate of the Gods", "Children of Mah",
+      // Direct prereqs of Sliske's Endgame quest itself.
+      "The Death of Chivalry", "One of a Kind", "A Tail of Two Cats",
+      "Holy Grail", "Nomad's Elegy", "Dishonour among Thieves",
+      "Nomad's Requiem", "Heart of Stone", "The Mighty Fall",
+      "Throne of Miscellania", "The Void Stares Back",
+      "Kindred Spirits", "Hero's Welcome",
+      "Sliske's Endgame",
     ],
     manual: [
       { id: "sl_combat_110", label_pt: "Combate 110+ recomendado", label_en: "Combat 110+ recommended" },
@@ -310,7 +337,9 @@ GOALS.push(
     label_en: "Necromancy 99",
     sub_pt: "Maestria no novo estilo de combate",
     sub_en: "Mastery of the new combat style",
-    capstone: "Rune Mythos",
+    // No capstone quest — Necromancy 99 is grind-gated, not quest-gated.
+    // (Old capstone "Rune Mythos" required only Necromancy 24, which would
+    // mark the 99 goal complete at level 24 for every player.)
     skills: [
       { id: 28, required: 99, reason: "Necromancy 99" },
     ],
@@ -331,7 +360,7 @@ GOALS.push(
     sub_en: "Every skill at level 50+",
     capstone: null,
     // Generated programmatically: every active skill (id 1-25, plus 27/28).
-    skills: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,27,28]
+    skills: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,27,28]
       .map(id => ({ id, required: 50, reason: "Base 50" })),
     quests: [],
     manual: [],

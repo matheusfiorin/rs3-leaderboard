@@ -28,7 +28,6 @@ const LANG = {
     navGoals: "Metas",
     navLive: "Ao Vivo",
     navSenntisten: "Senntisten",
-    navPrifddinas: "Prifddinas",
     noReqs: "Sem requisitos",
     daily: "DIÁRIO",
     soon: "QUASE",
@@ -110,29 +109,13 @@ const LANG = {
     cbEstimate: "Estimativa base — sem orações, poções, perks ou auras",
     cbCursesAvailable: "Maldições disponíveis (Oração {n}) — +10% DPS com Tormento/Angústia/Turbulência",
 
-    // Meetup labels (meetup.js)
-    meetupCompleted: "Concluído",
-    meetupNoPlanned: "Nenhum encontro planejado.",
-
     // Money
     moneyTitle: "Formas de Ganhar GP",
     moneyDisclaimer: "Preços do Grand Exchange atualizados a cada 15 min via GitHub Actions. Lucro real pode variar.",
 
     // Combat
-    combatNotice: "Barras baseadas no Combat Style Modernisation (Março 2026). Arraste habilidades no jogo para ajustar.",
+    combatNotice: "Barras baseadas no Combat Style Modernisation. Arraste habilidades no jogo para ajustar.",
     combatWikiLink: "Wiki Revolution Bars",
-
-    // Meetup
-    meetupXpPerSkill: "XP Ganho por Habilidade",
-    meetupTotalXp: "XP Total Ganho",
-    meetupTotalLevels: "Níveis Totais Ganhos",
-    meetupResult: "Resultado",
-    meetupSessionSummary: "Resumo da Sessão",
-    meetupXpGained: "XP Ganho",
-    meetupHighlights: "Destaques",
-    meetupEmpty: "Nenhum encontro planejado.",
-    meetupChartsEmpty: "Gráficos disponíveis após o primeiro encontro registrado.",
-    meetupLevelsGained: "Níveis Ganhos",
 
     // Quest points
     questPoints: "pontos de missão",
@@ -347,7 +330,6 @@ const LANG = {
     navGoals: "Goals",
     navLive: "Live",
     navSenntisten: "Senntisten",
-    navPrifddinas: "Prifddinas",
     noReqs: "No requirements",
     daily: "DAILY",
     soon: "SOON",
@@ -429,29 +411,13 @@ const LANG = {
     cbEstimate: "Baseline estimate — no prayers, potions, perks, or auras",
     cbCursesAvailable: "Curses available (Prayer {n}) — +10% DPS with Turmoil/Anguish/Torment",
 
-    // Meetup labels
-    meetupCompleted: "Completed",
-    meetupNoPlanned: "No meetups planned.",
-
     // Money
     moneyTitle: "Money Making",
     moneyDisclaimer: "Grand Exchange prices updated every 15 min via GitHub Actions. Actual profit may vary.",
 
     // Combat
-    combatNotice: "Bars based on Combat Style Modernisation (March 2026). Drag abilities in-game to adjust.",
+    combatNotice: "Bars based on Combat Style Modernisation. Drag abilities in-game to adjust.",
     combatWikiLink: "Wiki Revolution Bars",
-
-    // Meetup
-    meetupXpPerSkill: "XP Gained per Skill",
-    meetupTotalXp: "Total XP Gained",
-    meetupTotalLevels: "Total Levels Gained",
-    meetupResult: "Result",
-    meetupSessionSummary: "Session Summary",
-    meetupXpGained: "XP Gained",
-    meetupHighlights: "Highlights",
-    meetupEmpty: "No meetups planned.",
-    meetupChartsEmpty: "Charts available after the first recorded meetup.",
-    meetupLevelsGained: "Levels Gained",
 
     // Quest points
     questPoints: "quest points",

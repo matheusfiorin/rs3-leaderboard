@@ -9,12 +9,13 @@ test.describe('RS3 Leaderboard Smoke Tests', () => {
     expect(dockButtons).toBeGreaterThan(0);
     
     // Check header
-    const header = await page.locator('header').isVisible();
+    const header = await page.getByRole('banner').isVisible();
     expect(header).toBeTruthy();
     
-    // Activity section should be visible initially
-    const activitySection = await page.locator('#activity-feed').isVisible();
-    expect(activitySection).toBeTruthy();
+    // Dashboard is the default page; its primary mount is #player-cards.
+    // Activity feed lives on its own dock route, not visible at cold load.
+    const dashMount = await page.locator('#player-cards').count();
+    expect(dashMount).toBeGreaterThan(0);
   });
 
   test('language toggle works', async ({ page }) => {
@@ -28,7 +29,7 @@ test.describe('RS3 Leaderboard Smoke Tests', () => {
     await page.waitForTimeout(200);
     
     // Should still be on page
-    const header = await page.locator('header').isVisible();
+    const header = await page.getByRole('banner').isVisible();
     expect(header).toBeTruthy();
   });
 
@@ -47,7 +48,7 @@ test.describe('RS3 Leaderboard Smoke Tests', () => {
       await page.waitForTimeout(300);
       
       // Content should have changed (not fully testable without knowing IDs)
-      const header = await page.locator('header').isVisible();
+      const header = await page.getByRole('banner').isVisible();
       expect(header).toBeTruthy();
     }
   });
@@ -83,7 +84,7 @@ test.describe('RS3 Leaderboard Smoke Tests', () => {
     
     // Try to find and click combat-related button
     // This is a smoke test - just check structure loads
-    const header = await page.locator('header').isVisible();
+    const header = await page.getByRole('banner').isVisible();
     expect(header).toBeTruthy();
   });
 
@@ -98,11 +99,14 @@ test.describe('RS3 Leaderboard Smoke Tests', () => {
     await page.goto('/');
     await page.waitForTimeout(500);
     
-    // Filter out expected errors or third-party errors
-    const appErrors = errors.filter(e => 
-      !e.includes('404') && 
+    // Filter out expected errors or third-party errors. Live fetches to
+    // runescape.com / CORS proxies are blocked or 4xx in local dev — those
+    // are the data layer doing what it's designed to do (fall back to cache).
+    const appErrors = errors.filter(e =>
+      !e.includes('404') &&
       !e.includes('CORS') &&
-      !e.includes('favicon')
+      !e.includes('favicon') &&
+      !e.includes('Failed to load resource')
     );
     
     expect(appErrors.length).toBe(0);

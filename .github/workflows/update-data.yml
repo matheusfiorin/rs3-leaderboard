@@ -66,10 +66,14 @@ jobs:
               '((.skills // []) | length) > 0' \
               "hiscores($player)"
 
+            # Accept empty quest arrays only if the response is well-formed
+            # (.quests is present and not null). Length>0 used to reject any
+            # transient empty payload, which then left quest data permanently
+            # stale once the player went private or the API hiccupped.
             fetch_or_keep \
               "https://apps.runescape.com/runemetrics/quests?user=${player}" \
               "data/${safe}_quests.json" \
-              '((.quests // []) | length) > 0' \
+              '.quests != null and (.error // null) == null' \
               "quests($player)"
 
             sleep 1
@@ -78,10 +82,18 @@ jobs:
           echo "Fetching GE prices..."
           python3 scripts/fetch_prices.py
 
-          # Only update meta.json if data actually changed (not just meta)
-          if git diff --name-only HEAD -- data/ | grep -qv meta.json; then
-            echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > data/meta.json
+          # Always update meta.json so the UI's "last refresh" reflects when
+          # the cron actually ran, not just when player data last changed.
+          # Both stamps in one file: lastRun = every cron tick;
+          # lastChange = only when player data actually changed.
+          now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          last_change="$now"
+          if ! git diff --name-only HEAD -- data/ | grep -qv meta.json; then
+            # Nothing but meta changed — keep the previous lastChange stamp
+            last_change="$(jq -r '.lastChange // .timestamp // empty' data/meta.json 2>/dev/null || true)"
+            [ -z "$last_change" ] && last_change="$now"
           fi
+          echo "{\"timestamp\":\"$now\",\"lastRun\":\"$now\",\"lastChange\":\"$last_change\"}" > data/meta.json
 
           echo "Done fetching all data"
 
