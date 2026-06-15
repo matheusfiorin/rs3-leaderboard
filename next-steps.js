@@ -15,12 +15,13 @@ const NS_UNLOCKS = [
   { id: 10, level: 35, u_pt: "Pesca de Tuna/Swordfish", u_en: "Tuna/Swordfish", hint_pt: "Karamja docks", hint_en: "Karamja docks" },
   { id: 10, level: 76, u_pt: "Pesca de Tubarão (lucro)", u_en: "Shark fishing (profit)", hint_pt: "Fishing Guild", hint_en: "Fishing Guild" },
 
-  // Cooking — Lunar gate
-  { id: 7, level: 40, u_pt: "Lunar Diplomacy desbloqueada", u_en: "Lunar Diplomacy unlock", hint_pt: "Pré-requisito ROTM", hint_en: "ROTM prerequisite" },
+  // Cooking
   { id: 7, level: 80, u_pt: "Cozinhar Sharks (lucro)", u_en: "Cook sharks (profit)", hint_pt: "AFK money", hint_en: "AFK money" },
 
-  // Necromancy
-  { id: 28, level: 80, u_pt: "Conjurar Phantom Guardian", u_en: "Phantom Guardian", hint_pt: "Boss-tier familiar", hint_en: "Boss-tier familiar" },
+  // Necromancy — Phantom Guardian is gated by Well-of-Souls Tier-5 talent,
+  // not a flat skill level; 80 is the practical floor where players invest in
+  // the talent.
+  { id: 28, level: 80, u_pt: "Talent T5 — Phantom Guardian", u_en: "Talent T5 — Phantom Guardian", hint_pt: "Well of Souls", hint_en: "Well of Souls" },
   { id: 28, level: 92, u_pt: "Boss Rasial", u_en: "Rasial boss fight", hint_pt: "Top-tier Necro drop", hint_en: "Top-tier Necro drop" },
   { id: 28, level: 100, u_pt: "Necromancia maxada", u_en: "Necromancy maxed", hint_pt: "Cape de Necro", hint_en: "Necromancy cape" },
 
@@ -28,12 +29,12 @@ const NS_UNLOCKS = [
   { id: 5, level: 99, u_pt: "Prayer 99 — Cape", u_en: "Prayer 99 cape", hint_pt: "Skillcape de oração", hint_en: "Skillcape of Prayer" },
 
   // Combat skills (Decxus catch-up)
-  { id: 0, level: 50, u_pt: "Rune scimitar", u_en: "Rune scimitar", hint_pt: "Melee tier 50", hint_en: "Melee tier 50" },
-  { id: 0, level: 70, u_pt: "Dragon weapons", u_en: "Dragon weapons", hint_pt: "Tier 60-70 melee", hint_en: "Tier 60-70 melee" },
-  { id: 2, level: 70, u_pt: "Dragon weapons", u_en: "Dragon weapons", hint_pt: "Strength gate", hint_en: "Strength gate" },
-  { id: 6, level: 75, u_pt: "Sunshine", u_en: "Sunshine", hint_pt: "The World Wakes reward", hint_en: "The World Wakes reward" },
-  { id: 4, level: 75, u_pt: "Death's Swiftness", u_en: "Death's Swiftness", hint_pt: "TWW reward", hint_en: "TWW reward" },
-  { id: 1, level: 70, u_pt: "Tetsu/Death Lotus armor (T80)", u_en: "Tetsu/Death Lotus (T80)", hint_pt: "Defence gate", hint_en: "Defence gate" },
+  { id: 0, level: 40, u_pt: "Rune scimitar", u_en: "Rune scimitar", hint_pt: "Melee tier 50", hint_en: "Melee tier 50" },
+  { id: 0, level: 60, u_pt: "Dragon weapons", u_en: "Dragon weapons", hint_pt: "Tier 60 melee", hint_en: "Tier 60 melee" },
+  { id: 2, level: 60, u_pt: "Dragon weapons", u_en: "Dragon weapons", hint_pt: "Strength gate", hint_en: "Strength gate" },
+  { id: 6, level: 76, u_pt: "Sunshine", u_en: "Sunshine", hint_pt: "The World Wakes reward", hint_en: "The World Wakes reward" },
+  { id: 4, level: 76, u_pt: "Death's Swiftness", u_en: "Death's Swiftness", hint_pt: "TWW reward", hint_en: "TWW reward" },
+  { id: 1, level: 85, u_pt: "Tetsu/Death Lotus armor (T85)", u_en: "Tetsu/Death Lotus (T85)", hint_pt: "Defence gate", hint_en: "Defence gate" },
 
   // Slayer
   { id: 18, level: 55, u_pt: "Slayer Tower elites", u_en: "Slayer Tower elites", hint_pt: "Black demons / Aberrants", hint_en: "Black demons / Aberrants" },
@@ -59,7 +60,8 @@ const NS_UNLOCKS = [
   { id: 19, level: 50, u_pt: "Plantar Cadantine", u_en: "Plant Cadantine", hint_pt: "Mid-herbs profit", hint_en: "Mid-herbs profit" },
 
   // Agility
-  { id: 16, level: 70, u_pt: "Wilderness Course (Hati)", u_en: "Wilderness Agility Course", hint_pt: "Best Agility XP/h", hint_en: "Best Agility XP/h" },
+  { id: 16, level: 52, u_pt: "Wilderness Agility Course", u_en: "Wilderness Agility Course", hint_pt: "Solid Agility XP", hint_en: "Solid Agility XP" },
+  { id: 16, level: 75, u_pt: "Hefin Course (Prifddinas)", u_en: "Hefin Course (Prifddinas)", hint_pt: "Best Agility XP/h", hint_en: "Best Agility XP/h" },
 
   // Hunter
   { id: 21, level: 63, u_pt: "Red Chinchompas", u_en: "Red Chinchompas", hint_pt: "GP + range XP", hint_en: "GP + range XP" },
@@ -68,7 +70,7 @@ const NS_UNLOCKS = [
   { id: 22, level: 50, u_pt: "Player-Owned House altar", u_en: "POH altar", hint_pt: "Solo Prayer alt", hint_en: "Solo Prayer alt" },
 
   // Summoning
-  { id: 23, level: 67, u_pt: "Pack Yak", u_en: "Pack Yak", hint_pt: "Top-tier BoB", hint_en: "Top-tier BoB" },
+  { id: 23, level: 96, u_pt: "Pack Yak", u_en: "Pack Yak", hint_pt: "Top-tier BoB", hint_en: "Top-tier BoB" },
 ];
 
 // ---- Major quest chain priorities — the "what should I quest next" rail.
@@ -79,7 +81,7 @@ const NS_QUEST_RAILS = {
   Soclopata: [
     { name: "Lunar Diplomacy", chain: "ROTM", pt: "Próximo da cadeia ROTM", en: "Next in ROTM chain" },
     { name: "Dream Mentor", chain: "ROTM", pt: "Continuação Lunar", en: "Lunar continuation" },
-    { name: "The Hunt for Surok", chain: "ROTM", pt: "Pré-WGS", en: "Pre-WGS" },
+    { name: "The Hunt for Surok (miniquest)", chain: "ROTM", pt: "Pré-WGS", en: "Pre-WGS" },
     { name: "While Guthix Sleeps", chain: "ROTM", pt: "Última porta antes do Ritual", en: "Last gate before Ritual" },
     { name: "Ritual of the Mahjarrat", chain: "ROTM", pt: "Capstone do arco", en: "Arc capstone" },
     { name: "Fate of the Gods", chain: "Zaros", pt: "Próximo arco Zarosiano", en: "Next Zarosian arc" },
@@ -114,10 +116,11 @@ function nsDailyMoves(player) {
     // Will unlock soon - skip
   }
   if (lvl(14) >= 81) {
-    out.push({ ic: "💎", pt: "Red Sandstone diário", en: "Daily Red Sandstone", min: 4, gp: "1.5M" });
+    // Red Sandstone is no longer daily-capped; treat as an AFK mining session.
+    out.push({ ic: "💎", pt: "Sessão Red Sandstone", en: "Red Sandstone session", min: 15, gp: "1.5M+" });
   }
-  // Senntisten Altar - if Soul Split unlocked
   if (has("The Temple at Senntisten")) {
+    // Senntisten Altar is 24/7 — listed here for visibility, not as a true daily.
     out.push({ ic: "💀", pt: "Ossos no Altar de Senntisten", en: "Bones at Senntisten Altar", min: 30, gp: "Prayer XP" });
   }
   // Always show shop runs as a daily for everyone
@@ -134,14 +137,26 @@ function nsPickClosestUnlock(player) {
       const gap = u.level - cur;
       return { ...u, cur, gap };
     })
-    .filter(u => u.gap > 0 && u.gap <= 25)
+    // Show closest unlock within 40 levels so early-game accounts see
+    // something. If nothing within 40, fall back to the absolute closest.
+    .filter(u => u.gap > 0)
     .sort((a, b) => a.gap - b.gap);
-  return candidates[0] || null;
+  const near = candidates.find(u => u.gap <= 40);
+  return near || candidates[0] || null;
 }
 
 // ---- Pick first incomplete quest from rail ----
+// Fallback rail for unknown players: a generic early-mid starter chain so an
+// unrecognized RSN doesn't inherit Soclopata's late-game capstones.
+const NS_GENERIC_RAIL = [
+  { name: "Dragon Slayer", chain: "starter", pt: "Capa Caça-Dragões", en: "Dragon Slayer cape" },
+  { name: "Lost City", chain: "starter", pt: "Acesso a Zanaris", en: "Zanaris access" },
+  { name: "Plague City", chain: "elf", pt: "Início da cadeia élfica", en: "Start of elf chain" },
+  { name: "Recipe for Disaster", chain: "qol", pt: "Multi-stage diary", en: "Multi-stage diary" },
+];
+
 function nsPickNextQuest(player) {
-  const rail = NS_QUEST_RAILS[player.name] || NS_QUEST_RAILS.Soclopata;
+  const rail = NS_QUEST_RAILS[player.name] || NS_GENERIC_RAIL;
   for (const q of rail) {
     if (typeof hasQuest === "function" && !hasQuest(player, q.name)) return q;
   }

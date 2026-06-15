@@ -54,7 +54,7 @@ const MONEY_METHODS = [
     name:{pt:"Fazer Super Antipoison",en:"Make Super Antipoison"},
     desc:{pt:"Herblore médio, bom lucro.",en:"Mid-level Herblore, good profit."},
     reqs:{15:48},
-    inputs:[{id:269,qty:1,name:"Clean irit"},{id:235,qty:1,name:"Unicorn horn dust"}], outputs:[{id:181,qty:1,name:"Super antipoison"}], actionsPerHour:2600,
+    inputs:[{id:261,qty:1,name:"Clean irit"},{id:227,qty:1,name:"Unicorn horn dust"}], outputs:[{id:181,qty:1,name:"Super antipoison"}], actionsPerHour:2600,
     wiki:"https://runescape.wiki/w/Money_making_guide/Making_super_antipoisons" },
   { id:"make_super_str", cat:"processing", intensity:"moderate", members:true, gp:9800000,
     name:{pt:"Fazer Super Strength",en:"Make Super Strength"},
@@ -83,20 +83,20 @@ const MONEY_METHODS = [
   { id:"craft_mist_runes", cat:"processing", intensity:"high", members:true, gp:7000000,
     name:{pt:"Criar Mist Runes",en:"Craft Mist Runes"},
     desc:{pt:"Combination runes: ar + altar de água.",en:"Combination runes: air + water altar."},
-    reqs:{20:6},
+    reqs:{20:6}, quest:"Lunar Diplomacy",
     inputs:[{id:556,qty:1,name:"Air rune"}], outputs:[{id:4694,qty:1,name:"Mist rune"}], actionsPerHour:2200,
     wiki:"https://runescape.wiki/w/Money_making_guide/Crafting_mist_runes" },
   { id:"craft_mud_runes", cat:"processing", intensity:"high", members:true, gp:6500000,
     name:{pt:"Criar Mud Runes",en:"Craft Mud Runes"},
     desc:{pt:"Combination runes: água + altar de terra.",en:"Combination runes: water + earth altar."},
-    reqs:{20:13},
+    reqs:{20:13}, quest:"Lunar Diplomacy",
     inputs:[{id:555,qty:1,name:"Water rune"}], outputs:[{id:4695,qty:1,name:"Mud rune"}], actionsPerHour:2200,
     wiki:"https://runescape.wiki/w/Money_making_guide/Crafting_mud_runes" },
   { id:"unf_ranarr", cat:"processing", intensity:"low", members:true, gp:5000000,
     name:{pt:"Poções Inacabadas de Ranarr",en:"Ranarr Unfinished Potions"},
     desc:{pt:"Combine clean ranarr + vial of water. AFK.",en:"Combine clean ranarr + vial of water. AFK."},
     reqs:{15:25},
-    inputs:[{id:265,qty:1,name:"Clean ranarr"},{id:2481,qty:1,name:"Vial of water"}], outputs:[{id:99,qty:1,name:"Ranarr potion (unf)"}], actionsPerHour:2800,
+    inputs:[{id:259,qty:1,name:"Clean ranarr"},{id:2481,qty:1,name:"Vial of water"}], outputs:[{id:99,qty:1,name:"Ranarr potion (unf)"}], actionsPerHour:2800,
     wiki:"https://runescape.wiki/w/Money_making_guide/Making_ranarr_potions_(unf)" },
   { id:"smelt_steel_bars", cat:"processing", intensity:"moderate", members:false, gp:3000000,
     name:{pt:"Fundir Barras de Aço",en:"Smelt Steel Bars"},
@@ -126,13 +126,13 @@ const MONEY_METHODS = [
     name:{pt:"Fletchar Rune Arrows",en:"Fletch Rune Arrows"},
     desc:{pt:"Combine rune arrowheads + arrow shafts.",en:"Combine rune arrowheads + arrow shafts."},
     reqs:{9:75},
-    inputs:[{id:44,qty:15,name:"Arrow shaft"},{id:41,qty:15,name:"Rune arrowheads"}], outputs:[{id:42,qty:15,name:"Rune arrow"}], actionsPerHour:2800,
+    inputs:[{id:52,qty:15,name:"Arrow shaft"},{id:41,qty:15,name:"Rune arrowheads"}], outputs:[{id:42,qty:15,name:"Rune arrow"}], actionsPerHour:2800,
     wiki:"https://runescape.wiki/w/Money_making_guide/Fletching_rune_arrows" },
   { id:"cut_rubies", cat:"processing", intensity:"low", members:false, gp:2000000,
     name:{pt:"Cortar Rubis",en:"Cut Rubies"},
     desc:{pt:"Compre rubis brutos, corte com cinzel.",en:"Buy uncut rubies, cut with chisel."},
     reqs:{12:34},
-    inputs:[{id:1619,qty:1,name:"Uncut ruby"}], outputs:[{id:1603,qty:1,name:"Ruby"}], actionsPerHour:2800,
+    inputs:[{id:1619,qty:1,name:"Uncut ruby"}], outputs:[{id:1609,qty:1,name:"Ruby"}], actionsPerHour:2800,
     wiki:"https://runescape.wiki/w/Money_making_guide/Cutting_rubies" },
   { id:"cut_dragonstones", cat:"processing", intensity:"low", members:true, gp:3500000,
     name:{pt:"Cortar Dragonstones",en:"Cut Dragonstones"},
@@ -487,7 +487,7 @@ const MONEY_METHODS = [
     name:{pt:"Penguin Hide and Seek (semanal)",en:"Penguin Hide and Seek (weekly)"},
     desc:{pt:"Encontre pinguins. XP + GP semanal.",en:"Find penguins. Weekly XP + GP."},
     reqs:{},
-    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:300000, daily:true,
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:300000, cadence:"weekly",
     wiki:"https://runescape.wiki/w/Penguin_Hide_and_Seek" },
   // NEW: Eclectic impling jars hunt
   { id:"eclectic_implings", cat:"collecting", intensity:"moderate", members:true, gp:2000000,
@@ -521,7 +521,7 @@ const MONEY_METHODS = [
     name:{pt:"Player-Owned Ports (semanal)",en:"Player-Owned Ports (weekly)"},
     desc:{pt:"Voyages semanais retornam recursos vendáveis. Quase passivo.",en:"Weekly voyages return tradable resources. Near passive."},
     reqs:{8:90,10:90,21:90,5:90,9:90}, quest:"The Jack of Spades",
-    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:5000000, daily:true,
+    inputs:[], outputs:[], actionsPerHour:0, fixedProfit:5000000, cadence:"weekly",
     wiki:"https://runescape.wiki/w/Player-owned_port" },
   // NEW: Artisans' Workshop (smithing/mining trade with rep)
   { id:"artisans_workshop", cat:"recurring", intensity:"moderate", members:true, gp:1800000,
@@ -553,9 +553,9 @@ async function loadGEPrices() {
   try {
     const query = [...ids].join("|");
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 8000);
+    const timeoutId = setTimeout(() => ctrl.abort(), 8000);
     const resp = await fetch(`https://api.weirdgloop.org/exchange/history/rs/latest?id=${query}`, { signal: ctrl.signal });
-    clearTimeout(t);
+    clearTimeout(timeoutId);
     if (resp.ok) {
       const data = await resp.json();
       gePrices = {};
@@ -790,7 +790,10 @@ function powerLoopsHTML(player, lang, all) {
     if (ms.length !== loop.methodIds.length) return null;
     const allUnlocked = ms.every(m => m._can);
     if (!allUnlocked) return null;
-    const total = ms.reduce((s, m) => s + (m._profit || 0), 0) * loop.synergyMult;
+    // Synergy is informational, not multiplicative — the user still works
+     // only one method at a time. Show the combined ceiling (sum) without an
+     // invented multiplier; ranking by raw sum stays meaningful.
+    const total = ms.reduce((s, m) => s + (m._profit || 0), 0);
     return { loop, methods: ms, total };
   }).filter(Boolean).sort((a, b) => b.total - a.total).slice(0, 2);
   if (!eligibles.length) return "";

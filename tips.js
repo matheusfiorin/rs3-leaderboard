@@ -74,19 +74,20 @@ const TIPS_METHODS = {
   // Herblore (15)
   15: [
     { lvl: 25, name: { pt: "Ranarr unfinished pots", en: "Ranarr unf potions" }, xph: 80000, intensity: "low" },
-    { lvl: 82, name: { pt: "Aggression potion (4)", en: "Aggression potion (4)" }, xph: 320000, intensity: "moderate", setup: { pt: "Plague's End. Top XP/h via mod-extreme.", en: "Plague's End. Top XP/h via overload-tier." } },
+    { lvl: 82, name: { pt: "Aggression potion (4)", en: "Aggression potion (4)" }, xph: 320000, intensity: "moderate", setup: { pt: "Top XP/h em Herblore mid-tier.", en: "Top XP/h at mid-tier Herblore." } },
     { lvl: 96, name: { pt: "Overloads", en: "Overloads" }, xph: 400000, intensity: "moderate" },
   ],
   // Agility (16)
   16: [
     { lvl: 1,  name: { pt: "Gnome Stronghold", en: "Gnome Stronghold" }, xph: 20000, intensity: "high" },
-    { lvl: 70, name: { pt: "Wilderness course (Hati)", en: "Wilderness course (Hati)" }, xph: 90000, intensity: "high" },
-    { lvl: 85, name: { pt: "Hefin agility (Prif)", en: "Hefin agility (Prif)" }, xph: 70000, intensity: "moderate", setup: { pt: "Voice of Seren bonifica.", en: "Voice of Seren boosts." } },
+    { lvl: 52, name: { pt: "Wilderness Agility Course", en: "Wilderness Agility Course" }, xph: 60000, intensity: "high" },
+    { lvl: 75, name: { pt: "Hefin agility (Prif)", en: "Hefin agility (Prif)" }, xph: 70000, intensity: "moderate", setup: { pt: "Voice of Seren bonifica.", en: "Voice of Seren boosts." } },
   ],
   // Thieving (17)
   17: [
-    { lvl: 60, name: { pt: "Pyramid Plunder", en: "Pyramid Plunder" }, xph: 280000, intensity: "high" },
-    { lvl: 91, name: { pt: "Dragon impling jar (Puro)", en: "Dragon implings (Puro)" }, xph: 200000, intensity: "moderate" },
+    { lvl: 21, name: { pt: "Pyramid Plunder", en: "Pyramid Plunder" }, xph: 280000, intensity: "high", setup: { pt: "Sala 4 a partir de L51, sala 8 em L91+.", en: "Room 4 at L51, room 8 at L91+." } },
+    { lvl: 81, name: { pt: "Pyramid Plunder (sala 7+)", en: "Pyramid Plunder (room 7+)" }, xph: 600000, intensity: "high" },
+    { lvl: 83, name: { pt: "Dragon implings (Puro-Puro)", en: "Dragon implings (Puro)" }, xph: 140000, intensity: "moderate" },
   ],
   // Slayer (18)
   18: [
@@ -101,14 +102,15 @@ const TIPS_METHODS = {
   ],
   // Runecrafting (20)
   20: [
-    { lvl: 50, name: { pt: "Soul Runes (ZMI alt)", en: "Soul runes (alt)" }, xph: 60000, intensity: "moderate" },
+    { lvl: 1,  name: { pt: "ZMI altar (mid-tier mix)", en: "ZMI altar (mixed runes)" }, xph: 50000, intensity: "moderate" },
     { lvl: 77, name: { pt: "Nature runes via Abyss", en: "Nature runes via Abyss" }, xph: 80000, intensity: "high", setup: { pt: "Maximum profit at this level.", en: "Maximum profit at this level." } },
-    { lvl: 91, name: { pt: "Astral runes (lunar isle)", en: "Astral runes" }, xph: 100000, intensity: "moderate" },
+    { lvl: 90, name: { pt: "Soul Runes (altar Senntisten)", en: "Soul runes (Senntisten altar)" }, xph: 100000, intensity: "moderate" },
+    { lvl: 91, name: { pt: "Astral runes (Lunar isle)", en: "Astral runes (Lunar isle)" }, xph: 100000, intensity: "moderate" },
   ],
   // Hunter (21)
   21: [
     { lvl: 63, name: { pt: "Red Chinchompas", en: "Red Chinchompas" }, xph: 140000, intensity: "moderate", setup: { pt: "Carnillean Rising rewards.", en: "Carnillean Rising rewards." } },
-    { lvl: 80, name: { pt: "Polar kebbits / Big game", en: "Big game hunter" }, xph: 200000, intensity: "moderate" },
+    { lvl: 80, name: { pt: "Big-game hunter", en: "Big-game hunter" }, xph: 200000, intensity: "moderate" },
   ],
   // Construction (22)
   22: [
@@ -119,10 +121,13 @@ const TIPS_METHODS = {
   23: [
     { lvl: 67, name: { pt: "Pack Yak pouches", en: "Pack Yak pouches" }, xph: 220000, intensity: "moderate", setup: { pt: "Yak hides + spirit shards.", en: "Yak hides + spirit shards." } },
   ],
-  // Dungeoneering (24)
+  // Dungeoneering (24) — ascending by level so _tipsActiveMethod picks
+  // the highest-applicable entry. Sinkholes is a weekly D&D, not a primary
+  // method — surface it but mark the cadence.
   24: [
-    { lvl: 10, name: { pt: "Sinkholes (D&D)", en: "Sinkholes (D&D)" }, xph: 80000, intensity: "high" },
     { lvl: 1,  name: { pt: "Daemonheim solo small", en: "Daemonheim solo small" }, xph: 50000, intensity: "high" },
+    { lvl: 35, name: { pt: "Sinkholes (D&D semanal)", en: "Sinkholes (weekly D&D)" }, xph: 280000, intensity: "moderate", setup: { pt: "Weekly D&D — burst, não método sustentado.", en: "Weekly D&D — burst, not sustained." } },
+    { lvl: 90, name: { pt: "Elite Dungeons", en: "Elite Dungeons" }, xph: 200000, intensity: "high" },
   ],
   // Divination (25)
   25: [

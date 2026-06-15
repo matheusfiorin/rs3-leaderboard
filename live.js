@@ -44,16 +44,6 @@ function liveSaveBaseline(name, snap) {
     localStorage.setItem(_LIVE_BASELINE_KEY, JSON.stringify(all));
   } catch {}
 }
-function liveClearBaseline(name) {
-  try {
-    const raw = localStorage.getItem(_LIVE_BASELINE_KEY);
-    if (!raw) return;
-    const all = JSON.parse(raw);
-    delete all[name];
-    localStorage.setItem(_LIVE_BASELINE_KEY, JSON.stringify(all));
-  } catch {}
-}
-
 // ---- Sample helpers ----
 function _liveSnapshotFromPlayer(p) {
   const perSkillXp = {};
@@ -122,12 +112,16 @@ function _liveComputeRates() {
 }
 
 // ---- Poll once. Returns parsed player or null. ----
-async function _liveFetchOnce(name) {
+// expectedIdx + ctrl let _liveTick discard the result if user switched players
+// mid-poll. liveFetch does not accept AbortSignal, so we use ctrl as a kill
+// flag the caller checks after await — the in-flight network request still
+// resolves, but its result is dropped before touching shared state.
+async function _liveFetchOnce(name, ctrl) {
   if (_liveInflight) return null;
   _liveInflight = true;
   try {
-    // Skip live API if currently rate-limited by a previous failure
     const profile = await liveFetch(API.profile(name));
+    if (ctrl && ctrl.signal.aborted) return null;
     return parse(profile, null, null);
   } catch (e) {
     return null;
@@ -145,10 +139,16 @@ function _liveScheduleNext() {
 }
 
 async function _liveTick() {
-  const currentIdx = _livePlayerIdx;  // Capture current player index at start
   if (!_liveActive) return;
+  const currentIdx = _livePlayerIdx;
   const name = PLAYERS[_livePlayerIdx];
-  const player = await _liveFetchOnce(name, currentIdx);
+  // Fresh AbortController per tick — player-switch handler aborts it to
+  // discard this tick's result before it pollutes the new player's samples.
+  _liveAbortCtrl = new AbortController();
+  const myCtrl = _liveAbortCtrl;
+  const player = await _liveFetchOnce(name, myCtrl);
+  // Bail if user switched players or navigated away mid-poll.
+  if (!_liveActive || _livePlayerIdx !== currentIdx || myCtrl.signal.aborted) return;
   if (player) {
     const snap = _liveSnapshotFromPlayer(player);
     const last = _liveSamples[_liveSamples.length - 1];
@@ -534,6 +534,8 @@ function liveStop() {
   _liveActive = false;
   if (_liveTimer) clearTimeout(_liveTimer);
   cancelAnimationFrame(_liveLerpRAF);
+  if (_liveAbortCtrl) _liveAbortCtrl.abort();
+  _liveAbortCtrl = null;
 }
 
 // Pause when tab hidden

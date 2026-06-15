@@ -170,8 +170,8 @@ const ROTM_QUESTS = [
   "Dragon Slayer", "Heroes' Quest", "Legends' Quest",
   "Tree Gnome Village", "The Grand Tree", "Waterfall Quest",
   "The Eyes of Glouphrie", "The Path of Glouphrie",
-  "Tears of Guthix", "Enter the Abyss",
-  "Wanted!", "The Hunt for Surok",
+  "Tears of Guthix", "Enter the Abyss (miniquest)",
+  "Wanted!", "The Hunt for Surok (miniquest)",
   "While Guthix Sleeps",
   // ROTM additional
   "Hazeel Cult", "Enakhra's Lament",
@@ -179,6 +179,8 @@ const ROTM_QUESTS = [
   "A Fairy Tale I - Growing Pains", "A Fairy Tale II - Cure a Queen",
   "Pirate's Treasure", "Rum Deal", "Cabin Fever",
   "A Tail of Two Cats", "Fight Arena",
+  "The General's Shadow (miniquest)",
+  "The Curse of Zaros (miniquest)",
   "Ritual of the Mahjarrat",
 ];
 
