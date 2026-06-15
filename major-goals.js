@@ -282,12 +282,15 @@ function mgInjectStyles() {
   .mg-grid { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; }
 }
 
+/* Plain Slab default. Theme variant adds a 3px top edge in the campaign
+   color, nothing else — no gradient fill, no glow layer, no hover lift. */
 .mg-card {
   position: relative;
   display: block;
   width: 100%;
-  min-height: 180px;
+  min-height: 168px;
   border: 1px solid var(--border);
+  border-top-width: 3px;
   border-radius: var(--radius, 10px);
   background: var(--bg-card);
   overflow: hidden;
@@ -296,64 +299,16 @@ function mgInjectStyles() {
   font-family: inherit;
   color: var(--text);
   padding: 0;
-  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+  transition: border-color var(--dur-fast) var(--ease);
 }
-.mg-card:hover {
-  transform: translateY(-4px);
-  border-color: var(--border-glow);
-}
-.mg-card:active { transform: translateY(-1px); }
+.mg-card:hover { border-color: var(--border-lit); }
 
-/* Theme: gold (Senntisten) */
-.mg-card-gold {
-  background: linear-gradient(135deg, rgba(212,168,67,0.10) 0%, var(--bg-card) 60%);
-}
-.mg-card-gold:hover {
-  box-shadow: 0 8px 40px rgba(212,168,67,0.18), 0 0 60px rgba(212,168,67,0.06);
-  border-color: var(--gold-dim);
-}
-.mg-card-gold .mg-card-glow {
-  background: radial-gradient(ellipse at 20% 50%, rgba(212,168,67,0.14) 0%, transparent 70%);
-}
-.mg-card-gold:hover .mg-card-glow {
-  background: radial-gradient(ellipse at 20% 50%, rgba(212,168,67,0.24) 0%, transparent 70%);
-}
+.mg-card-gold   { border-top-color: var(--soul); }
+.mg-card-teal   { border-top-color: var(--prayer); }
+.mg-card-purple { border-top-color: var(--ash); }
 
-/* Theme: teal (Prifddinas) */
-.mg-card-teal {
-  background: linear-gradient(135deg, rgba(34,211,187,0.10) 0%, var(--bg-card) 60%);
-}
-.mg-card-teal:hover {
-  box-shadow: 0 8px 40px rgba(34,211,187,0.18), 0 0 60px rgba(34,211,187,0.06);
-  border-color: var(--teal-dim);
-}
-.mg-card-teal .mg-card-glow {
-  background: radial-gradient(ellipse at 20% 50%, rgba(34,211,187,0.14) 0%, transparent 70%);
-}
-.mg-card-teal:hover .mg-card-glow {
-  background: radial-gradient(ellipse at 20% 50%, rgba(34,211,187,0.24) 0%, transparent 70%);
-}
-.mg-card-purple {
-  background: linear-gradient(135deg, rgba(167,139,250,0.10) 0%, var(--bg-card) 60%);
-}
-.mg-card-purple:hover {
-  box-shadow: 0 8px 40px rgba(167,139,250,0.18), 0 0 60px rgba(167,139,250,0.06);
-  border-color: rgba(167,139,250,0.4);
-}
-.mg-card-purple .mg-card-glow {
-  background: radial-gradient(ellipse at 20% 50%, rgba(167,139,250,0.14) 0%, transparent 70%);
-}
-.mg-card-purple:hover .mg-card-glow {
-  background: radial-gradient(ellipse at 20% 50%, rgba(167,139,250,0.24) 0%, transparent 70%);
-}
-
-/* Inner glow layer */
-.mg-card-glow {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  transition: background .3s ease;
-}
+/* Glow layer kept as transparent no-op so existing markup doesn't break. */
+.mg-card-glow { display: none; }
 
 /* Body layout */
 .mg-card-body {

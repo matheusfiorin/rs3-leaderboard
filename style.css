@@ -116,6 +116,14 @@
 
 /* ---- Reset ---- */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+/* Kill the iOS / Android tap-flash and the Windows default 2-px white focus
+   ring on every interactive element. Per-component :focus-visible rules
+   below restore deliberate keyboard focus styling. */
+* { -webkit-tap-highlight-color: transparent; }
+:focus { outline: none; }
+button, summary, [role="button"] { -webkit-tap-highlight-color: transparent; }
+details > summary { list-style: none; cursor: pointer; }
+details > summary::-webkit-details-marker { display: none; }
 /* Base 16px on mobile/tablet for readable sub-rem labels (0.65rem = 10.4px
    floor). Drops to 15px on desktop where viewport pixels are abundant.
    The media query approach beats clamp() here — no in-between half-pixels. */
@@ -454,7 +462,7 @@ body::before {
   font-size: 1.5rem;
   margin-bottom: 8px;
   color: var(--gold-bright);
-  filter: drop-shadow(0 0 8px rgba(212,168,67,0.4));
+  filter: drop-shadow(0 0 8px rgba(91,163,255,0.40));
   animation: loader-pulse 2.4s ease-in-out infinite;
 }
 .loader-text {
@@ -498,20 +506,21 @@ body::before {
 
 /* ===== SECTION HEADS ===== */
 .section-head {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: var(--sp-3); flex-wrap: wrap;
+  display: flex; align-items: baseline; gap: 12px;
+  margin: var(--sp-6) 0 var(--sp-3);
+  padding-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
 }
 .section-title {
   font-family: var(--font-display);
-  font-size: 0.95rem; font-weight: 700;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
   color: var(--text);
-  letter-spacing: 0.02em;
+  font-style: italic;
 }
-/* Decorative diamond before section titles */
-.section-title::before {
-  content: "\25C6"; color: var(--gold-dim); font-size: 0.75rem;
-  margin-right: 6px; vertical-align: middle; opacity: 0.5;
-}
+/* No leading diamond — the underline is the whole accent. */
 .badge {
   font-family: var(--font-mono); font-size: 0.75rem;
   background: var(--bg-raised); color: var(--text-3);
@@ -534,8 +543,9 @@ body::before {
 .pill:hover { border-color: var(--border-hover); color: var(--text-2); }
 .pill:active { transform: scale(0.95); }
 .pill.active {
-  border-color: var(--gold-dim); color: var(--gold-bright); background: var(--gold-bg);
-  box-shadow: 0 0 8px rgba(212,168,67,0.08);
+  border-color: var(--prayer-dim);
+  color: var(--prayer-bright);
+  background: var(--prayer-bg);
 }
 
 /* ===== CARD (unified component) ===== */
@@ -546,28 +556,35 @@ body::before {
 }
 .card:hover { border-color: var(--border-hover); }
 
-/* ===== PLAYER CARDS ===== */
+/* ===== WAR ROOM PLAYER CARDS =====
+   Pattern B (Lit Edge): plain slab + 3-px left edge in the player's ritual
+   light. No top stripe, no halo, no hover lift — the rhythm is dense and
+   editorial, not glowing. */
 .player-cards { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); margin-bottom: var(--sp-4); }
 .p-card {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: var(--sp-4);
-  position: relative; transition: all 0.25s cubic-bezier(0.22,1,0.36,1);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  border-radius: var(--radius);
+  padding: var(--sp-4) var(--sp-4) var(--sp-3);
+  position: relative;
+  transition: border-color var(--dur-fast) var(--ease);
 }
-.p-card::before {
-  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-  transition: opacity 0.3s;
-}
-.p-card:hover { border-color: var(--border-hover); box-shadow: var(--shadow-md); transform: translateY(-2px); }
-.p-card.p1::before { background: linear-gradient(90deg, var(--gold-dim), var(--gold), var(--gold-dim)); }
-.p-card.p2::before { background: linear-gradient(90deg, var(--teal-dim), var(--teal), var(--teal-dim)); }
+.p-card.p1 { border-left-color: var(--soul); }
+.p-card.p2 { border-left-color: var(--prayer); }
+.p-card:hover { border-color: var(--border-lit); }
+.p-card.p1:hover { border-left-color: var(--soul-bright); }
+.p-card.p2:hover { border-left-color: var(--prayer-bright); }
 .p-card-name {
   font-family: var(--font-display);
-  font-size: 1.1rem; font-weight: 700; margin-bottom: 2px;
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 2px;
+  font-style: italic;
 }
-.p-card.p1 .p-card-name { color: var(--gold-bright); }
-.p-card.p2 .p-card-name { color: var(--teal-bright); }
+.p-card.p1 .p-card-name { color: var(--soul-bright); }
+.p-card.p2 .p-card-name { color: var(--prayer-bright); }
 .p-card-combat-shield {
   font-family: var(--font-mono); font-size: 0.65rem;
   color: var(--text-2); margin-bottom: var(--sp-2);
@@ -870,8 +887,8 @@ body::before {
   flex-shrink: 0; position: relative; cursor: default;
 }
 .revo-slot img { width: 26px; height: 26px; border-radius: 2px; }
-.revo-slot.enhanced { border-color: rgba(212,168,67,0.3); }
-.revo-slot.ultimate { border-color: rgba(167,139,250,0.3); }
+.revo-slot.enhanced { border-color: rgba(91,163,255,0.30); }
+.revo-slot.ultimate { border-color: var(--ash-bg); }
 .revo-slot .revo-tooltip {
   display: none; position: absolute; bottom: calc(100% + 4px); left: 50%;
   transform: translateX(-50%); background: var(--bg-card); border: 1px solid var(--border);
@@ -969,7 +986,7 @@ body::before {
   transition: border-color 0.2s;
   /* iOS fix: font-size <16px triggers auto-zoom on focus */
 }
-.lk-input:focus { outline: none; border-color: var(--gold-dim); box-shadow: 0 0 0 3px rgba(212,168,67,0.06); }
+.lk-input:focus { outline: none; border-color: var(--gold-dim); box-shadow: 0 0 0 3px var(--prayer-bg); }
 .lk-btn {
   background: var(--gold-bg); border: 1px solid var(--gold-dim);
   color: var(--gold); padding: 10px 20px; border-radius: var(--radius-sm);
@@ -1006,7 +1023,7 @@ body::before {
 .lk-spinner::before {
   content: "";
   width: 18px; height: 18px;
-  border: 2px solid rgba(212,168,67,0.18);
+  border: 2px solid rgba(91,163,255,0.10);
   border-top-color: var(--gold);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -1134,9 +1151,9 @@ body::before {
 .dock-btn:hover { color: var(--text-2); background: rgba(255,255,255,0.03); }
 .dock-btn:active { transform: scale(0.92); }
 .dock-btn.active {
-  color: var(--gold-bright); background: rgba(212,168,67,0.08);
-  border-color: rgba(212,168,67,0.12);
-  box-shadow: 0 0 16px rgba(212,168,67,0.1);
+  color: var(--gold-bright); background: var(--prayer-bg);
+  border-color: rgba(91,163,255,0.10);
+  box-shadow: 0 0 16px rgba(91,163,255,0.10);
 }
 /* Active indicator dot */
 .dock-btn.active::after {
@@ -1375,7 +1392,7 @@ html { scrollbar-gutter: stable; }
   padding: 8px 14px; border-radius: var(--radius-sm);
   font-weight: 700; text-decoration: none;
 }
-.skip-link:focus { left: 8px; top: 8px; outline: 2px solid var(--gold-bright); }
+.skip-link:focus { left: 8px; top: 8px; outline: 2px solid var(--prayer-bright); }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
@@ -1385,7 +1402,9 @@ html { scrollbar-gutter: stable; }
 ::-webkit-scrollbar-thumb { background: var(--bg-raised); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--bg-hover); }
 
-/* ---- Focus Indicators (Accessibility - WCAG 2.4.7) ---- */
+/* ---- Focus Indicators (Accessibility - WCAG 2.4.7) ----
+   Thin azure ring on keyboard focus only — :focus-visible never fires for
+   pointer clicks, so this never shows as a "white box" after tap/click. */
 button:focus-visible,
 .btn-refresh:focus-visible,
 .btn-dismiss:focus-visible,
@@ -1396,23 +1415,21 @@ button:focus-visible,
 .back-btn:focus-visible,
 .lk-btn:focus-visible,
 .feed-more:focus-visible,
+summary:focus-visible,
 a:focus-visible {
-  outline: 3px solid var(--gold-bright);
+  outline: 2px solid var(--prayer-bright);
   outline-offset: 2px;
-  border-radius: 4px;
 }
 
-/* Remove default outline for styled elements already handling focus */
 .lk-input:focus-visible {
-  outline: 3px solid var(--gold-bright);
+  outline: 2px solid var(--prayer-bright);
   outline-offset: 1px;
-  border-color: var(--gold-bright);
+  border-color: var(--prayer-bright);
 }
 
-/* Tab/pill active state with aria-pressed for screen readers */
 [aria-pressed="true"]:focus-visible,
 [aria-current="page"]:focus-visible {
-  outline: 3px solid var(--gold-bright);
+  outline: 2px solid var(--prayer-bright);
   outline-offset: 2px;
 }
 
@@ -1479,13 +1496,9 @@ a:focus-visible {
 }
 
 /* ============================================================
-   Player binding — Decxus (p1) → soul, Soclopata (p2) → prayer.
+   Player binding — non-card surfaces. The .p-card binding lives at
+   the canonical .p-card block above (Lit Edge pattern).
    ============================================================ */
-
-.p-card.p1::before { background: linear-gradient(90deg, var(--soul-dim), var(--soul), var(--soul-dim)); }
-.p-card.p1 .p-card-name { color: var(--soul-bright); }
-.p-card.p2::before { background: linear-gradient(90deg, var(--prayer-dim), var(--prayer), var(--prayer-dim)); }
-.p-card.p2 .p-card-name { color: var(--prayer-bright); }
 
 .h2h-row .h2h-bar-wrap.left .h2h-bar,
 .h2h-row .h2h-bar-wrap.winner .h2h-bar { background: var(--soul-dim); }
@@ -1514,7 +1527,7 @@ a:focus-visible {
   content: "";
   position: absolute; top: 50%; height: 1px;
   width: 8%;
-  background: linear-gradient(90deg, transparent, rgba(212,168,67,0.25));
+  background: linear-gradient(90deg, transparent, rgba(91,163,255,0.20));
 }
 .tier-ribbon::before { left: 6%; transform: scaleX(-1); background: linear-gradient(90deg, transparent, var(--border-lit)); }
 .tier-ribbon::after  { right: 6%; background: linear-gradient(90deg, transparent, var(--border-lit)); }
@@ -1596,16 +1609,15 @@ a:focus-visible {
 .tier-sigil[data-tier="end"]    .tier-sigil-arc-fill { stroke: var(--ash); }
 .tier-sigil[data-tier="end"]    .tier-sigil-rune { color: var(--ash); }
 
-/* Tier-specific accents */
-.tier-sigil[data-tier="early"] .tier-sigil-rune { color: var(--teal-bright); text-shadow: 0 1px 0 rgba(0,0,0,0.6), 0 0 14px rgba(34,211,187,0.25); }
-.tier-sigil[data-tier="early"] .tier-sigil-arc-fill { stroke: var(--teal); filter: drop-shadow(0 0 4px rgba(34,211,187,0.45)); }
-.tier-sigil[data-tier="early"] { border-color: rgba(34,211,187,0.20); }
-.tier-sigil[data-tier="early"]:hover { border-color: rgba(34,211,187,0.45); box-shadow: 0 8px 30px -10px rgba(34,211,187,0.35), inset 0 1px 0 rgba(255,255,255,0.04); }
+/* Tier-specific accents — left border in the tier color, no halo. */
+.tier-sigil[data-tier="early"] { border-left: 2px solid var(--prayer); }
+.tier-sigil[data-tier="early"]:hover { border-color: var(--prayer-dim); border-left-color: var(--prayer); }
 
-.tier-sigil[data-tier="end"] .tier-sigil-rune { color: var(--purple-bright); text-shadow: 0 1px 0 rgba(0,0,0,0.6), 0 0 14px rgba(167,139,250,0.30); }
-.tier-sigil[data-tier="end"] .tier-sigil-arc-fill { stroke: var(--purple); filter: drop-shadow(0 0 4px rgba(167,139,250,0.45)); }
-.tier-sigil[data-tier="end"] { border-color: rgba(167,139,250,0.22); }
-.tier-sigil[data-tier="end"]:hover { border-color: rgba(167,139,250,0.5); box-shadow: 0 8px 30px -10px var(--purple-glow), inset 0 1px 0 rgba(255,255,255,0.04); }
+.tier-sigil[data-tier="mid"] { border-left: 2px solid var(--soul); }
+.tier-sigil[data-tier="mid"]:hover { border-color: var(--soul-dim); border-left-color: var(--soul); }
+
+.tier-sigil[data-tier="end"] { border-left: 2px solid var(--ash); }
+.tier-sigil[data-tier="end"]:hover { border-color: var(--ash-dim); border-left-color: var(--ash); }
 
 /* Locked end-tier (low combat) is muted but still clickable */
 .tier-sigil.tier-locked { opacity: 0.55; }
@@ -1620,7 +1632,7 @@ a:focus-visible {
 /* Inter-sigil glyphs */
 .tier-ribbon-glyph {
   width: 22px; height: 16px;
-  color: rgba(212,168,67,0.35);
+  color: rgba(91,163,255,0.30);
   display: inline-flex; align-items: center; justify-content: center;
 }
 .tier-ribbon-glyph svg { width: 100%; height: 100%; }
@@ -1630,7 +1642,7 @@ a:focus-visible {
   max-width: var(--max-w);
   margin: 8px auto 0;
   padding: 0 18px;
-  color: rgba(212,168,67,0.45);
+  color: rgba(91,163,255,0.40);
   text-align: center;
 }
 .ornament-rule svg {
@@ -1715,22 +1727,22 @@ a:focus-visible {
 .dock {
   /* Keep current sizing/positioning; only refine the surface treatment */
   background: linear-gradient(180deg, rgba(20,15,26,0.96), rgba(8,6,12,0.96));
-  border: 1px solid rgba(212,168,67,0.16);
+  border: 1px solid rgba(91,163,255,0.10);
   box-shadow:
     0 10px 40px rgba(0,0,0,0.65),
     inset 0 1px 0 rgba(255,255,255,0.035),
-    inset 0 -1px 0 rgba(212,168,67,0.06);
+    inset 0 -1px 0 var(--prayer-bg);
 }
 .dock::after {
   content: "";
   position: absolute; bottom: -1px; left: 30%; right: 30%; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(212,168,67,0.18), transparent);
+  background: linear-gradient(90deg, transparent, rgba(91,163,255,0.10), transparent);
 }
 .dock-btn { border-radius: 11px; }
 .dock-btn.active {
-  background: radial-gradient(ellipse at 50% 100%, rgba(212,168,67,0.18), rgba(212,168,67,0.05) 70%);
-  border-color: rgba(212,168,67,0.28);
-  box-shadow: 0 0 20px rgba(212,168,67,0.12), inset 0 0 0 1px rgba(212,168,67,0.04);
+  background: radial-gradient(ellipse at 50% 100%, rgba(91,163,255,0.10), var(--prayer-bg) 70%);
+  border-color: rgba(91,163,255,0.20);
+  box-shadow: 0 0 20px rgba(91,163,255,0.10), inset 0 0 0 1px var(--prayer-bg);
 }
 .dock-btn.active::after {
   width: 18px; height: 2px; border-radius: 2px;
@@ -1745,13 +1757,13 @@ a:focus-visible {
 .notif-panel {
   background:
     linear-gradient(180deg, rgba(30,26,42,0.97), rgba(18,16,28,0.97)),
-    radial-gradient(ellipse at top, rgba(212,168,67,0.06), transparent 60%);
-  border: 1px solid rgba(212,168,67,0.22);
+    radial-gradient(ellipse at top, var(--prayer-bg), transparent 60%);
+  border: 1px solid rgba(91,163,255,0.20);
   border-radius: 14px;
   box-shadow:
     0 18px 48px rgba(0,0,0,0.6),
     inset 0 1px 0 rgba(255,255,255,0.04),
-    inset 0 -1px 0 rgba(212,168,67,0.08);
+    inset 0 -1px 0 var(--prayer-bg);
   /* Do NOT set `position` here — upstream rule pins it `absolute` so the
      panel hangs below the bell. Overriding to `relative` collapses it into
      the header flex flow (visible as a tiny box "inside" the navbar). */
@@ -1763,8 +1775,8 @@ a:focus-visible {
   opacity: 0.5;
 }
 .notif-head {
-  background: linear-gradient(180deg, rgba(212,168,67,0.05), transparent);
-  border-bottom: 1px solid rgba(212,168,67,0.15);
+  background: linear-gradient(180deg, var(--prayer-bg), transparent);
+  border-bottom: 1px solid rgba(91,163,255,0.10);
 }
 .notif-h-title {
   font-family: var(--font-display);
@@ -1793,28 +1805,28 @@ a:focus-visible {
 
 /* Notif bell — recast as a chiseled bracket */
 .notif-bell {
-  background: linear-gradient(180deg, rgba(212,168,67,0.04), rgba(0,0,0,0));
-  border: 1px solid rgba(212,168,67,0.20);
+  background: linear-gradient(180deg, var(--prayer-bg), rgba(0,0,0,0));
+  border: 1px solid rgba(91,163,255,0.20);
   border-radius: 10px;
   transition: all .25s cubic-bezier(.22,1,.36,1);
 }
 .notif-bell:hover {
-  border-color: rgba(212,168,67,0.55);
+  border-color: rgba(91,163,255,0.50);
   box-shadow: 0 0 18px -4px var(--gold-glow);
   transform: translateY(-1px);
 }
 .notif-bell[aria-expanded="true"] {
-  background: linear-gradient(180deg, rgba(212,168,67,0.12), rgba(212,168,67,0.04));
+  background: linear-gradient(180deg, rgba(91,163,255,0.10), var(--prayer-bg));
   border-color: var(--gold);
   box-shadow: 0 0 22px -6px var(--gold-glow), inset 0 1px 0 rgba(255,255,255,0.05);
 }
 .notif-bell-icon {
-  filter: drop-shadow(0 0 4px rgba(240,199,94,0.4));
+  filter: drop-shadow(0 0 4px var(--prayer-bg));
 }
 
 /* Notif row icon gets a slight gold halo on unseen entries */
 .notif-row.notif-unseen .notif-icon {
-  filter: drop-shadow(0 0 6px rgba(240,199,94,0.45));
+  filter: drop-shadow(0 0 6px var(--prayer-bg));
 }
 
 /* ============================================================
@@ -1826,7 +1838,7 @@ a:focus-visible {
   position: relative;
   background:
     linear-gradient(180deg, rgba(255,255,255,0.025), transparent),
-    radial-gradient(ellipse at 50% -10%, rgba(212,168,67,0.06), transparent 60%);
+    radial-gradient(ellipse at 50% -10%, var(--prayer-bg), transparent 60%);
 }
 .gl-tier-head .gl-tier-label {
   font-family: var(--font-display) !important;
