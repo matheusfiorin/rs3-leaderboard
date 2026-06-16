@@ -27,3 +27,11 @@ playwright-report/
 # Audit reports (generated)
 .audit-*/
 .review-*/
+
+# v2 Next.js sources — keep source committed, ignore intermediates
+v2-src/.next/
+v2-src/.v2-dist/
+v2-src/node_modules/
+v2-src/public/data/
+v2-src/v2-src/
+# (v2/ at repo root IS committed — it's the deployed build artefact.)

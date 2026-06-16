@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+/* Sexta Era v2 — cold temple stone + Soul Split crimson + Prayer azure +
+   Ash violet milestone. AA contrast verified against --color-bg. */
+@theme {
+  --color-bg:         #06080F;
+  --color-bg-surface: #0C1019;
+  --color-bg-raised:  #141826;
+  --color-bg-hover:   #1B1F2E;
+
+  --color-line:        rgba(180,196,224,0.07);
+  --color-line-strong: rgba(180,196,224,0.18);
+
+  --color-soul:        #E63950;
+  --color-soul-bright: #FF6478;
+  --color-soul-dim:    #A8232F;
+
+  --color-prayer:        #5BA3FF;
+  --color-prayer-bright: #8AC0FF;
+  --color-prayer-dim:    #2E6FB8;
+
+  --color-ash:        #B388F5;
+  --color-ash-bright: #D4B8FF;
+  --color-ash-dim:    #7C5ED1;
+
+  --color-ink:       #ECEEF5;
+  --color-ink-2:     #9AA3B8;
+  --color-ink-3:     #6B7388;
+  --color-ink-faint: #454B5C;
+
+  --color-success: #3FD693;
+  --color-warn:    #F0A030;
+  --color-danger:  #FF5470;
+
+  --font-display: var(--font-display-family);
+  --font-sans:    var(--font-sans-family);
+  --font-mono:    var(--font-mono-family);
+
+  --ease-snappy: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    background: var(--color-bg);
+    color: var(--color-ink);
+  }
+  body {
+    font-family: var(--font-sans), ui-sans-serif, system-ui;
+    -webkit-font-smoothing: antialiased;
+  }
+  * { -webkit-tap-highlight-color: transparent; }
+  :focus { outline: none; }
+  :focus-visible {
+    outline: 2px solid var(--color-prayer-bright);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  details > summary { list-style: none; cursor: pointer; }
+  details > summary::-webkit-details-marker { display: none; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-bg-raised);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-bg-hover); }
+}
+
+body::before {
+  content: "";
+  position: fixed; inset: 0; z-index: -2; pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 50% at 6% -10%, rgba(230,57,80,0.045) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 45% at 94% 110%, rgba(91,163,255,0.05) 0%, transparent 55%);
+}
+
+.tabular { font-variant-numeric: tabular-nums; }
