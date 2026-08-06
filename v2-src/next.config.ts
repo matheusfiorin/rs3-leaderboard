@@ -1,15 +1,17 @@
 import type { NextConfig } from "next";
 
-// Static export under sub-path /rs3-leaderboard/v2 of the legacy GH Pages
-// site. distDir keeps the build inside the project (Turbopack refuses to
-// write outside projectPath); a postbuild script moves the artefact to
-// repo-root /v2/ so it ships alongside the legacy v1.
+// Static export served by GitHub Pages from `master:/docs`.
+//
+// The app owns the whole site now (v1 retired 2026-08-06), so basePath is the
+// bare repo name rather than a /v2 sub-path. distDir keeps the build inside
+// the project because Turbopack refuses to write above projectPath;
+// scripts/publish.mjs moves the artefact to repo-root /docs afterwards.
 const nextConfig: NextConfig = {
   output: "export",
-  basePath: "/rs3-leaderboard/v2",
-  assetPrefix: "/rs3-leaderboard/v2",
+  basePath: "/rs3-leaderboard",
+  assetPrefix: "/rs3-leaderboard",
   trailingSlash: true,
-  distDir: ".v2-dist",
+  distDir: ".dist",
   images: { unoptimized: true },
   reactStrictMode: true,
   turbopack: { root: process.cwd() },

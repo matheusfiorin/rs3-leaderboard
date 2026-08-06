@@ -91,7 +91,7 @@ function MethodCard({ method, players }: { method: Method; players: Player[] }) 
       <div className="mt-3 pt-3 border-t border-line space-y-1">
         {players.map((p) => {
           const accent = p.slug === "decxus" ? "soul" : "prayer";
-          const done = questDoneIndex(p);
+          const done = questDoneIndex(p.questList);
           const skillMet = Object.entries(method.reqs).every(([id, lvl]) => (p.skills[Number(id)]?.level ?? 1) >= lvl);
           const questMet = !method.quest || done.has(method.quest);
           const ok = skillMet && questMet;

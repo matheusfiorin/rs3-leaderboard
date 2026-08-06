@@ -97,11 +97,26 @@ jobs:
 
           echo "Done fetching all data"
 
+      # The site is a static Next export in docs/. Its pages re-read
+      # data/*.json on the client, so mirroring the refreshed JSON into the
+      # published tree keeps the live site current WITHOUT a rebuild on every
+      # 30-minute tick. Skipping this is what left the old v2 build showing
+      # numbers 52 days stale.
+      - name: Mirror data into the published site
+        run: |
+          if [ -d docs ]; then
+            mkdir -p docs/data
+            cp data/*.json docs/data/
+            echo "Mirrored $(ls data/*.json | wc -l) files into docs/data/"
+          else
+            echo "docs/ not present — skipping mirror"
+          fi
+
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/
+          git add data/ docs/data/ 2>/dev/null || git add data/
           if git diff --staged --quiet; then
             echo "No data changes"
           else

@@ -9,7 +9,7 @@ import { clsx } from "clsx";
 type PlayerLite = {
   slug: string;
   name: string;
-  accent: "soul" | "prayer";
+  accent: "soul" | "prayer" | "ash";
   totalXp: number;
 };
 

@@ -162,7 +162,7 @@ function Hero({
 }
 
 function PlayerCard({ player }: { player: Player }) {
-  const accent: "soul" | "prayer" = PLAYERS.find((p) => p.slug === player.slug)?.accent ?? "prayer";
+  const accent = player.accent;
   const lastActivity = player.activities[0];
   const lastDate = lastActivity ? parseActivityDate(lastActivity.date) : null;
   return (

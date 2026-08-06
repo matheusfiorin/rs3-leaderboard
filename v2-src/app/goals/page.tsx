@@ -127,9 +127,9 @@ function GoalCard({ goal, players }: { goal: Goal; players: Player[] }) {
       </p>
       <div className="space-y-3">
         {players.map((p) => {
-          const accent: "soul" | "prayer" = PLAYERS.find((x) => x.slug === p.slug)?.accent ?? "prayer";
+          const accent = p.accent;
           const skillsDone = goal.skills.filter((s) => (p.skills[s.id]?.level ?? 1) >= s.required).length;
-          const done = questDoneIndex(p);
+          const done = questDoneIndex(p.questList);
           const questsDone = goal.quests.filter((q) => done.has(q)).length;
           const capstoneDone = goal.capstone ? done.has(goal.capstone) : false;
           const total = goal.skills.length + goal.quests.length;

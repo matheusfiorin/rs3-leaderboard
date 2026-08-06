@@ -13,7 +13,7 @@ export default async function LivePage() {
         players={players.map((p) => ({
           slug: p.slug,
           name: p.name,
-          accent: PLAYERS.find((x) => x.slug === p.slug)?.accent ?? "prayer",
+          accent: p.accent,
           totalXp: p.totalXp,
         }))}
       />
