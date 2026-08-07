@@ -5,11 +5,13 @@
   "scripts": {
     "predev": "node ./scripts/sync-data.mjs",
     "dev": "next dev",
-    "prebuild": "node ./scripts/sync-data.mjs",
+    "prebuild": "node ./scripts/sync-data.mjs && node ./scripts/validate-content.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "validate": "node ./scripts/sync-data.mjs && node ./scripts/validate-content.mjs",
+    "check": "npm run typecheck && npm run lint && npm run validate",
     "postbuild": "node ./scripts/publish.mjs"
   },
   "dependencies": {

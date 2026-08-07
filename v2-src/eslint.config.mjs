@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Our export target. `distDir` puts minified bundles here; linting them
+    // buries the real findings under thousands of warnings from generated code.
+    ".dist/**",
+    ".v2-dist/**",
+    "public/data/**",
   ]),
 ]);
 

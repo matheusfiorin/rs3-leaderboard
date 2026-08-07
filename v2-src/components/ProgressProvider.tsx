@@ -7,25 +7,27 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
+  useSyncExternalStore,
 } from "react";
 import {
   emptySnapshot,
   generateSyncCode,
-  getSyncCode,
-  loadLocal,
+  getServerState,
+  getState,
   merge,
+  patchState,
   pullRemote,
   pushRemote,
   remoteConfigured,
-  saveLocal,
-  setSyncCode as persistCode,
+  replaceSnapshot,
+  setCode,
+  subscribe,
   toPlain,
+  writeEntries,
   type ProgressSnapshot,
   type ProgressValue,
+  type SyncState,
 } from "@/lib/progress";
-
-export type SyncState = "local" | "syncing" | "synced" | "error";
 
 interface ProgressApi {
   /** Flat key -> value map for the requirement evaluator. */
@@ -35,7 +37,6 @@ interface ProgressApi {
   count(key: string): number;
   set(key: string, value: ProgressValue): void;
   toggle(key: string): void;
-  /** Bulk write — one stamp, one push. */
   setMany(patch: Record<string, ProgressValue>): void;
   reset(): void;
 
@@ -47,7 +48,6 @@ interface ProgressApi {
   createSyncCode(): Promise<string | null>;
   unlink(): void;
   syncNow(): Promise<void>;
-  /** Export/import for the no-backend path. */
   exportSnapshot(): string;
   importSnapshot(json: string): boolean;
 }
@@ -57,137 +57,100 @@ const Ctx = createContext<ProgressApi | null>(null);
 const PUSH_DEBOUNCE_MS = 1200;
 
 export function ProgressProvider({ children }: { children: React.ReactNode }) {
-  const [snap, setSnap] = useState<ProgressSnapshot>(emptySnapshot);
-  const [syncCode, setCode] = useState<string | null>(null);
-  const [syncState, setSyncState] = useState<SyncState>("local");
-  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
-
+  // localStorage is an external system; subscribing to it keeps the server
+  // render (always the empty snapshot) and the client render consistent
+  // without mirroring anything into component state.
+  const state = useSyncExternalStore(subscribe, getState, getServerState);
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const snapRef = useRef(snap);
-  snapRef.current = snap;
-  const codeRef = useRef(syncCode);
-  codeRef.current = syncCode;
-
-  // Hydrate from localStorage after mount. Doing this in useState's initialiser
-  // would desync server and client HTML and trip a hydration mismatch.
-  useEffect(() => {
-    const local = loadLocal();
-    setSnap(local);
-    const code = getSyncCode();
-    if (code) setCode(code);
-  }, []);
 
   const schedulePush = useCallback(() => {
-    if (!remoteConfigured() || !codeRef.current) return;
+    if (!remoteConfigured()) return;
     if (pushTimer.current) clearTimeout(pushTimer.current);
     pushTimer.current = setTimeout(async () => {
-      const code = codeRef.current;
+      const { code, snapshot } = getState();
       if (!code) return;
-      setSyncState("syncing");
-      const ok = await pushRemote(code, snapRef.current);
-      setSyncState(ok ? "synced" : "error");
-      if (ok) setLastSyncedAt(Date.now());
+      patchState({ sync: "syncing" });
+      const ok = await pushRemote(code, snapshot);
+      patchState({
+        sync: ok ? "synced" : "error",
+        ...(ok ? { lastSyncedAt: Date.now() } : {}),
+      });
     }, PUSH_DEBOUNCE_MS);
   }, []);
 
-  const commit = useCallback(
-    (next: ProgressSnapshot) => {
-      setSnap(next);
-      saveLocal(next);
+  const setMany = useCallback(
+    (patch: Record<string, ProgressValue>) => {
+      writeEntries(patch);
       schedulePush();
     },
     [schedulePush],
   );
 
-  const setMany = useCallback(
-    (patch: Record<string, ProgressValue>) => {
-      const t = Date.now();
-      const entries = { ...snapRef.current.entries };
-      for (const [k, v] of Object.entries(patch)) entries[k] = { v, t };
-      commit({ version: snapRef.current.version, entries });
-    },
-    [commit],
-  );
+  const pullAndMerge = useCallback(async (code: string): Promise<boolean> => {
+    patchState({ sync: "syncing" });
+    const remote = await pullRemote(code);
 
-  const set = useCallback(
-    (key: string, value: ProgressValue) => setMany({ [key]: value }),
-    [setMany],
-  );
+    // No row yet is the normal first-link state, not a failure — seed it.
+    const local = getState().snapshot;
+    const next = remote ? merge(local, remote) : local;
+    if (remote) replaceSnapshot(next);
 
-  const toggle = useCallback(
-    (key: string) => {
-      const cur = snapRef.current.entries[key]?.v;
-      setMany({ [key]: !(cur === true) });
-    },
-    [setMany],
-  );
+    const ok = await pushRemote(code, next);
+    patchState({
+      sync: ok ? "synced" : "error",
+      ...(ok ? { lastSyncedAt: Date.now() } : {}),
+    });
+    return ok || Boolean(remote);
+  }, []);
 
-  const pullAndMerge = useCallback(
-    async (code: string) => {
-      setSyncState("syncing");
-      const remote = await pullRemote(code);
-      if (!remote) {
-        // No row yet is a normal first-link state, not a failure — seed it.
-        const ok = await pushRemote(code, snapRef.current);
-        setSyncState(ok ? "synced" : "error");
-        if (ok) setLastSyncedAt(Date.now());
-        return ok;
-      }
-      const merged = merge(snapRef.current, remote);
-      setSnap(merged);
-      saveLocal(merged);
-      const ok = await pushRemote(code, merged);
-      setSyncState(ok ? "synced" : "error");
-      if (ok) setLastSyncedAt(Date.now());
-      return true;
-    },
-    [],
-  );
-
-  // Initial pull once a code is known, then re-pull whenever the tab regains
-  // focus so a device left open picks up edits made elsewhere.
+  // Pull once a code is known, then again whenever the tab regains focus so a
+  // device left open picks up edits made elsewhere. Every state write happens
+  // inside an async callback, never synchronously in the effect body.
   useEffect(() => {
-    if (!syncCode || !remoteConfigured()) return;
-    void pullAndMerge(syncCode);
-    const onVisible = () => {
-      if (!document.hidden) void pullAndMerge(syncCode);
-    };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [syncCode, pullAndMerge]);
+    const code = state.code;
+    if (!code || !remoteConfigured()) return;
 
-  // Same-device, multi-tab coherence.
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key !== "sexta-era:progress") return;
-      const local = loadLocal();
-      setSnap((cur) => merge(cur, local));
+    let cancelled = false;
+    const run = () => {
+      if (!cancelled && !document.hidden) void pullAndMerge(code);
     };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    run();
+    document.addEventListener("visibilitychange", run);
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", run);
+    };
+  }, [state.code, pullAndMerge]);
+
+  useEffect(() => {
+    return () => {
+      if (pushTimer.current) clearTimeout(pushTimer.current);
+    };
   }, []);
 
   const api = useMemo<ProgressApi>(() => {
-    const values = toPlain(snap);
+    const values = toPlain(state.snapshot);
     return {
       values,
       get: (k) => values[k],
       isDone: (k) => values[k] === true,
       count: (k) => (typeof values[k] === "number" ? (values[k] as number) : 0),
-      set,
-      toggle,
+      set: (key, value) => setMany({ [key]: value }),
+      toggle: (key) => setMany({ [key]: values[key] !== true }),
       setMany,
-      reset: () => commit(emptySnapshot()),
+      reset: () => {
+        replaceSnapshot(emptySnapshot());
+        schedulePush();
+      },
 
-      syncState,
-      syncCode,
+      syncState: state.sync,
+      syncCode: state.code,
       remoteAvailable: remoteConfigured(),
-      lastSyncedAt,
+      lastSyncedAt: state.lastSyncedAt,
 
       async linkDevice(code: string) {
         const clean = code.trim().toLowerCase();
         if (!clean) return false;
-        persistCode(clean);
         setCode(clean);
         return pullAndMerge(clean);
       },
@@ -195,36 +158,33 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
       async createSyncCode() {
         if (!remoteConfigured()) return null;
         const code = generateSyncCode();
-        persistCode(code);
         setCode(code);
         await pullAndMerge(code);
         return code;
       },
 
-      unlink() {
-        persistCode(null);
-        setCode(null);
-        setSyncState("local");
-      },
+      unlink: () => setCode(null),
 
       async syncNow() {
-        if (codeRef.current) await pullAndMerge(codeRef.current);
+        const code = getState().code;
+        if (code) await pullAndMerge(code);
       },
 
-      exportSnapshot: () => JSON.stringify(snapRef.current, null, 2),
+      exportSnapshot: () => JSON.stringify(getState().snapshot, null, 2),
 
       importSnapshot(json: string) {
         try {
           const parsed = JSON.parse(json) as ProgressSnapshot;
           if (!parsed || typeof parsed !== "object" || !parsed.entries) return false;
-          commit(merge(snapRef.current, parsed));
+          replaceSnapshot(merge(getState().snapshot, parsed));
+          schedulePush();
           return true;
         } catch {
           return false;
         }
       },
     };
-  }, [snap, set, toggle, setMany, commit, syncState, syncCode, lastSyncedAt, pullAndMerge]);
+  }, [state, setMany, schedulePush, pullAndMerge]);
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }

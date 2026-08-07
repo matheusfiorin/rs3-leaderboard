@@ -155,27 +155,29 @@ export function useQuests(slugs: string[]): {
   loading: boolean;
 } {
   const key = slugs.join(",");
-  const [quests, setQuests] = useState<Record<string, QuestEntry[]>>(() => {
-    const seed: Record<string, QuestEntry[]> = {};
-    for (const s of slugs) {
+  // The module-level cache is the source of truth; `version` exists only to
+  // re-derive after an async fill. Deriving instead of mirroring means the
+  // already-cached case needs no state write at all.
+  const [version, setVersion] = useState(0);
+
+  const { quests, loading } = useMemo(() => {
+    const wanted = key.split(",").filter(Boolean);
+    const out: Record<string, QuestEntry[]> = {};
+    let pending = false;
+    for (const s of wanted) {
       const hit = questCache.get(s);
-      if (hit) seed[s] = hit;
+      if (hit) out[s] = hit;
+      else pending = true;
     }
-    return seed;
-  });
-  const [loading, setLoading] = useState(false);
+    return { quests: out, loading: pending };
+    // `version` is a deliberate cache-invalidation dependency.
+  }, [key, version]);
 
   useEffect(() => {
     let cancelled = false;
-    const wanted = key.split(",").filter(Boolean);
-    const missing = wanted.filter((s) => !questCache.has(s));
-    if (!missing.length) {
-      const all: Record<string, QuestEntry[]> = {};
-      for (const s of wanted) all[s] = questCache.get(s) ?? [];
-      setQuests(all);
-      return;
-    }
-    setLoading(true);
+    const missing = key.split(",").filter(Boolean).filter((s) => !questCache.has(s));
+    if (!missing.length) return;
+
     void (async () => {
       await Promise.all(
         missing.map(async (slug) => {
@@ -183,12 +185,9 @@ export function useQuests(slugs: string[]): {
           questCache.set(slug, j?.quests ?? []);
         }),
       );
-      if (cancelled) return;
-      const all: Record<string, QuestEntry[]> = {};
-      for (const s of wanted) all[s] = questCache.get(s) ?? [];
-      setQuests(all);
-      setLoading(false);
+      if (!cancelled) setVersion((v) => v + 1);
     })();
+
     return () => {
       cancelled = true;
     };

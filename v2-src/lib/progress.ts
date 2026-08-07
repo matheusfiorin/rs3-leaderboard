@@ -185,6 +185,107 @@ export async function pushRemote(code: string, snap: ProgressSnapshot): Promise<
   }
 }
 
+// ---------------------------------------------------------------------------
+// External store
+//
+// localStorage is an external system, so React subscribes to it via
+// useSyncExternalStore rather than mirroring it into component state. That
+// keeps the server snapshot (always empty) distinct from the client one, so
+// hydration matches without a "did we mount yet" flag, and it means every tab
+// and every provider instance reads one source of truth.
+// ---------------------------------------------------------------------------
+
+export type SyncState = "local" | "syncing" | "synced" | "error";
+
+export interface StoreState {
+  snapshot: ProgressSnapshot;
+  code: string | null;
+  sync: SyncState;
+  lastSyncedAt: number | null;
+}
+
+/** Stable identity — useSyncExternalStore requires getServerSnapshot to be
+ *  referentially stable or it re-renders forever. */
+const SERVER_STATE: StoreState = {
+  snapshot: emptySnapshot(),
+  code: null,
+  sync: "local",
+  lastSyncedAt: null,
+};
+
+let state: StoreState | null = null;
+const listeners = new Set<() => void>();
+let bridged = false;
+
+function ensure(): StoreState {
+  if (state === null) {
+    state = {
+      snapshot: loadLocal(),
+      code: getSyncCode(),
+      sync: "local",
+      lastSyncedAt: null,
+    };
+  }
+  return state;
+}
+
+function emit(): void {
+  for (const l of listeners) l();
+}
+
+/** Replace state. Always produces a new object so snapshot identity changes. */
+export function patchState(patch: Partial<StoreState>): void {
+  state = { ...ensure(), ...patch };
+  emit();
+}
+
+export function getState(): StoreState {
+  return ensure();
+}
+
+export function getServerState(): StoreState {
+  return SERVER_STATE;
+}
+
+export function subscribe(fn: () => void): () => void {
+  listeners.add(fn);
+
+  // Bridge the cross-tab storage event exactly once, not per subscriber.
+  if (!bridged && typeof window !== "undefined") {
+    bridged = true;
+    window.addEventListener("storage", (e) => {
+      if (e.key !== LOCAL_KEY) return;
+      patchState({ snapshot: merge(ensure().snapshot, loadLocal()) });
+    });
+  }
+
+  return () => {
+    listeners.delete(fn);
+  };
+}
+
+/** Write entries with a single timestamp, persist, and notify. */
+export function writeEntries(patch: Record<string, ProgressValue>): ProgressSnapshot {
+  const t = Date.now();
+  const cur = ensure().snapshot;
+  const entries = { ...cur.entries };
+  for (const [k, v] of Object.entries(patch)) entries[k] = { v, t };
+  const next: ProgressSnapshot = { version: PROGRESS_VERSION, entries };
+  saveLocal(next);
+  patchState({ snapshot: next });
+  return next;
+}
+
+export function replaceSnapshot(next: ProgressSnapshot): void {
+  saveLocal(next);
+  patchState({ snapshot: next });
+}
+
+export function setCode(code: string | null): void {
+  setSyncCode(code);
+  patchState({ code, sync: code ? "syncing" : "local" });
+}
+
 /** Crypto-random, human-transcribable sync code. */
 export function generateSyncCode(): string {
   const alphabet = "abcdefghjkmnpqrstuvwxyz23456789"; // no look-alikes
