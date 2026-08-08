@@ -30,10 +30,13 @@
      (cards, #0C1019). The old #6B7388 measured 4.02:1 there and 3.73:1 on
      raised chips — failing everywhere it was used. */
   --color-ink-3:     #858EA4;
-  /* ink-faint is for decoration and de-emphasised numerals. The old #454B5C
-     measured 2.19:1, under even the 3:1 non-text floor. Raised to clear 3:1;
-     anything carrying words should use ink-3 instead. */
-  --color-ink-faint: #6A7288;
+  /* ink-faint is the most de-emphasised tier. It is *supposed* to be
+     decoration only, but reviews kept finding real sentences rendered in it
+     across different pages, so the token itself now clears AA 4.5:1 on the
+     worst surface it lands on (#1B1F2E, 4.59:1) rather than relying on every
+     author remembering the rule. Measured: #454B5C was 2.19:1 and #6A7288 was
+     3.41:1 — both illegible for text. */
+  --color-ink-faint: #7F8899;
 
   --color-success: #3FD693;
   --color-warn:    #F0A030;

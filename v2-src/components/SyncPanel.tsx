@@ -9,6 +9,7 @@ import {
   Loader2,
   RefreshCw,
   Smartphone,
+  Trash2,
   Unlink,
   Upload,
 } from "lucide-react";
@@ -33,6 +34,7 @@ export function SyncPanel() {
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const [importText, setImportText] = useState("");
+  const [confirmingReset, setConfirmingReset] = useState(false);
   const [notice, setNotice] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
 
   const trackedCount = Object.values(progress.values).filter(
@@ -95,6 +97,7 @@ export function SyncPanel() {
   return (
     <div className="space-y-6">
       <SectionHead
+        as="h1"
         title="Sync"
         hint="Manual progress across devices"
         right={<StatusPill />}
@@ -278,6 +281,48 @@ export function SyncPanel() {
             <Upload size={13} />
             Import and merge
           </button>
+        </div>
+
+        {/* Nothing else in the app can undo a tick, so without this the only way
+            out of a wrong entry is clearing site data. Two-step, because it
+            throws away everything the API cannot re-derive. */}
+        <div className="pt-3 border-t border-line">
+          {confirmingReset ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-danger">
+                Erase all {trackedCount} tracked items on this device?
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  progress.reset();
+                  setConfirmingReset(false);
+                  setNotice({ tone: "ok", text: "Progress cleared." });
+                }}
+                className="inline-flex items-center gap-2 h-11 sm:h-9 px-3 rounded-md border border-danger/40 text-xs text-danger hover:bg-danger/10 transition-colors"
+              >
+                <Trash2 size={13} />
+                Yes, clear it
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingReset(false)}
+                className="inline-flex items-center h-11 sm:h-9 px-3 rounded-md text-xs text-ink-3 hover:text-ink-2 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setConfirmingReset(true)}
+              disabled={trackedCount === 0}
+              className="inline-flex items-center gap-2 h-11 sm:h-9 px-3 rounded-md text-xs text-ink-3 hover:text-danger transition-colors disabled:opacity-40"
+            >
+              <Trash2 size={13} />
+              Clear all progress
+            </button>
+          )}
         </div>
       </Card>
     </div>

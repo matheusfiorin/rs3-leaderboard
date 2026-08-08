@@ -302,6 +302,11 @@ export function writeEntries(patch: Record<string, ProgressValue>): ProgressSnap
   const t = Date.now();
   const cur = ensure().snapshot;
   const entries = { ...cur.entries };
+  // A cleared checkbox is stored as `false`, not deleted. It looks like dead
+  // weight, but it is a tombstone: merge() is a per-key newest-wins union, so
+  // a key absent locally loses to a peer's older copy and the cleared item
+  // would resurrect on the next sync. The entry is what records "I un-ticked
+  // this, and when".
   for (const [k, v] of Object.entries(patch)) entries[k] = { v, t };
   const next: ProgressSnapshot = { version: PROGRESS_VERSION, entries };
   saveLocal(next);

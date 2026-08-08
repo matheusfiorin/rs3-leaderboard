@@ -479,7 +479,10 @@ export function CountInput({
 
   return (
     <div className="flex items-center gap-3 py-1.5">
-      <span className="text-sm text-ink-2 min-w-0 flex-1 truncate">{label}</span>
+      {/* No truncation: the label ends in the word that gives the number its
+          meaning ("… kills"), and clipping it produced rows reading
+          "Corporeal Beast …" with a bare number beside them. */}
+      <span className="text-sm text-ink-2 min-w-0 flex-1 leading-tight">{label}</span>
       <div className="flex items-center gap-1 shrink-0">
         <button
           type="button"
