@@ -30,7 +30,7 @@ export function fmtRelative(d: Date | null, now = new Date()): string {
   const ms = now.getTime() - d.getTime();
   if (ms < 0) return "now";
   const s = Math.floor(ms / 1000);
-  if (s < 60) return `${s}s ago`;
+  if (s < 60) return "just now";
   const m = Math.floor(s / 60);
   if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);

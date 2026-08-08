@@ -8,6 +8,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 import { dataUrl } from "@/lib/paths";
 import { MEMORIAL, PLAYERS, mergeSummary } from "@/lib/player";
@@ -34,6 +35,48 @@ import type {
 const REVALIDATE_MS = 5 * 60 * 1000;
 
 const SELECTED_KEY = "sexta-era:selected-player";
+
+// Selected player is persisted in localStorage, which is an external system —
+// so React subscribes to it rather than mirroring it into component state.
+// The server snapshot is always the first roster entry, keeping SSR and the
+// first client render identical.
+const selectionListeners = new Set<() => void>();
+let selectionCache: string | null = null;
+
+function getSelectedSnapshot(): string {
+  if (selectionCache === null) {
+    let saved: string | null = null;
+    try {
+      saved = localStorage.getItem(SELECTED_KEY);
+    } catch {
+      /* private mode */
+    }
+    selectionCache =
+      saved && PLAYERS.some((p) => p.slug === saved) ? saved : PLAYERS[0]?.slug ?? "";
+  }
+  return selectionCache;
+}
+
+function getSelectedServerSnapshot(): string {
+  return PLAYERS[0]?.slug ?? "";
+}
+
+function subscribeSelected(fn: () => void): () => void {
+  selectionListeners.add(fn);
+  return () => {
+    selectionListeners.delete(fn);
+  };
+}
+
+function writeSelected(slug: string): void {
+  selectionCache = slug;
+  try {
+    localStorage.setItem(SELECTED_KEY, slug);
+  } catch {
+    /* ignore */
+  }
+  for (const l of selectionListeners) l();
+}
 
 interface PlayerDataApi {
   players: PlayerSummary[];
@@ -114,6 +157,10 @@ export function PlayerDataProvider({
       );
       if (nextMeta) setMeta(nextMeta);
       setRefreshedAt(new Date());
+      // The fetches usually resolve in well under 100ms from cache, so the
+      // spinner would flash for a frame and the button looked inert. Hold the
+      // spinning state long enough to read as "something happened".
+      await new Promise((r) => setTimeout(r, 450));
     } finally {
       inflight.current = false;
       setRefreshing(false);
@@ -135,27 +182,12 @@ export function PlayerDataProvider({
     };
   }, [refresh]);
 
-  const [selectedSlug, setSelectedSlug] = useState(PLAYERS[0]?.slug ?? "");
-
-  // Restore the last choice after mount. Reading localStorage in the initial
-  // state would diverge from the server render and break hydration.
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(SELECTED_KEY);
-      if (saved && PLAYERS.some((p) => p.slug === saved)) setSelectedSlug(saved);
-    } catch {
-      /* private mode — the default is fine */
-    }
-  }, []);
-
-  const setSelected = useCallback((slug: string) => {
-    setSelectedSlug(slug);
-    try {
-      localStorage.setItem(SELECTED_KEY, slug);
-    } catch {
-      /* ignore */
-    }
-  }, []);
+  const selectedSlug = useSyncExternalStore(
+    subscribeSelected,
+    getSelectedSnapshot,
+    getSelectedServerSnapshot,
+  );
+  const setSelected = useCallback((slug: string) => writeSelected(slug), []);
 
   const api = useMemo<PlayerDataApi>(
     () => ({
@@ -188,6 +220,29 @@ export function usePlayerData(): PlayerDataApi {
 // ---------------------------------------------------------------------------
 
 const questCache = new Map<string, QuestEntry[]>();
+// In-flight requests are cached too. Without this, two components mounting in
+// the same tick both miss the cache and fire their own fetch — the dashboard
+// was pulling 172KB of quest JSON instead of 86KB.
+const questInflight = new Map<string, Promise<QuestEntry[]>>();
+
+function fetchQuests(slug: string): Promise<QuestEntry[]> {
+  const cached = questCache.get(slug);
+  if (cached) return Promise.resolve(cached);
+
+  const pending = questInflight.get(slug);
+  if (pending) return pending;
+
+  const p = fetchJson<QuestsJson>(`${slug}_quests.json`)
+    .then((j) => {
+      const quests = j?.quests ?? [];
+      questCache.set(slug, quests);
+      return quests;
+    })
+    .finally(() => questInflight.delete(slug));
+
+  questInflight.set(slug, p);
+  return p;
+}
 
 export function useQuests(slugs: string[]): {
   quests: Record<string, QuestEntry[]>;
@@ -218,12 +273,7 @@ export function useQuests(slugs: string[]): {
     if (!missing.length) return;
 
     void (async () => {
-      await Promise.all(
-        missing.map(async (slug) => {
-          const j = await fetchJson<QuestsJson>(`${slug}_quests.json`);
-          questCache.set(slug, j?.quests ?? []);
-        }),
-      );
+      await Promise.all(missing.map((slug) => fetchQuests(slug)));
       if (!cancelled) setVersion((v) => v + 1);
     })();
 

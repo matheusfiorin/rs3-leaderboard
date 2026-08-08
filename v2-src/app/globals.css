@@ -62,6 +62,9 @@
     outline: 2px solid var(--color-prayer-bright);
     outline-offset: 2px;
     border-radius: 4px;
+    /* Without this the ring inherits a colour transition from the element and
+       fades in from its text colour instead of appearing instantly. */
+    transition: none;
   }
   details > summary { list-style: none; cursor: pointer; }
   details > summary::-webkit-details-marker { display: none; }
@@ -95,8 +98,8 @@ body::before {
   /* Numeric inputs: strip the spinner everywhere, we ship our own +/- buttons. */
   input[type="number"] { -moz-appearance: textfield; }
 
-  /* Honour the OS-level motion preference. framer-motion is told separately via
-     useReducedMotion; this covers plain CSS transitions and animations. */
+  /* Honour the OS-level motion preference. All motion in the app is CSS, so
+     this is the single place it is disabled. */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;

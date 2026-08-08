@@ -116,7 +116,8 @@ function relative(d: Date, now = new Date()): string {
   const ms = now.getTime() - d.getTime();
   if (ms < 0) return "just now";
   const s = Math.floor(ms / 1000);
-  if (s < 45) return "just now";
+  // Cutoff at a full minute, not 45s — between the two you get "0m ago".
+  if (s < 60) return "just now";
   const m = Math.floor(s / 60);
   if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);
@@ -464,6 +465,11 @@ export function CountInput({
   const value = progress.count(key);
   const set = (n: number) => progress.set(key, Math.max(0, n));
 
+  // While the field has focus, hold the raw text. Coercing "" to 0 on every
+  // keystroke made the normal select-all → delete → type flow impossible: the
+  // field snapped back to "0" the moment it was cleared.
+  const [draft, setDraft] = useState<string | null>(null);
+
   // Every counter on a page announces itself identically to a screen reader
   // unless the owning entity's name is threaded into the control labels —
   // 39 buttons all called "Increase" is unusable.
@@ -485,9 +491,18 @@ export function CountInput({
         <input
           type="number"
           inputMode="numeric"
-          value={value}
+          value={draft ?? value}
           min={0}
-          onChange={(e) => set(parseInt(e.target.value || "0", 10))}
+          onFocus={() => setDraft(String(value))}
+          onChange={(e) => {
+            const raw = e.target.value;
+            setDraft(raw);
+            if (raw !== "") set(parseInt(raw, 10) || 0);
+          }}
+          onBlur={() => {
+            if (draft === "") set(0);
+            setDraft(null);
+          }}
           aria-label={name}
           className="w-16 h-11 sm:h-8 text-center rounded-md bg-bg-raised border border-line font-mono tabular text-sm text-ink focus:border-prayer/50 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
@@ -534,7 +549,10 @@ export function Segmented<T extends string>({
     <div
       role="group"
       aria-label={ariaLabel}
-      className="inline-flex flex-wrap items-center gap-1 p-1 rounded-lg bg-bg-surface border border-line max-w-full"
+      // On a narrow screen the chips used to wrap inside the pill, leaving
+      // most of a second row as dead space inside a bordered container. A
+      // single scrolling row reads correctly at any width.
+      className="flex sm:inline-flex flex-nowrap sm:flex-wrap items-center gap-1 p-1 rounded-lg bg-bg-surface border border-line max-w-full overflow-x-auto sm:overflow-visible scroll-fade-x sm:[mask-image:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       {options.map((o) => {
         const active = o.value === value;

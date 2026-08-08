@@ -53,7 +53,7 @@ const BOTTOM = [
   { href: "/skills", label: "Skills", icon: Swords },
   { href: "/pvm",    label: "PvM",    icon: Skull },
   { href: "/goals",  label: "Goals",  icon: Sparkles },
-  { href: "/live",   label: "Live",   icon: Radio },
+  { href: "/quests", label: "Quests", icon: Compass },
 ] as const;
 
 function isActive(path: string | null, href: string): boolean {
@@ -122,6 +122,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Sidebar path={path} mobileOpen={open} onNav={() => setOpen(false)} />
         <main
           id="main"
+          tabIndex={-1}
           className="flex-1 min-w-0 px-4 sm:px-6 md:px-8 py-6 md:py-8 pb-24 md:pb-8"
         >
           <div key={path} className="route-enter mx-auto w-full max-w-[1400px]">
