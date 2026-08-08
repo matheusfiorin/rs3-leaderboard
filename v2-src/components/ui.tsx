@@ -1,13 +1,42 @@
 "use client";
 
 import { clsx } from "clsx";
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { Check as CheckIcon, Minus, Plus } from "lucide-react";
 import { iconUrl } from "@/lib/paths";
 import { SKILLS } from "@/lib/skills";
 import { describe } from "@/lib/requirements";
+import { scopedKey } from "@/lib/progress";
 import { useProgress } from "@/components/ProgressProvider";
 import type { Accent, RequirementResult } from "@/lib/types";
+
+// ---------------------------------------------------------------------------
+// Player scope
+//
+// Manual ticks and kill counts belong to a player, not to the browser. Wrapping
+// a per-player region in <PlayerScope slug={p.slug}> makes every <Check> and
+// <CountInput> inside it write to that player's namespace automatically, so
+// pages keep using short, readable storeKeys.
+//
+// Outside a scope, keys stay account-wide — correct for the handful of things
+// that genuinely are shared.
+// ---------------------------------------------------------------------------
+
+const ScopeCtx = createContext<string | null>(null);
+
+export function PlayerScope({
+  slug,
+  children,
+}: {
+  slug: string | null;
+  children: React.ReactNode;
+}) {
+  return <ScopeCtx.Provider value={slug}>{children}</ScopeCtx.Provider>;
+}
+
+export function usePlayerScope(): string | null {
+  return useContext(ScopeCtx);
+}
 
 // ---------------------------------------------------------------------------
 // Accent plumbing
@@ -345,7 +374,8 @@ export function Check({
   hint?: string;
 }) {
   const progress = useProgress();
-  const checked = progress.isDone(storeKey);
+  const key = scopedKey(usePlayerScope(), storeKey);
+  const checked = progress.isDone(key);
   return (
     <label
       className={clsx(
@@ -356,7 +386,7 @@ export function Check({
       <input
         type="checkbox"
         checked={checked}
-        onChange={() => progress.toggle(storeKey)}
+        onChange={() => progress.toggle(key)}
         className="sr-only peer"
       />
       <span
@@ -398,8 +428,9 @@ export function CountInput({
   target?: number;
 }) {
   const progress = useProgress();
-  const value = progress.count(storeKey);
-  const set = (n: number) => progress.set(storeKey, Math.max(0, n));
+  const key = scopedKey(usePlayerScope(), storeKey);
+  const value = progress.count(key);
+  const set = (n: number) => progress.set(key, Math.max(0, n));
 
   return (
     <div className="flex items-center justify-between gap-3 py-1.5">

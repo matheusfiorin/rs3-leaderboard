@@ -44,6 +44,39 @@ export function toPlain(snap: ProgressSnapshot): Record<string, ProgressValue> {
   return out;
 }
 
+// ---------------------------------------------------------------------------
+// Per-player scoping
+//
+// "Decxus owns Masterwork armour" is not the same claim as "Soclopata owns
+// Masterwork armour", and neither is a Vorago kill count. Manual entries are
+// therefore stored under a `p:<slug>:` prefix. Keys with no prefix are
+// account-wide on purpose — a few things genuinely are shared — and older
+// unprefixed entries keep working rather than disappearing on upgrade.
+// ---------------------------------------------------------------------------
+
+const SCOPE_PREFIX = "p:";
+
+export function scopedKey(slug: string | null | undefined, key: string): string {
+  return slug ? `${SCOPE_PREFIX}${slug}:${key}` : key;
+}
+
+/**
+ * Project the flat store down to one player's view: their prefixed entries
+ * (unprefixed) plus every account-wide entry.
+ */
+export function scopeManual(
+  values: Record<string, ProgressValue>,
+  slug: string,
+): Record<string, ProgressValue> {
+  const mine = `${SCOPE_PREFIX}${slug}:`;
+  const out: Record<string, ProgressValue> = {};
+  for (const [k, v] of Object.entries(values)) {
+    if (k.startsWith(mine)) out[k.slice(mine.length)] = v;
+    else if (!k.startsWith(SCOPE_PREFIX)) out[k] = v;
+  }
+  return out;
+}
+
 /** Per-key last-write-wins. Order of arguments does not matter. */
 export function merge(a: ProgressSnapshot, b: ProgressSnapshot): ProgressSnapshot {
   const entries: Record<string, ProgressEntry> = { ...a.entries };

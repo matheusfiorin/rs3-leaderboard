@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { usePlayerData, useQuests } from "@/components/PlayerDataProvider";
 import { useProgress } from "@/components/ProgressProvider";
 import { questDoneIndex } from "@/lib/player";
+import { scopeManual } from "@/lib/progress";
 import { evaluate } from "@/lib/requirements";
 import type { EvalContext } from "@/lib/requirements";
 import type { GateResult, PlayerSummary, Requirement } from "@/lib/types";
@@ -33,10 +34,20 @@ export function useEval(): EvalBundle {
   const contexts = useMemo(() => {
     const out: Record<string, EvalContext> = {};
     for (const p of players) {
+      const list = quests[p.slug] ?? [];
       out[p.slug] = {
         player: p,
-        questsDone: questDoneIndex(quests[p.slug] ?? []),
-        manual: progress.values,
+        questsDone: questDoneIndex(list),
+        // Manual entries are namespaced per player and presented unprefixed, so
+        // a requirement written as { kind: "manual", id: "owns-masterwork" }
+        // resolves to that player's tick and not the other player's.
+        manual: scopeManual(progress.values, p.slug),
+        questPoints: list.length
+          ? list.reduce(
+              (sum, q) => sum + (q.status === "COMPLETED" ? q.questPoints || 0 : 0),
+              0,
+            )
+          : undefined,
       };
     }
     return out;

@@ -19,6 +19,12 @@ export interface EvalContext {
   questsDone: Set<string>;
   /** Manual checkboxes and user-entered kill counts, keyed by id. */
   manual: Record<string, boolean | number>;
+  /**
+   * Quest points earned. RuneMetrics does not report this directly — it has to
+   * be summed from the quest list — so it is supplied by the caller. Omitted
+   * means "not loaded yet", which is distinct from zero.
+   */
+  questPoints?: number;
 }
 
 const clampPct = (n: number) => Math.max(0, Math.min(100, n));
@@ -61,7 +67,7 @@ export function evaluateOne(req: Requirement, ctx: EvalContext): RequirementResu
         req.stat === "totalLevel" ? ctx.player.totalLevel
         : req.stat === "combatLevel" ? ctx.player.combatLevel
         : req.stat === "runeScore" ? ctx.player.runeScore
-        : 0; // questPoints is supplied by the caller via a manual override
+        : ctx.questPoints ?? 0;
       const met = have >= req.value;
       return {
         req,
