@@ -881,7 +881,11 @@ function MethodCard({
   const { method: m, gate: g } = row;
 
   return (
-    <Card className="p-4">
+    // h-full + flex column: the grid stretches every card to the tallest in its
+    // row, and without this the "Ready for" footer floated wherever the content
+    // ended, leaving a 100px+ void under the shorter cards. mt-auto below pins
+    // it to the bottom edge so the footers line up across the row.
+    <Card className="p-4 h-full flex flex-col">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-2.5 min-w-0">
           <MethodIcon file={m.icon} />
@@ -931,7 +935,7 @@ function MethodCard({
       {m.recipe && <RecipeDetails method={m} recipe={m.recipe} prices={prices} />}
 
       {gatesReady && (
-        <div className="mt-3">
+        <div className="mt-auto pt-3">
           <ReadyFor players={players} gate={gate} reqs={m.requirements} />
         </div>
       )}

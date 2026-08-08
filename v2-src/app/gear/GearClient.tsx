@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { clsx } from "clsx";
 import { ExternalLink } from "lucide-react";
 import { Bar, Card, EmptyState, Pill, SectionHead, Skeleton, Stat } from "@/components/primitives";
@@ -123,10 +123,51 @@ export default function GearClient() {
 
   // upgradePath already drops finished gates and caps at one item per slot, so
   // the only thing left to strip is what the user has ticked as owned.
-  const path = useMemo(() => {
+  const fullPath = useMemo(() => {
     if (!ctx || loading) return [];
-    return upgradePath(style, ctx).filter((e) => !isOwned(e.id));
-  }, [ctx, loading, style, isOwned]);
+    return upgradePath(style, ctx);
+  }, [ctx, loading, style]);
+
+  const livePath = useMemo(
+    () => fullPath.filter((e) => !isOwned(e.id)),
+    [fullPath, isOwned],
+  );
+
+  // Ticking "Owned" drops a card out of this list, and without a hold the cards
+  // below slide up under a pointer that has not moved — the next tick lands on
+  // the wrong item. While the pointer or keyboard focus is inside the list we
+  // snapshot the running order and re-insert anything that leaves it, so the
+  // list only ever settles once the user has stepped away from it.
+  const [held, setHeld] = useState<string[] | null>(null);
+  const pointerInside = useRef(false);
+  const focusInside = useRef(false);
+
+  const path = useMemo(() => {
+    if (!held) return livePath;
+    const live = new Set(livePath.map((e) => e.id));
+    const byId = new Map(fullPath.map((e) => [e.id, e] as const));
+    const out = [...livePath];
+    held.forEach((id, i) => {
+      if (live.has(id)) return;
+      const entry = byId.get(id);
+      if (entry) out.splice(Math.min(i, out.length), 0, entry);
+    });
+    return out;
+  }, [held, livePath, fullPath]);
+
+  const hold = useCallback(() => {
+    setHeld((prev) => prev ?? livePath.map((e) => e.id));
+  }, [livePath]);
+
+  const release = useCallback(() => {
+    if (!pointerInside.current && !focusInside.current) setHeld(null);
+  }, []);
+
+  // Keyboard hold is gated on :focus-visible. A mouse click leaves focus parked
+  // on the sr-only checkbox, and treating that as "still in the list" would keep
+  // the shortlist frozen long after the pointer had gone somewhere else.
+  const focusIsVisible = (node: EventTarget | null) =>
+    node instanceof Element && node.matches(":focus-visible");
 
   const groups = useMemo(
     () =>
@@ -260,7 +301,28 @@ export default function GearClient() {
             // Two (three on very wide screens) to a row. One upgrade per full
             // 1150px row left two thirds of every row empty and parked the
             // readiness ring an inch away from the item it describes.
-            <ol className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
+            <ol
+              className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3"
+              onPointerEnter={() => {
+                pointerInside.current = true;
+                hold();
+              }}
+              onPointerLeave={() => {
+                pointerInside.current = false;
+                release();
+              }}
+              onFocusCapture={(ev) => {
+                if (!focusIsVisible(ev.target)) return;
+                focusInside.current = true;
+                hold();
+              }}
+              onBlurCapture={(ev) => {
+                focusInside.current =
+                  focusInside.current &&
+                  ev.currentTarget.contains(ev.relatedTarget as Node | null);
+                release();
+              }}
+            >
               {path.map((e, i) => (
                 <UpgradeStep
                   key={e.id}
@@ -268,6 +330,7 @@ export default function GearClient() {
                   entry={e}
                   gate={gate(player.slug, e.requirements)}
                   accent={accent}
+                  owned={isOwned(e.id)}
                 />
               ))}
             </ol>
@@ -428,15 +491,24 @@ function UpgradeStep({
   entry,
   gate,
   accent,
+  owned,
 }: {
   step: number;
   entry: GearEntry;
   gate: GateResult;
   accent: Accent;
+  /** Ticked owned but still held in place until the pointer leaves the list. */
+  owned?: boolean;
 }) {
   return (
     <li className="h-full">
-      <Card accent={accent} className="h-full p-3.5 flex flex-col gap-2.5">
+      <Card
+        accent={accent}
+        className={clsx(
+          "h-full p-3.5 flex flex-col gap-2.5 transition-opacity",
+          owned && "opacity-60",
+        )}
+      >
         {/* The ring sits against the name it scores. It used to be pinned to the
             far right of a full-width row, ~700px from the nearest content. */}
         <div className="flex items-start gap-3">

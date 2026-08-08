@@ -845,7 +845,11 @@ function NecroLadder({
   );
 
   return (
-    <div className="relative">
+    // Capped at xl. The rung is a prose lane plus a chips-and-controls lane, and
+    // neither grows past what it needs — left to the full 1400px measure the
+    // second lane inflated to ~750px of empty card. 62rem is the widest the two
+    // lanes can actually fill (34rem prose + gap + a ~23rem control column).
+    <div className="relative xl:max-w-[62rem]">
       {/* The rail lives outside the <ol> — only <li> may be its direct child. */}
       <span
         className="pointer-events-none absolute bottom-4 left-[18px] top-4 w-px -translate-x-1/2 bg-line"

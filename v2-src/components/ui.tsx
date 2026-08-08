@@ -560,7 +560,7 @@ export function Segmented<T extends string>({
           bordered container masks the border and background too, dissolving
           the group's own right edge into the page — which reads as a rendering
           bug on any row that does not actually overflow. */}
-      <div className="flex min-w-0 flex-nowrap sm:flex-wrap items-center gap-1 overflow-x-auto sm:overflow-visible scroll-fade-x sm:[mask-image:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex min-w-0 flex-nowrap sm:flex-wrap items-center gap-1 overflow-x-auto sm:overflow-visible max-sm:scroll-fade-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {options.map((o) => {
         const active = o.value === value;
         return (

@@ -283,9 +283,9 @@ export default function CapesClient() {
           is capped instead of stretched: two 700px-wide cards holding a ring and
           three short lines is dead space, not layout. */}
       <div className="grid gap-3 sm:grid-cols-2 xl:max-w-[860px]">
-        {loading
-          ? players.map((p) => <Skeleton key={p.slug} className="h-[92px]" />)
-          : summaries.map((s) => <PlayerHeader key={s.player.slug} {...s} />)}
+        {summaries.map((s) => (
+          <PlayerHeader key={s.player.slug} {...s} pending={loading} />
+        ))}
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -368,31 +368,34 @@ export default function CapesClient() {
             title="Long goals"
             hint={`${active.name} · manual ticks are saved per player`}
           />
-          {loading ? (
+          {/* Names, blurbs, rewards, the manual checklists and the wiki links
+              are all static, so these cards render into the HTML immediately;
+              only the ring, the met tally and the "still missing" chips wait on
+              the quest lists.
+
+              Every Check below writes into the selected player's namespace,
+              which is the same namespace the gates above are evaluated from. */}
+          <PlayerScope slug={active.slug}>
+            {/* Columns, not a grid. These cards run from 232px (one manual
+                tick) to 740px (the trimmed comp checklist), so a 3-track grid
+                spent 1100px on empty card bottoms — 1653px tall to hold
+                1426px of cards. Stretching only moves that void inside the
+                border. Multicol packs them, and because flow order is
+                top-to-bottom then across, the BIG_ORDER priority still reads
+                in order. break-inside-avoid keeps a card whole. */}
             <div className="columns-1 gap-x-4 lg:columns-2 2xl:columns-3">
-              <Skeleton className="mb-4 h-64 break-inside-avoid" />
-              <Skeleton className="mb-4 h-64 break-inside-avoid" />
+              {bigCards.map(({ cape, gate }) => (
+                <div key={cape.id} className="mb-4 break-inside-avoid">
+                  <BigCapeCard
+                    cape={cape}
+                    gate={gate}
+                    accent={active.accent}
+                    pending={loading}
+                  />
+                </div>
+              ))}
             </div>
-          ) : (
-            // Every Check below writes into the selected player's namespace,
-            // which is the same namespace the gates above are evaluated from.
-            <PlayerScope slug={active.slug}>
-              {/* Columns, not a grid. These cards run from 232px (one manual
-                  tick) to 740px (the trimmed comp checklist), so a 3-track grid
-                  spent 1100px on empty card bottoms — 1653px tall to hold
-                  1426px of cards. Stretching only moves that void inside the
-                  border. Multicol packs them, and because flow order is
-                  top-to-bottom then across, the BIG_ORDER priority still reads
-                  in order. break-inside-avoid keeps a card whole. */}
-              <div className="columns-1 gap-x-4 lg:columns-2 2xl:columns-3">
-                {bigCards.map(({ cape, gate }) => (
-                  <div key={cape.id} className="mb-4 break-inside-avoid">
-                    <BigCapeCard cape={cape} gate={gate} accent={active.accent} />
-                  </div>
-                ))}
-              </div>
-            </PlayerScope>
-          )}
+          </PlayerScope>
         </section>
       )}
     </div>
@@ -422,23 +425,40 @@ function PlayerHeader({
   player,
   earned,
   next,
+  pending,
 }: {
   player: PlayerSummary;
   earned: number;
   next: CapeDistance | null;
+  /** Quest lists still loading, so `earned` and `next` are not yet true. */
+  pending: boolean;
 }) {
   const pct = (earned / CAPES.length) * 100;
   return (
     <Card accent={player.accent} className="p-4">
       <div className="flex items-center gap-4">
-        {/* No children — Ring's own centre already prints the % with its unit. */}
+        {/* No children — Ring's own centre already prints the % with its unit,
+            except while pending, where an unknown tally is not 0%. */}
         <Ring
-          pct={pct}
+          pct={pending ? 0 : pct}
           size={60}
           stroke={5}
           accent={player.accent}
-          label={`${player.name}: ${earned} of ${CAPES.length} capes earned`}
-        />
+          label={
+            pending
+              ? `${player.name}: counting capes earned`
+              : `${player.name}: ${earned} of ${CAPES.length} capes earned`
+          }
+        >
+          {pending ? (
+            <span
+              className="font-mono text-[11px] font-bold text-ink-3"
+              aria-hidden="true"
+            >
+              …
+            </span>
+          ) : undefined}
+        </Ring>
         <div className="min-w-0">
           <div
             className={clsx(
@@ -449,11 +469,15 @@ function PlayerHeader({
             {player.name}
           </div>
           <div className="font-mono tabular text-xl font-bold text-ink">
-            {earned}
+            {pending ? <span className="text-ink-3">—</span> : earned}
             <span className="text-ink-3"> / {CAPES.length}</span>
           </div>
           <p className="mt-0.5 truncate text-[11px] text-ink-3">
-            {next ? `Next: ${next.item.name} · ${workLeft(next)}` : "Everything earned"}
+            {pending
+              ? "checking requirements…"
+              : next
+                ? `Next: ${next.item.name} · ${workLeft(next)}`
+                : "Everything earned"}
           </p>
         </div>
       </div>
@@ -582,39 +606,59 @@ function BigCapeCard({
   cape,
   gate,
   accent,
+  pending,
 }: {
   cape: CapeEntry;
   gate: GateResult;
   accent: Accent;
+  /** Quest lists still loading — the gate is not yet a true reading. */
+  pending: boolean;
 }) {
   const manual = gate.results.filter((r) => r.req.kind === "manual");
   // Only the automatically-evaluated gaps go in the chip list; the manual ones
   // are rendered below as checkboxes so they can actually be ticked off.
   const trackedMissing = gate.results.filter((r) => r.req.kind !== "manual" && !r.met);
+  const earned = !pending && gate.complete;
 
   return (
     <Card
-      accent={gate.complete ? undefined : accent}
-      className={clsx("p-5", gate.complete && "border-success/25")}
+      accent={earned ? undefined : accent}
+      className={clsx("p-5", earned && "border-success/25")}
     >
       <div className="flex items-start gap-4">
         <Ring
-          pct={gate.pct}
+          pct={pending ? 0 : gate.pct}
           size={60}
           stroke={5}
           accent={accent}
-          label={`${cape.name}: ${Math.round(gate.pct)}% complete`}
-        />
+          label={
+            pending
+              ? `${cape.name}: requirements still loading`
+              : `${cape.name}: ${Math.round(gate.pct)}% complete`
+          }
+        >
+          {pending ? (
+            <span
+              className="font-mono text-[11px] font-bold text-ink-3"
+              aria-hidden="true"
+            >
+              …
+            </span>
+          ) : undefined}
+        </Ring>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h4 className="font-display italic text-lg leading-none tracking-tight text-ink">
               {cape.name}
             </h4>
             <TierBadge tier={cape.tier} />
-            {gate.complete && <Pill tone="success">Earned</Pill>}
+            {earned && <Pill tone="success">Earned</Pill>}
           </div>
           <p className="mt-1 font-mono text-[10.5px] uppercase tracking-wider text-ink-3">
-            {CATEGORY_LABEL[cape.category]} · {gate.met.length} / {gate.results.length} met
+            {CATEGORY_LABEL[cape.category]} ·{" "}
+            {pending
+              ? `${gate.results.length} requirements`
+              : `${gate.met.length} / ${gate.results.length} met`}
           </p>
           <p className="mt-2 text-[13px] leading-relaxed text-ink-2">{cape.blurb}</p>
         </div>
@@ -626,13 +670,19 @@ function BigCapeCard({
         </p>
       )}
 
-      {trackedMissing.length > 0 && (
-        <div className="mt-4">
-          <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
-            Still missing
-          </p>
-          <ReqList results={trackedMissing} limit={8} />
-        </div>
+      {pending ? (
+        <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
+          Checking requirements…
+        </p>
+      ) : (
+        trackedMissing.length > 0 && (
+          <div className="mt-4">
+            <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
+              Still missing
+            </p>
+            <ReqList results={trackedMissing} limit={8} />
+          </div>
+        )
       )}
 
       {manual.length > 0 && (

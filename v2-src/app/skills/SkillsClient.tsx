@@ -799,8 +799,16 @@ function SkillDetail({ player, skill }: { player: PlayerSummary; skill: SkillDef
                     key={`${u.skill}-${u.level}-${u.label}`}
                     className="inline-flex items-center gap-1.5 min-h-6 py-0.5 px-2 rounded-md border border-line text-[11px] font-mono text-ink-3"
                   >
-                    <span className="tabular text-ink-3">{u.level}</span>
-                    <span className="truncate max-w-[20ch]">{u.label}</span>
+                    <span className="shrink-0 tabular text-ink-3">{u.level}</span>
+                    {/* Wraps rather than truncating, same as ReqChip: this
+                        column is 20rem at xl, and a 20ch clamp cut
+                        "Masterwork spear of annihilation" down to
+                        "Masterwork spear of…" — which names nothing. These
+                        already sit in a wrapping row, so a second line is
+                        free. */}
+                    <span className="whitespace-normal text-left leading-tight py-0.5">
+                      {u.label}
+                    </span>
                   </span>
                 ))}
               </div>

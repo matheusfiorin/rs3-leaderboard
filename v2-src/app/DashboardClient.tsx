@@ -72,6 +72,8 @@ interface Metric {
   a: number;
   b: number;
   show: (n: number) => string;
+  /** Value not knowable yet. Rendered as a placeholder, counted by nothing. */
+  pending?: boolean;
 }
 
 interface Scoreline {
@@ -80,6 +82,8 @@ interface Scoreline {
   trailer: PlayerSummary | null;
   leaderWins: number;
   trailerWins: number;
+  /** At least one metric is still loading, so the tally is not final yet. */
+  pending: boolean;
   /** Metric label -> signed delta, from a's point of view. */
   deltaFor(label: string, side: "a" | "b"): number;
 }
@@ -88,6 +92,7 @@ function useScoreline(
   a: PlayerSummary | undefined,
   b: PlayerSummary | undefined,
   questPoints: Record<string, number>,
+  questsLoading: boolean,
 ): Scoreline | null {
   return useMemo(() => {
     if (!a || !b) return null;
@@ -98,21 +103,28 @@ function useScoreline(
       { label: "Total XP", unit: "xp", a: a.totalXp, b: b.totalXp, show: fmtCompact },
       { label: "Quests", unit: "quests", a: a.questsDone, b: b.questsDone, show: fmt },
       { label: "RuneScore", unit: "runescore", a: a.runeScore, b: b.runeScore, show: fmt },
-      // Quest points come from the client-fetched quest lists, so both sides
-      // read 0 until those land — the zero filter drops the row instead of
-      // reporting a tie that does not exist.
-      {
-        label: "Quest points",
-        unit: "quest points",
-        a: questPoints[a.slug] ?? 0,
-        b: questPoints[b.slug] ?? 0,
-        show: fmt,
-      },
-    ].filter((m) => m.a !== 0 || m.b !== 0);
+    ];
+
+    // Quest points come from the client-fetched quest lists. The row is present
+    // from the first server-rendered paint, flagged pending, so the category
+    // count never grows under a reader who is already looking at it; once the
+    // lists land it becomes a real row. A genuine 0/0 after loading means the
+    // fetch gave us nothing, and the row drops rather than report a tie that
+    // does not exist.
+    const qp: Metric = {
+      label: "Quest points",
+      unit: "quest points",
+      a: questPoints[a.slug] ?? 0,
+      b: questPoints[b.slug] ?? 0,
+      show: fmt,
+      pending: questsLoading,
+    };
+    if (qp.pending || qp.a !== 0 || qp.b !== 0) metrics.push(qp);
 
     let aWins = 0;
     let bWins = 0;
     for (const m of metrics) {
+      if (m.pending) continue;
       if (m.a > m.b) aWins++;
       else if (m.b > m.a) bWins++;
     }
@@ -124,13 +136,14 @@ function useScoreline(
       trailer: tied ? null : aWins > bWins ? b : a,
       leaderWins: Math.max(aWins, bWins),
       trailerWins: Math.min(aWins, bWins),
+      pending: metrics.some((m) => m.pending),
       deltaFor: (label, side) => {
         const m = metrics.find((x) => x.label === label);
-        if (!m) return 0;
+        if (!m || m.pending) return 0;
         return side === "a" ? m.a - m.b : m.b - m.a;
       },
     };
-  }, [a, b, questPoints]);
+  }, [a, b, questPoints, questsLoading]);
 }
 
 export default function DashboardClient() {
@@ -147,7 +160,7 @@ export default function DashboardClient() {
     return out;
   }, [players, contexts]);
 
-  const scoreline = useScoreline(players[0], players[1], questPoints);
+  const scoreline = useScoreline(players[0], players[1], questPoints, loading);
   const combinedXp = useMemo(
     () => players.reduce((s, p) => s + p.totalXp, 0),
     [players],
@@ -322,12 +335,26 @@ function Hero({
               >
                 {scoreline.leader.name}
               </p>
+              {/* No tally while a category is still loading: printing "5–0 of
+                  5" and then swapping it for "6–0 of 6" a moment later changes
+                  a number the reader has already read. */}
               <p className="mt-2 font-mono text-[13px] text-ink-2">
-                leads{" "}
-                <span className="tabular font-bold text-ink">
-                  {scoreline.leaderWins}–{scoreline.trailerWins}
-                </span>{" "}
-                of {scoreline.metrics.length} categories
+                {scoreline.pending ? (
+                  <>
+                    ahead so far
+                    <span className="block mt-0.5 text-[11px] uppercase tracking-wider text-ink-3">
+                      Quest points still loading
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    leads{" "}
+                    <span className="tabular font-bold text-ink">
+                      {scoreline.leaderWins}–{scoreline.trailerWins}
+                    </span>{" "}
+                    of {scoreline.metrics.length} categories
+                  </>
+                )}
               </p>
               {/* "By how much", in the leader's own accent. Only the metrics
                   the leader actually leads, so a chip never needs a second name
@@ -336,6 +363,7 @@ function Hero({
                 {scoreline.metrics
                   .filter(
                     (m) =>
+                      !m.pending &&
                       m.a !== m.b &&
                       (m.a > m.b ? players[0] : players[1]) === scoreline.leader,
                   )
@@ -706,7 +734,9 @@ function H2H({
       {scoreline.metrics.map((m) => {
         const total = m.a + m.b;
         const shareA = total > 0 ? (m.a / total) * 100 : 50;
-        const leader = m.a === m.b ? null : m.a > m.b ? a : b;
+        // A pending metric has no winner and no split — it renders as a held
+        // slot so the grid is the same length before and after quests land.
+        const leader = m.pending || m.a === m.b ? null : m.a > m.b ? a : b;
         const delta = Math.abs(m.a - m.b);
 
         return (
@@ -716,20 +746,37 @@ function H2H({
                 {m.label}
               </p>
               <div className="mt-2 flex items-baseline justify-between gap-3">
-                <Side player={a} value={m.show(m.a)} leading={leader === a} />
-                <Side player={b} value={m.show(m.b)} leading={leader === b} align="right" />
+                <Side
+                  player={a}
+                  value={m.pending ? "—" : m.show(m.a)}
+                  leading={leader === a}
+                />
+                <Side
+                  player={b}
+                  value={m.pending ? "—" : m.show(m.b)}
+                  leading={leader === b}
+                  align="right"
+                />
               </div>
 
               <div className="mt-2.5 flex h-1.5 w-full rounded-full overflow-hidden bg-bg-raised">
-                <div
-                  className={clsx("h-full", ACCENT_BG[a.accent])}
-                  style={{ width: `${shareA}%` }}
-                />
-                <div className={clsx("h-full flex-1", ACCENT_BG[b.accent])} />
+                {!m.pending && (
+                  <>
+                    <div
+                      className={clsx("h-full", ACCENT_BG[a.accent])}
+                      style={{ width: `${shareA}%` }}
+                    />
+                    <div className={clsx("h-full flex-1", ACCENT_BG[b.accent])} />
+                  </>
+                )}
               </div>
 
               <p className="mt-2 font-mono text-[10px] uppercase tracking-wider text-ink-3">
-                {leader ? `${leader.name} +${m.show(delta)}` : "Dead even"}
+                {m.pending
+                  ? "Waiting on quest data"
+                  : leader
+                    ? `${leader.name} +${m.show(delta)}`
+                    : "Dead even"}
               </p>
             </Card>
           </li>
@@ -827,6 +874,24 @@ interface DayGroup {
   date: Date | null;
   rows: Row[];
 }
+
+/**
+ * Column count follows the number of day groups. The grid was fixed at three
+ * columns from xl up, but the feed usually yields two groups, so a third of the
+ * row sat empty; a single group used to leave half a row empty and now keeps a
+ * card-width measure instead of stretching to 1100px.
+ *
+ * Indexed lookup of whole class strings — Tailwind cannot see a class name that
+ * is assembled at runtime.
+ */
+const TICKER_COLS = [
+  "max-w-md",
+  "md:grid-cols-2",
+  "md:grid-cols-2 xl:grid-cols-3",
+] as const;
+
+const tickerCols = (groups: number) =>
+  TICKER_COLS[Math.min(Math.max(groups, 1), TICKER_COLS.length) - 1];
 
 function skillIdByName(name: string): number | undefined {
   const key = name.trim().toLowerCase();
@@ -952,7 +1017,12 @@ function Ticker({ activity }: { activity: CombinedActivity[] }) {
           {groups.length === 0 ? (
             <EmptyState title="Nothing of that kind yet" />
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 items-start">
+            <div
+              className={clsx(
+                "grid gap-4 items-start",
+                tickerCols(groups.length),
+              )}
+            >
               {/* Index in the key: activities with an unparseable date all sort
                   to the end with ts 0, where two day labels can interleave and
                   repeat. Duplicate keys there would drop rows. */}

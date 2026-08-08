@@ -1345,7 +1345,7 @@ export const PERK_TARGETS: PerkTarget[] = [
     // reach and wastes the materials. Drop to 68 with a Gorak or the GWD ice.
     inventionLevel: 68,
     successPct: 4.9,
-    why: "+6% critical strike chance. Best odds at Invention 68 — going in at 120 makes it *less* likely, so drain your level first.",
+    why: "+6% critical strike chance. Best odds at Invention 68 — going in at 120 makes it less likely, so drain your level first.",
     wiki: "Biting",
   },
   {

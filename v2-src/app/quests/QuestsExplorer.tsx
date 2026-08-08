@@ -386,16 +386,31 @@ export default function QuestsExplorer() {
 
             {/* One scrollable line on a phone. Left to wrap, these five chips
                 plus the members toggle stacked 150px of controls between the
-                app header and the first quest. */}
-            <div className="overflow-x-auto lg:overflow-visible">
+                app header and the first quest.
+
+                THIS element is that scroller — `min-w-max` below runs the row
+                261px past a 360px viewport, putting "None" and "Members only"
+                entirely off-screen — so it is the one that has to carry the
+                fade. Segmented's own fade sits on its inner row, which never
+                overflows here, so all it did was dim 24px of the "None" chip
+                while signalling nothing. */}
+            {/* scroll-fade-x is a real Tailwind `@utility`, so it composes with
+                variants: applying it only below lg is exact, and needs no
+                reset to undo it above. */}
+            <div className="overflow-x-auto lg:overflow-visible max-lg:scroll-fade-x">
               <div
                 className={clsx(
                   "flex items-center gap-2 min-w-max lg:min-w-0 lg:flex-wrap",
-                  // Segmented wraps and self-limits by default, which fights a
-                  // horizontal scroller. Overridden from out here so the shared
-                  // component keeps its own sensible defaults everywhere else.
-                  "[&>[role=group]]:flex-nowrap [&>[role=group]]:max-w-none",
-                  "lg:[&>[role=group]]:flex-wrap",
+                  // Segmented wraps, self-limits and fades by default, which
+                  // all fight a horizontal scroller. Its inner row is what
+                  // actually carries those, so target that — the earlier
+                  // `[&>[role=group]]` overrides landed on the outer group and
+                  // did nothing. Kept out here so the shared component keeps
+                  // its own sensible defaults everywhere else.
+                  "[&>[role=group]]:max-w-none",
+                  "[&>[role=group]>div]:flex-nowrap [&>[role=group]>div]:overflow-visible",
+                  "[&>[role=group]>div]:[mask-image:none]",
+                  "lg:[&>[role=group]>div]:flex-wrap",
                 )}
               >
                 <Segmented<Bucket>
@@ -649,16 +664,27 @@ const QuestRowItem = memo(function QuestRowItem({
       />
 
       <div className="min-w-0">
+        {/* The title wraps instead of truncating. Above xl the list splits in
+            two, which leaves the name ~268px of a 575px row — enough to clip
+            the whole "Recipe for Disaster: Freeing …" family mid-phrase, with
+            no visible tooltip on a row whose hit target is a link overlay.
+            A block (not flex) so the icon rides the last word inline rather
+            than floating in the vertical middle of a two-line name; no
+            whitespace before it in the JSX, so it can never orphan. */}
         <div
           className={clsx(
-            "flex items-center gap-1 text-sm transition-colors",
+            "text-sm transition-colors",
             done
               ? "text-ink-3 group-hover:text-ink-2"
               : "text-ink group-hover:text-prayer-bright",
           )}
         >
-          <span className="truncate">{q.title}</span>
-          <ExternalLink size={11} aria-hidden="true" className="shrink-0 text-ink-3" />
+          {q.title}
+          <ExternalLink
+            size={11}
+            aria-hidden="true"
+            className="ml-1 inline-block align-middle text-ink-3"
+          />
         </div>
         <div className="sm:hidden mt-1 flex items-center gap-2.5">
           <Stars difficulty={q.difficulty} />

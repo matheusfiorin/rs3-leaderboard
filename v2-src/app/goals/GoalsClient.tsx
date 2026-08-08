@@ -142,6 +142,15 @@ export default function GoalsClient() {
 
   const shownTiers = TIERS.filter((t) => tier === "all" || t === tier);
 
+  // The hero repeats a campaign that also has a full card in the tier list. When
+  // that card is the very next thing on screen, the two render back to back and
+  // read as a double paint — so the hero stands down and the card below carries
+  // the "closest" pill instead. Filtered to another tier, they are far apart and
+  // the hero still earns its place.
+  const firstBelow = shownTiers.length ? goalsByTier(shownTiers[0])[0] : undefined;
+  const heroDuplicatesFirstCard =
+    closest !== undefined && firstBelow !== undefined && closest.item.id === firstBelow.id;
+
   return (
     <div className="space-y-6">
       <SectionHead
@@ -211,7 +220,16 @@ export default function GoalsClient() {
         // writes to that player's namespace. Without this, ticking "Ice Gloves
         // obtained" for Soclopata also ticked it for Decxus.
         <PlayerScope slug={player.slug}>
-          {closest ? (
+          {!closest ? (
+            <Card accent={player.accent} className="p-5">
+              <p className="font-display italic text-lg text-ink">
+                Every campaign complete.
+              </p>
+              <p className="mt-1 text-sm text-ink-3">
+                {player.name} has cleared all {MAJOR_GOALS.length} goals.
+              </p>
+            </Card>
+          ) : heroDuplicatesFirstCard ? null : (
             <Card accent={player.accent} className="p-4 sm:p-5">
               <div className="flex items-center gap-4">
                 <Ring
@@ -236,15 +254,6 @@ export default function GoalsClient() {
               <div className="mt-3">
                 <ReqList results={closest.gate.missing} limit={6} />
               </div>
-            </Card>
-          ) : (
-            <Card accent={player.accent} className="p-5">
-              <p className="font-display italic text-lg text-ink">
-                Every campaign complete.
-              </p>
-              <p className="mt-1 text-sm text-ink-3">
-                {player.name} has cleared all {MAJOR_GOALS.length} goals.
-              </p>
             </Card>
           )}
 
@@ -271,6 +280,7 @@ export default function GoalsClient() {
                     key={g.id}
                     className={SPAN_ODD}
                     goal={g}
+                    closest={g.id === closest?.item.id}
                     player={player}
                     ctx={contexts[player.slug]}
                     gate={gate(player.slug, g.requirements)}
@@ -361,6 +371,7 @@ function GoalCard({
   ctx,
   gate,
   prereqs,
+  closest,
   className,
 }: {
   goal: MajorGoal;
@@ -369,6 +380,9 @@ function GoalCard({
   gate: GateResult;
   /** Earlier campaigns this one contains, with the same player's progress. */
   prereqs: { name: string; pct: number }[];
+  /** This is the campaign the hero calls out — marked so the label survives
+   *  even when the hero stands down to avoid rendering it twice. */
+  closest?: boolean;
   className?: string;
 }) {
   const b = bucket(gate);
@@ -406,6 +420,9 @@ function GoalCard({
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <TierBadge tier={goal.tier} />
+            {closest && !gate.complete && (
+              <Pill tone={accent}>closest · {player.name}</Pill>
+            )}
             {gate.complete && <Pill tone="success">complete</Pill>}
             {!gate.complete && capstoneDone && <Pill tone="warn">capstone done</Pill>}
             <a

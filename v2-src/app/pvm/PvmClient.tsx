@@ -195,8 +195,13 @@ export default function PvmClient() {
 
   // A tier with nothing open yet is 1,400px of cards you cannot use, so it
   // starts folded. Filtering to one tier is an explicit request to see it.
+  //
+  // While the quest lists are still in flight every quest-gated boss reads as
+  // locked, so `open` is only a lower bound — folding on it would hide the
+  // whole ladder from the static HTML. Start expanded and let the fold apply
+  // once the gates actually resolve.
   const isOpen = (g: { tier: ContentTier; open: number }) =>
-    tier !== "all" ? true : (override[g.tier] ?? g.open > 0);
+    tier !== "all" ? true : (override[g.tier] ?? (loading || g.open > 0));
 
   const allExpanded = ladder.length > 0 && ladder.every(isOpen);
 
@@ -272,7 +277,12 @@ export default function PvmClient() {
         />
       )}
 
-      {loading || !player ? (
+      {/* The ladder is static content: names, tiers, blurbs, drop highlights
+          and wiki links are all known at build time, so they render into the
+          HTML immediately. Only the gate-derived parts — rings, "still needs",
+          locked styling, ready-only, "what now" — wait on the quest lists,
+          which stay a client fetch because they are 44 KB per player. */}
+      {!player ? (
         <LadderSkeleton />
       ) : (
         // Every tick and counter below belongs to this player, not to the
@@ -296,18 +306,22 @@ export default function PvmClient() {
               {/* A count inside a percentage dial was being read as a percent.
                   A number plus a bar says the same thing without the pun. */}
               <div className="mt-1.5 font-mono tabular text-3xl font-bold text-ink leading-none">
-                {unlocked}
+                {loading ? <span className="text-ink-3">—</span> : unlocked}
                 <span className="text-ink-3 text-xl font-normal">
                   {" "}
                   / {BOSSES.length}
                 </span>
               </div>
               <div className="mt-3">
-                <Bar pct={(unlocked / BOSSES.length) * 100} accent={accent} />
+                <Bar
+                  pct={loading ? 0 : (unlocked / BOSSES.length) * 100}
+                  accent={accent}
+                />
               </div>
               <div className="mt-1.5 font-mono tabular text-[11px] text-ink-3">
-                {Math.round((unlocked / BOSSES.length) * 100)}% of the ladder
-                requirements met
+                {loading
+                  ? "checking requirements…"
+                  : `${Math.round((unlocked / BOSSES.length) * 100)}% of the ladder requirements met`}
               </div>
             </Card>
 
@@ -342,9 +356,13 @@ export default function PvmClient() {
                 Open and never fought
               </div>
               <div className="mt-1.5 font-mono tabular text-3xl font-bold text-ink leading-none">
-                {untried.length}
+                {loading ? <span className="text-ink-3">—</span> : untried.length}
               </div>
-              {untried.length > 0 ? (
+              {loading ? (
+                <p className="mt-2 text-[11px] text-ink-3">
+                  checking requirements…
+                </p>
+              ) : untried.length > 0 ? (
                 <>
                   <p className="mt-2 text-[11px] text-ink-3">
                     gates already met with no kills on the board
@@ -370,7 +388,11 @@ export default function PvmClient() {
             </Card>
           </div>
 
-          {nextUp.length > 0 && (
+          {/* Ranking the closest locked gates is the one thing on this page
+              that is meaningless without quests, so it keeps a real pending
+              state — and reserves its own height rather than shoving the
+              ladder down when it lands. */}
+          {(loading || nextUp.length > 0) && (
             <section aria-labelledby="next-up">
               <div className="flex items-baseline justify-between gap-3 mb-3">
                 <h2
@@ -384,9 +406,18 @@ export default function PvmClient() {
                 </span>
               </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {nextUp.map(({ item, gate: g }, i) => (
-                  <NextUpCard key={item.id} boss={item} gate={g} rank={i + 1} />
-                ))}
+                {loading
+                  ? [0, 1, 2].map((i) => (
+                      <Skeleton key={i} className="h-[132px]" />
+                    ))
+                  : nextUp.map(({ item, gate: g }, i) => (
+                      <NextUpCard
+                        key={item.id}
+                        boss={item}
+                        gate={g}
+                        rank={i + 1}
+                      />
+                    ))}
               </div>
             </section>
           )}
@@ -401,7 +432,9 @@ export default function PvmClient() {
                   <>
                     <TierBadge tier={currentGroup.tier} />
                     <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3 whitespace-nowrap">
-                      {currentGroup.open} of {currentGroup.bosses.length} open
+                      {loading
+                        ? `${currentGroup.bosses.length} bosses`
+                        : `${currentGroup.open} of ${currentGroup.bosses.length} open`}
                     </span>
                   </>
                 ) : (
@@ -471,9 +504,14 @@ export default function PvmClient() {
                   type="button"
                   onClick={() => setReadyOnly((v) => !v)}
                   aria-pressed={readyOnly}
+                  // "Ready" is the one filter that cannot answer honestly until
+                  // the quest lists land — every gate reads locked until then.
+                  disabled={loading}
+                  title={loading ? "Waiting on quest data" : undefined}
                   className={clsx(
                     "inline-flex items-center gap-2 h-11 sm:h-8 px-3 rounded-lg border transition-colors",
                     "font-mono text-[11px] uppercase tracking-wider",
+                    "disabled:opacity-50 disabled:cursor-not-allowed",
                     readyOnly
                       ? "border-success/40 text-success bg-success/10"
                       : "border-line text-ink-3 hover:text-ink-2 hover:border-line-strong",
@@ -537,7 +575,11 @@ export default function PvmClient() {
                         disabled={tier !== "all"}
                         className={clsx(
                           "w-full flex flex-wrap items-center gap-x-3 gap-y-1 text-left",
-                          "py-2 mb-3 border-b-2 transition-colors",
+                          // These five toggles are the page's primary
+                          // structural control and measured 38px on a phone.
+                          // min-h rather than h so a wrapped heading still
+                          // grows the target instead of spilling out of it.
+                          "min-h-11 py-2 mb-3 border-b-2 transition-colors",
                           TIER_RULE[g.tier],
                           tier === "all" &&
                             "cursor-pointer hover:bg-bg-surface/60 rounded-t",
@@ -562,7 +604,9 @@ export default function PvmClient() {
                           {TIER_LABEL[g.tier]}
                         </span>
                         <span className="font-mono tabular text-[11px] uppercase tracking-[0.14em] text-ink-2">
-                          {g.open} of {g.bosses.length} open
+                          {loading
+                            ? `${g.bosses.length} bosses`
+                            : `${g.open} of ${g.bosses.length} open`}
                         </span>
                         {!open && (
                           <span className="ml-auto font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3">
@@ -582,6 +626,7 @@ export default function PvmClient() {
                             boss={b}
                             gate={gates[b.id]}
                             accent={accent}
+                            pending={loading}
                           />
                         ))}
                       </div>
@@ -637,17 +682,20 @@ function BossCard({
   boss,
   gate,
   accent,
+  pending,
 }: {
   boss: BossEntry;
   gate: GateResult;
   accent: Accent;
+  /** Quest lists still loading — every gate below reads as locked, so don't. */
+  pending: boolean;
 }) {
   const progress = useProgress();
   const scope = usePlayerScope();
   // Read through the same scope CountInput writes to, or the pill would show
   // the account-wide number while the input edited the player's.
   const kc = progress.count(scopedKey(scope, kcKey(boss.name)));
-  const locked = !gate.complete;
+  const locked = !pending && !gate.complete;
 
   return (
     <Card
@@ -658,13 +706,28 @@ function BossCard({
       )}
     >
       <div className="flex items-start gap-3">
+        {/* An unresolved gate is not 0% — it is unknown — so the pending ring
+            is an empty track with a placeholder glyph rather than an arc. */}
         <Ring
-          pct={gate.pct}
+          pct={pending ? 0 : gate.pct}
           size={44}
           stroke={4}
-          accent={locked ? "ash" : accent}
-          label={`${Math.round(gate.pct)}% of ${boss.name}'s requirements met`}
-        />
+          accent={pending || locked ? "ash" : accent}
+          label={
+            pending
+              ? `${boss.name}: requirements still loading`
+              : `${Math.round(gate.pct)}% of ${boss.name}'s requirements met`
+          }
+        >
+          {pending ? (
+            <span
+              className="font-mono text-[11px] font-bold text-ink-3"
+              aria-hidden="true"
+            >
+              …
+            </span>
+          ) : undefined}
+        </Ring>
         <div className="min-w-0 flex-1">
           {/* min-w-0 on the row and break-words on the name: without them a
               long boss name ("Raksha, the Shadow Colossus") establishes a
@@ -722,12 +785,20 @@ function BossCard({
       </div>
 
       <div>
-        {locked && (
-          <p className="mb-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">
-            Still needs
+        {pending ? (
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">
+            Checking requirements…
           </p>
+        ) : (
+          <>
+            {locked && (
+              <p className="mb-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">
+                Still needs
+              </p>
+            )}
+            <ReqList results={gate.missing} limit={6} />
+          </>
         )}
-        <ReqList results={gate.missing} limit={6} />
       </div>
 
       {/* Kill counts are the one thing the RS3 API cannot see, so the log gets

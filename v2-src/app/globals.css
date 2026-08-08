@@ -138,12 +138,21 @@ body::before {
   .route-enter { animation: none; }
 }
 
+/* Fades the trailing edge of a horizontally scrolling row so it reads as
+   "more to the right" rather than a hard clip.
+
+   Declared with `@utility`, not as a plain `.scroll-fade-x` in
+   `@layer utilities`. A hand-written class lands in the same layer as Tailwind's
+   generated utilities but *after* them, so an off-switch like
+   `sm:[mask-image:none]` ties on specificity and loses on source order — the
+   reset silently did nothing. `@utility` also makes the class composable with
+   variants, so callers can write `max-sm:scroll-fade-x` and never need a reset
+   at all. */
+@utility scroll-fade-x {
+  mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 24px), transparent 100%);
+}
+
 @layer utilities {
-  /* Fades the trailing edge of a horizontally scrolling row so it reads as
-     "more to the right" rather than a hard clip. */
-  .scroll-fade-x {
-    mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 24px), transparent 100%);
-  }
 
   /* Hairline top highlight — gives a card a lit edge without a visible border. */
   .lit-edge {
