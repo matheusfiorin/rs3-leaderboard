@@ -25,8 +25,15 @@
 
   --color-ink:       #ECEEF5;
   --color-ink-2:     #9AA3B8;
-  --color-ink-3:     #6B7388;
-  --color-ink-faint: #454B5C;
+  /* ink-3 is the default label/secondary colour and carries real information,
+     so it must clear WCAG AA 4.5:1 against the worst surface it lands on
+     (cards, #0C1019). The old #6B7388 measured 4.02:1 there and 3.73:1 on
+     raised chips — failing everywhere it was used. */
+  --color-ink-3:     #858EA4;
+  /* ink-faint is for decoration and de-emphasised numerals. The old #454B5C
+     measured 2.19:1, under even the 3:1 non-text floor. Raised to clear 3:1;
+     anything carrying words should use ink-3 instead. */
+  --color-ink-faint: #6A7288;
 
   --color-success: #3FD693;
   --color-warn:    #F0A030;
@@ -98,6 +105,25 @@ body::before {
       scroll-behavior: auto !important;
     }
   }
+}
+
+/* Route entry fade.
+   Deliberately CSS rather than a JS animation library: the previous
+   framer-motion wrapper rendered every route's HTML with inline
+   `opacity:0` and only revealed it after hydration, so the page was blank
+   until ~40KB of extra JS parsed. Animating FROM opacity 0 with
+   `both` fill means the content is visible even if JS never runs. */
+@keyframes route-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.route-enter {
+  animation: route-enter 0.22s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-enter { animation: none; }
 }
 
 @layer utilities {

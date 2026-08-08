@@ -56,20 +56,30 @@ async function audit(page) {
       }
     }
 
-    // Interactive elements smaller than 44px on a touch viewport.
+    // Interactive elements below the 44px touch minimum. Only meaningful on a
+    // touch viewport — a 32px button is fine for a mouse, so counting them on
+    // desktop would bury the real findings in noise.
+    const touch =
+      window.matchMedia("(pointer: coarse)").matches || "ontouchstart" in window;
     const small = [];
-    for (const el of Array.from(
-      document.querySelectorAll("a, button, input, select, textarea, [role=tab], [role=button]"),
-    )) {
-      const r = el.getBoundingClientRect();
-      if (r.width === 0 || r.height === 0) continue;
-      if (r.height < 44 || r.width < 24) {
-        small.push({
-          tag: el.tagName.toLowerCase(),
-          text: (el.textContent || el.getAttribute("aria-label") || "").trim().slice(0, 32),
-          w: Math.round(r.width),
-          h: Math.round(r.height),
-        });
+    if (touch) {
+      for (const el of Array.from(
+        document.querySelectorAll(
+          "a, button, input, select, textarea, [role=tab], [role=button]",
+        ),
+      )) {
+        const r = el.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0) continue;
+        if (r.height < 44 || r.width < 24) {
+          small.push({
+            tag: el.tagName.toLowerCase(),
+            text: (el.textContent || el.getAttribute("aria-label") || "")
+              .trim()
+              .slice(0, 32),
+            w: Math.round(r.width),
+            h: Math.round(r.height),
+          });
+        }
       }
     }
 

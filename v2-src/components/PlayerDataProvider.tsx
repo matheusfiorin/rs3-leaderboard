@@ -33,6 +33,8 @@ import type {
 
 const REVALIDATE_MS = 5 * 60 * 1000;
 
+const SELECTED_KEY = "sexta-era:selected-player";
+
 interface PlayerDataApi {
   players: PlayerSummary[];
   meta: MetaJson;
@@ -44,6 +46,17 @@ interface PlayerDataApi {
   stale: boolean;
   refresh(): Promise<void>;
   byslug(slug: string): PlayerSummary | undefined;
+
+  /**
+   * Which player the per-player pages are showing.
+   *
+   * Lifted out of the individual pages: it used to be four separate useStates
+   * that each reset on navigation, so choosing a player on /pvm and clicking
+   * through to /gear silently put you back on the other one.
+   */
+  selected: PlayerSummary | undefined;
+  selectedSlug: string;
+  setSelected(slug: string): void;
 }
 
 const Ctx = createContext<PlayerDataApi | null>(null);
@@ -122,6 +135,28 @@ export function PlayerDataProvider({
     };
   }, [refresh]);
 
+  const [selectedSlug, setSelectedSlug] = useState(PLAYERS[0]?.slug ?? "");
+
+  // Restore the last choice after mount. Reading localStorage in the initial
+  // state would diverge from the server render and break hydration.
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(SELECTED_KEY);
+      if (saved && PLAYERS.some((p) => p.slug === saved)) setSelectedSlug(saved);
+    } catch {
+      /* private mode — the default is fine */
+    }
+  }, []);
+
+  const setSelected = useCallback((slug: string) => {
+    setSelectedSlug(slug);
+    try {
+      localStorage.setItem(SELECTED_KEY, slug);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   const api = useMemo<PlayerDataApi>(
     () => ({
       players,
@@ -131,8 +166,12 @@ export function PlayerDataProvider({
       stale: refreshedAt === null,
       refresh,
       byslug: (slug) => players.find((p) => p.slug === slug),
+      selected:
+        players.find((p) => p.slug === selectedSlug) ?? players[0],
+      selectedSlug,
+      setSelected,
     }),
-    [players, meta, refreshing, refreshedAt, refresh],
+    [players, meta, refreshing, refreshedAt, refresh, selectedSlug, setSelected],
   );
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;

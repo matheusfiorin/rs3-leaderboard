@@ -52,10 +52,19 @@ export function Stat({
     : "text-ink";
   return (
     <div className="space-y-1">
-      <div className="text-[11px] uppercase tracking-[0.14em] font-mono text-ink-3">
+      {/* Reserve two lines for the label. In a stat row, one label wrapping and
+          its neighbours not would drop that column's value onto a different
+          baseline, making the whole row look broken. */}
+      <div className="text-[11px] uppercase tracking-[0.14em] font-mono text-ink-3 min-h-[2.2em] flex items-start">
         {label}
       </div>
-      <div className={clsx("tabular font-mono font-bold", valueClass, tone)}>
+      <div
+        className={clsx(
+          "tabular font-mono font-bold break-words",
+          valueClass,
+          tone,
+        )}
+      >
         {value}
       </div>
       {hint && <div className="text-xs text-ink-3">{hint}</div>}
@@ -113,7 +122,9 @@ export function Pill({
   return (
     <span
       className={clsx(
-        "inline-flex items-center gap-1 h-5 px-2 rounded-full border text-[10.5px] font-mono uppercase tracking-wider",
+        // min-h rather than a fixed h: a fixed height meant wrapped text spilled
+        // straight through the pill's own border.
+        "inline-flex items-center gap-1 min-h-5 px-2 py-0.5 rounded-full border text-[10.5px] font-mono uppercase tracking-wider",
         map[tone],
       )}
     >
@@ -126,17 +137,21 @@ export function SectionHead({
   title,
   hint,
   right,
+  as = "h2",
 }: {
   title: string;
   hint?: React.ReactNode;
   right?: React.ReactNode;
+  /** Use "h1" for the page's own title. Most routes had no h1 at all. */
+  as?: "h1" | "h2";
 }) {
+  const Heading = as;
   return (
     <header className="flex items-end justify-between gap-4 pb-3 mb-4 border-b border-line">
       <div>
-        <h2 className="font-display italic text-[22px] leading-none text-ink tracking-tight">
+        <Heading className="font-display italic text-[22px] leading-none text-ink tracking-tight">
           {title}
-        </h2>
+        </Heading>
         {hint && (
           <p className="mt-1 text-[12px] text-ink-3 font-mono uppercase tracking-[0.14em]">
             {hint}

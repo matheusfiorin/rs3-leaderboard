@@ -150,9 +150,15 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
 
       async linkDevice(code: string) {
         const clean = code.trim().toLowerCase();
-        if (!clean) return false;
-        setCode(clean);
-        return pullAndMerge(clean);
+        if (!clean || !remoteConfigured()) return false;
+
+        // Only persist the code once the round-trip actually succeeds.
+        // Persisting first flipped the UI into a fully "linked" state — with
+        // copy claiming the data was shared across devices — even when the
+        // request had failed and nothing had ever left the browser.
+        const ok = await pullAndMerge(clean);
+        if (ok) setCode(clean);
+        return ok;
       },
 
       async createSyncCode() {

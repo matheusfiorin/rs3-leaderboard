@@ -184,9 +184,15 @@ export function Ring({
         />
       </svg>
       <div className="absolute inset-0 grid place-items-center">
+        {/* Default centre is always a percentage, and always carries the unit.
+            A bare number inside a ring is ambiguous — the same glyph was being
+            read as a count on one card and a percentage on the next. Callers
+            showing something other than a percentage must pass `children` AND
+            label the unit themselves. */}
         {children ?? (
           <span className="font-mono tabular text-[11px] font-bold text-ink-2">
             {Math.round(safe)}
+            <span className="text-[8px] text-ink-3 align-super ml-px">%</span>
           </span>
         )}
       </div>
@@ -319,9 +325,17 @@ export function ReqChip({ result }: { result: RequirementResult }) {
       ) : (
         <span className="w-[11px] text-center shrink-0 text-ink-faint">·</span>
       )}
-      <span className="truncate max-w-[18ch]">{describe(req)}</span>
+      {/* The label is the entire point of the chip: it names what is blocking
+          you. It wraps rather than truncating — a chip clipped to "Reaper
+          necklace (…" tells the reader nothing, and these live in a wrapping
+          row where a second line is free. */}
+      <span className="whitespace-normal text-left leading-tight py-0.5">
+        {describe(req)}
+      </span>
       {!met && req.kind !== "quest" && req.kind !== "manual" && (
-        <span className="text-ink-faint tabular">{current}</span>
+        <span className="text-ink-3 tabular shrink-0 whitespace-nowrap">
+          {current}
+        </span>
       )}
     </span>
   );
@@ -336,9 +350,12 @@ export function ReqList({
   limit?: number;
   showMet?: boolean;
 }) {
+  const [expanded, setExpanded] = useState(false);
+
   const shown = showMet ? results : results.filter((r) => !r.met);
-  const visible = limit ? shown.slice(0, limit) : shown;
+  const visible = limit && !expanded ? shown.slice(0, limit) : shown;
   const hidden = shown.length - visible.length;
+
   if (!shown.length) {
     return (
       <p className="text-[11px] font-mono uppercase tracking-wider text-success/80">
@@ -346,15 +363,30 @@ export function ReqList({
       </p>
     );
   }
+
   return (
     <div className="flex flex-wrap gap-1.5">
       {visible.map((r, i) => (
         <ReqChip key={i} result={r} />
       ))}
+      {/* A count of things you cannot see is not information. Make it open. */}
       {hidden > 0 && (
-        <span className="inline-flex items-center h-6 px-2 rounded-md text-[11px] font-mono text-ink-3">
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="inline-flex items-center h-6 px-2 rounded-md border border-dashed border-line text-[11px] font-mono text-ink-2 hover:text-ink hover:border-line-strong transition-colors"
+        >
           +{hidden} more
-        </span>
+        </button>
+      )}
+      {expanded && limit && shown.length > limit && (
+        <button
+          type="button"
+          onClick={() => setExpanded(false)}
+          className="inline-flex items-center h-6 px-2 rounded-md text-[11px] font-mono text-ink-3 hover:text-ink-2 transition-colors"
+        >
+          Show less
+        </button>
       )}
     </div>
   );
@@ -432,18 +464,23 @@ export function CountInput({
   const value = progress.count(key);
   const set = (n: number) => progress.set(key, Math.max(0, n));
 
+  // Every counter on a page announces itself identically to a screen reader
+  // unless the owning entity's name is threaded into the control labels —
+  // 39 buttons all called "Increase" is unusable.
+  const name = typeof label === "string" ? label : "count";
+
   return (
-    <div className="flex items-center justify-between gap-3 py-1.5">
-      <span className="text-sm text-ink-2 min-w-0 truncate">{label}</span>
+    <div className="flex items-center gap-3 py-1.5">
+      <span className="text-sm text-ink-2 min-w-0 flex-1 truncate">{label}</span>
       <div className="flex items-center gap-1 shrink-0">
         <button
           type="button"
           onClick={() => set(value - step)}
           disabled={value === 0}
-          aria-label="Decrease"
-          className="grid place-items-center w-8 h-8 rounded-md border border-line text-ink-3 hover:text-ink hover:border-line-strong disabled:opacity-30 disabled:hover:text-ink-3 disabled:hover:border-line transition-colors"
+          aria-label={`Decrease ${name}`}
+          className="grid place-items-center w-11 h-11 sm:w-8 sm:h-8 rounded-md border border-line text-ink-3 hover:text-ink hover:border-line-strong disabled:opacity-30 disabled:hover:text-ink-3 disabled:hover:border-line transition-colors"
         >
-          <Minus size={13} />
+          <Minus size={14} />
         </button>
         <input
           type="number"
@@ -451,19 +488,19 @@ export function CountInput({
           value={value}
           min={0}
           onChange={(e) => set(parseInt(e.target.value || "0", 10))}
-          aria-label={typeof label === "string" ? label : "Count"}
-          className="w-16 h-8 text-center rounded-md bg-bg-raised border border-line font-mono tabular text-sm text-ink focus:border-prayer/50 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          aria-label={name}
+          className="w-16 h-11 sm:h-8 text-center rounded-md bg-bg-raised border border-line font-mono tabular text-sm text-ink focus:border-prayer/50 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
         <button
           type="button"
           onClick={() => set(value + step)}
-          aria-label="Increase"
-          className="grid place-items-center w-8 h-8 rounded-md border border-line text-ink-3 hover:text-ink hover:border-line-strong transition-colors"
+          aria-label={`Increase ${name}`}
+          className="grid place-items-center w-11 h-11 sm:w-8 sm:h-8 rounded-md border border-line text-ink-3 hover:text-ink hover:border-line-strong transition-colors"
         >
-          <Plus size={13} />
+          <Plus size={14} />
         </button>
         {target != null && (
-          <span className="ml-1 font-mono text-[11px] text-ink-faint tabular w-12">
+          <span className="ml-1 font-mono text-[11px] text-ink-3 tabular w-12">
             / {target}
           </span>
         )}
@@ -489,24 +526,32 @@ export function Segmented<T extends string>({
   size?: "sm" | "md";
   ariaLabel?: string;
 }) {
+  // Not a tablist. It was announcing role="tab" while implementing none of the
+  // tab keyboard contract (roving tabindex, arrow keys, aria-controls), which
+  // is worse for a screen-reader user than plain buttons. These are filter
+  // toggles, so they are buttons with aria-pressed.
   return (
     <div
-      role="tablist"
+      role="group"
       aria-label={ariaLabel}
-      className="inline-flex flex-wrap items-center gap-1 p-1 rounded-lg bg-bg-surface border border-line"
+      className="inline-flex flex-wrap items-center gap-1 p-1 rounded-lg bg-bg-surface border border-line max-w-full"
     >
       {options.map((o) => {
         const active = o.value === value;
         return (
           <button
             key={o.value}
-            role="tab"
-            aria-selected={active}
             type="button"
+            aria-pressed={active}
             onClick={() => onChange(o.value)}
             className={clsx(
               "rounded-md font-mono uppercase tracking-wider transition-colors whitespace-nowrap",
-              size === "sm" ? "h-7 px-2.5 text-[10.5px]" : "h-8 px-3 text-[11px]",
+              // 44px on touch, compact for a mouse. These were 28px tall,
+              // below every touch-target guideline, and they are the primary
+              // way to navigate the dense pages.
+              size === "sm"
+                ? "h-11 px-3 text-[10.5px] sm:h-7 sm:px-2.5"
+                : "h-11 px-3.5 text-[11px] sm:h-8 sm:px-3",
               active
                 ? "bg-bg-raised text-ink"
                 : "text-ink-3 hover:text-ink-2 hover:bg-bg-raised/50",
@@ -514,7 +559,7 @@ export function Segmented<T extends string>({
           >
             {o.label}
             {o.count != null && (
-              <span className="ml-1.5 text-ink-faint tabular">{o.count}</span>
+              <span className="ml-1.5 text-ink-3 tabular">{o.count}</span>
             )}
           </button>
         );

@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import {
   Activity,
   Coins,
@@ -66,7 +65,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   const [seenPath, setSeenPath] = useState(path);
-  const reduceMotion = useReducedMotion();
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   // Close the drawer on route change so a tap-through — or a browser back —
   // doesn't leave it hanging over the page it just navigated to. Adjusting
@@ -76,6 +75,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     setSeenPath(path);
     setOpen(false);
   }
+
+  // The drawer is a modal overlay, so Escape must dismiss it and focus must
+  // return to the control that opened it. Without this a keyboard user who
+  // opens the menu has no way back out.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setOpen(false);
+      menuButtonRef.current?.focus();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
 
   // Lock body scroll while the mobile drawer is open.
   useEffect(() => {
@@ -96,22 +109,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         Skip to content
       </a>
 
-      <TopBar onMenu={() => setOpen((v) => !v)} menuOpen={open} />
+      <TopBar
+        onMenu={() => setOpen((v) => !v)}
+        menuOpen={open}
+        menuButtonRef={menuButtonRef}
+      />
 
-      <div className="flex flex-1 w-full max-w-[1480px] mx-auto">
+      {/* The sidebar is anchored to the viewport edge, not to the centred
+          content column. Wrapping both in one max-width container left the nav
+          floating 220px off the left edge above 1480px, which read as broken. */}
+      <div className="flex flex-1 w-full">
         <Sidebar path={path} mobileOpen={open} onNav={() => setOpen(false)} />
         <main
           id="main"
           className="flex-1 min-w-0 px-4 sm:px-6 md:px-8 py-6 md:py-8 pb-24 md:pb-8"
         >
-          <motion.div
-            key={path}
-            initial={reduceMotion ? false : { opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
-          >
+          <div key={path} className="route-enter mx-auto w-full max-w-[1400px]">
             {children}
-          </motion.div>
+          </div>
         </main>
       </div>
 
@@ -120,14 +135,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function TopBar({ onMenu, menuOpen }: { onMenu: () => void; menuOpen: boolean }) {
+function TopBar({
+  onMenu,
+  menuOpen,
+  menuButtonRef,
+}: {
+  onMenu: () => void;
+  menuOpen: boolean;
+  menuButtonRef: React.RefObject<HTMLButtonElement | null>;
+}) {
   const { meta, refreshing, refreshedAt, refresh } = usePlayerData();
 
   return (
     <header className="sticky top-0 z-30 h-14 border-b border-line bg-bg/85 backdrop-blur-md">
-      <div className="h-full max-w-[1480px] mx-auto flex items-center justify-between gap-3 px-4 sm:px-6 md:px-8">
+      <div className="h-full max-w-[1400px] mx-auto flex items-center justify-between gap-3 px-4 sm:px-6 md:px-8">
         <div className="flex items-center gap-3 min-w-0">
           <button
+            ref={menuButtonRef}
             type="button"
             className="md:hidden -ml-1 p-2 text-ink-2 hover:text-ink"
             onClick={onMenu}
@@ -225,6 +249,7 @@ function Sidebar({
                       <Link
                         href={n.href}
                         onClick={onNav}
+                        prefetch={false}
                         aria-current={active ? "page" : undefined}
                         className={clsx(
                           "group relative flex items-center gap-3 h-9 px-2 rounded-md text-sm transition-colors",
@@ -267,6 +292,7 @@ function BottomNav({ path }: { path: string | null }) {
           <Link
             key={it.href}
             href={it.href}
+            prefetch={false}
             aria-current={active ? "page" : undefined}
             className={clsx(
               "flex flex-col items-center justify-center gap-1 h-16 text-[10px] font-mono uppercase tracking-wider transition-colors",

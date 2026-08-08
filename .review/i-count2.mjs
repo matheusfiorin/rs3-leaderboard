@@ -1,0 +1,10 @@
+import { chromium } from '@playwright/test';
+const b = await chromium.launch();
+const p = await (await b.newContext({viewport:{width:1440,height:900}})).newPage();
+await p.goto('http://localhost:4173/rs3-leaderboard/money/', {waitUntil:'networkidle'});
+await p.waitForTimeout(2000);
+await p.locator('button[aria-pressed]').filter({hasText:/Available to me/i}).click();
+await p.waitForTimeout(1000);
+console.log('cards', await p.locator('main div.grid.md\\:grid-cols-2 > div').count(), 'with recipe receipt', await p.locator('main details').count());
+console.log('price-unavailable cards', (await p.locator('main div.grid.md\\:grid-cols-2 > div').allInnerTexts()).filter(t=>/price unavailable/i.test(t)).length);
+await b.close();

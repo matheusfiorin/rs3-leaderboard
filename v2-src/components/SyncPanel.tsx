@@ -105,8 +105,9 @@ export function SyncPanel() {
           <Smartphone size={18} className="text-ink-3 mt-0.5 shrink-0" />
           <div className="min-w-0">
             <p className="text-sm text-ink-2">
-              Kill counts and checklists are saved on this device automatically.
-              To see them on your phone as well, link both with the same sync code.
+              {progress.remoteAvailable
+                ? "Kill counts and checklists are saved on this device automatically. To see them on your phone as well, link both with the same sync code."
+                : "Kill counts and checklists are saved in this browser and stay here. Cloud sync is not enabled on this build, so use the export and import below to move them to another device."}
             </p>
             <p className="mt-1.5 text-xs text-ink-3">
               {trackedCount} item{trackedCount === 1 ? "" : "s"} tracked
@@ -120,14 +121,17 @@ export function SyncPanel() {
           </div>
         </div>
 
-        {!progress.remoteAvailable && (
-          <p className="text-xs text-warn bg-warn/5 border border-warn/20 rounded-md px-3 py-2">
-            Cloud sync is not configured for this build. Export and import below
-            still moves progress between devices by hand.
+        {/* When there is no backend, the entire sync-code apparatus is a lie:
+            it offers to create codes that cannot be stored and to link devices
+            that will never see each other. Hide it rather than let it claim
+            something untrue about where the user's data lives. */}
+        {!progress.remoteAvailable ? (
+          <p className="text-xs text-ink-3 bg-bg-raised/60 border border-line rounded-md px-3 py-2">
+            Nothing is uploaded anywhere. To enable cross-device sync, see
+            SYNC_SETUP.md in the repository — it takes about five minutes and
+            needs a free Supabase project.
           </p>
-        )}
-
-        {progress.syncCode ? (
+        ) : progress.syncCode ? (
           <div className="space-y-3">
             <div>
               <label className="block text-[11px] font-mono uppercase tracking-wider text-ink-3 mb-1.5">
