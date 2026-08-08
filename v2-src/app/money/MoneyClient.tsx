@@ -1016,8 +1016,15 @@ function RecipeTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[300px] border-collapse text-[11px] font-mono tabular">
-        {/* The item name is the only cell that may wrap, so it takes the slack
+      <table className="w-full border-collapse text-[11px] font-mono tabular">
+        {/* No min-width floor: a 300px floor inside the 294px wrapper at 360px
+            overflowed by 6px, which is too little to read as a scroller and cut
+            the Value column mid-glyph ("VALU", "2.5M /"). At w-full the numeric
+            columns fit their own tokens down to 320px, and if a wide unit price
+            ever forces the table past the wrapper it scrolls by a visible
+            amount instead of silently shaving the rightmost digits.
+
+            The item name is the only cell that may wrap, so it takes the slack
             and the three numeric columns keep their tokens whole. */}
         <colgroup>
           <col />

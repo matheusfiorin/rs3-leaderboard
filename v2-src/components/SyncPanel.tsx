@@ -160,7 +160,7 @@ export function SyncPanel() {
                 type="button"
                 onClick={() => void progress.syncNow()}
                 disabled={busy}
-                className="inline-flex items-center gap-2 h-9 px-3 rounded-md border border-line text-xs text-ink-2 hover:text-ink hover:border-line-strong transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 h-11 sm:h-9 px-3 rounded-md border border-line text-xs text-ink-2 hover:text-ink hover:border-line-strong transition-colors disabled:opacity-50"
               >
                 <RefreshCw size={13} className={progress.syncState === "syncing" ? "animate-spin" : ""} />
                 Sync now
@@ -168,7 +168,7 @@ export function SyncPanel() {
               <button
                 type="button"
                 onClick={() => progress.unlink()}
-                className="inline-flex items-center gap-2 h-9 px-3 rounded-md border border-line text-xs text-ink-3 hover:text-danger hover:border-danger/40 transition-colors"
+                className="inline-flex items-center gap-2 h-11 sm:h-9 px-3 rounded-md border border-line text-xs text-ink-3 hover:text-danger hover:border-danger/40 transition-colors"
               >
                 <Unlink size={13} />
                 Unlink this device
@@ -185,7 +185,7 @@ export function SyncPanel() {
                 type="button"
                 onClick={handleCreate}
                 disabled={busy || !progress.remoteAvailable}
-                className="inline-flex items-center gap-2 h-9 px-3 rounded-md border border-prayer/40 text-xs text-prayer-bright hover:bg-prayer/10 transition-colors disabled:opacity-40"
+                className="inline-flex items-center gap-2 h-11 sm:h-9 px-3 rounded-md border border-prayer/40 text-xs text-prayer-bright hover:bg-prayer/10 transition-colors disabled:opacity-40"
               >
                 {busy ? <Loader2 size={13} className="animate-spin" /> : <Link2 size={13} />}
                 Create a sync code
@@ -206,13 +206,13 @@ export function SyncPanel() {
                   placeholder="xxxxx-xxxxx-xxxxx-xxxxx"
                   autoComplete="off"
                   spellCheck={false}
-                  className="flex-1 min-w-0 h-9 px-3 rounded-md bg-bg-raised border border-line font-mono text-xs text-ink placeholder:text-ink-faint focus:border-prayer/50 outline-none"
+                  className="flex-1 min-w-0 h-11 sm:h-9 px-3 rounded-md bg-bg-raised border border-line font-mono text-xs text-ink placeholder:text-ink-faint focus:border-prayer/50 outline-none"
                 />
                 <button
                   type="button"
                   onClick={handleLink}
                   disabled={busy || !codeInput.trim()}
-                  className="h-9 px-3 rounded-md border border-line text-xs text-ink-2 hover:text-ink hover:border-line-strong transition-colors disabled:opacity-40"
+                  className="h-11 sm:h-9 px-3 rounded-md border border-line text-xs text-ink-2 hover:text-ink hover:border-line-strong transition-colors disabled:opacity-40"
                 >
                   Link
                 </button>
@@ -247,7 +247,7 @@ export function SyncPanel() {
           <button
             type="button"
             onClick={handleExport}
-            className="inline-flex items-center gap-2 h-9 px-3 rounded-md border border-line text-xs text-ink-2 hover:text-ink hover:border-line-strong transition-colors"
+            className="inline-flex items-center gap-2 h-11 sm:h-9 px-3 rounded-md border border-line text-xs text-ink-2 hover:text-ink hover:border-line-strong transition-colors"
           >
             <Download size={13} />
             Export progress
@@ -273,7 +273,7 @@ export function SyncPanel() {
             type="button"
             onClick={handleImport}
             disabled={!importText.trim()}
-            className="inline-flex items-center gap-2 h-9 px-3 rounded-md border border-line text-xs text-ink-2 hover:text-ink hover:border-line-strong transition-colors disabled:opacity-40"
+            className="inline-flex items-center gap-2 h-11 sm:h-9 px-3 rounded-md border border-line text-xs text-ink-2 hover:text-ink hover:border-line-strong transition-colors disabled:opacity-40"
           >
             <Upload size={13} />
             Import and merge

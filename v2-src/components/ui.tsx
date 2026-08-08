@@ -312,7 +312,9 @@ export function ReqChip({ result }: { result: RequirementResult }) {
   return (
     <span
       className={clsx(
-        "inline-flex items-center gap-1.5 h-6 pl-1.5 pr-2 rounded-md border text-[11px] font-mono",
+        // min-h, not h: the label wraps in narrow grid cells, and a fixed
+        // height let the second line spill straight through the border.
+        "inline-flex items-center gap-1.5 min-h-6 py-0.5 pl-1.5 pr-2 rounded-md border text-[11px] font-mono",
         met
           ? "border-success/25 text-success/90 bg-success/5"
           : "border-line text-ink-2 bg-bg-raised/50",
@@ -549,11 +551,13 @@ export function Segmented<T extends string>({
     <div
       role="group"
       aria-label={ariaLabel}
-      // On a narrow screen the chips used to wrap inside the pill, leaving
-      // most of a second row as dead space inside a bordered container. A
-      // single scrolling row reads correctly at any width.
-      className="flex sm:inline-flex flex-nowrap sm:flex-wrap items-center gap-1 p-1 rounded-lg bg-bg-surface border border-line max-w-full overflow-x-auto sm:overflow-visible scroll-fade-x sm:[mask-image:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="flex sm:inline-flex max-w-full rounded-lg bg-bg-surface border border-line p-1"
     >
+      {/* The scroll and its fade live on an INNER element. A mask-image on the
+          bordered container masks the border and background too, dissolving
+          the group's own right edge into the page — which reads as a rendering
+          bug on any row that does not actually overflow. */}
+      <div className="flex min-w-0 flex-nowrap sm:flex-wrap items-center gap-1 overflow-x-auto sm:overflow-visible scroll-fade-x sm:[mask-image:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {options.map((o) => {
         const active = o.value === value;
         return (
@@ -582,6 +586,7 @@ export function Segmented<T extends string>({
           </button>
         );
       })}
+      </div>
     </div>
   );
 }

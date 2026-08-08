@@ -328,8 +328,13 @@ export default function SkillsClient() {
               </h2>
             )}
             {/* Two columns from xl: 29 single-file rows made a 3,800px page and
-                left ~500px of dead width beside every one of them. */}
-            <ul className="grid grid-cols-1 xl:grid-cols-2 gap-2 items-start">
+                left ~500px of dead width beside every one of them.
+                The open row spans both columns instead of inflating one cell —
+                a 666px expanded card beside a 126px collapsed sibling used to
+                leave 540px of dead column in the first screenful. Dense flow
+                backfills the single-cell gap left when the open row starts in
+                the right-hand column. */}
+            <ul className="grid grid-cols-1 xl:grid-cols-2 xl:grid-flow-row-dense gap-2 items-start">
               {g.rows.map(({ skill }) => (
                 <SkillRow
                   key={skill.id}
@@ -594,7 +599,14 @@ function SkillRow({
   const teaser = rowTeaser(mine, unlock?.label ?? null, unlock?.level ?? 0);
 
   return (
-    <li className="rounded-lg border border-line bg-bg-surface">
+    <li
+      className={clsx(
+        "rounded-lg border border-line bg-bg-surface",
+        // Own the whole row while expanded so the detail panel spends the width
+        // it needs instead of stretching one cell and orphaning its neighbour.
+        open && "xl:col-span-2",
+      )}
+    >
       {/* The whole header is the control. A 14px chevron was the only
           affordance on 29 rows of otherwise inert-looking text. */}
       <button
@@ -708,7 +720,7 @@ function SkillDetail({ player, skill }: { player: PlayerSummary; skill: SkillDef
 
   return (
     <div className="rounded-lg border border-line bg-bg-raised/40 p-4 space-y-4">
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-line pb-3">
         <span className={clsx("font-mono text-[11px] uppercase tracking-[0.16em]", ACCENT_TEXT[player.accent])}>
           {player.name}
         </span>
@@ -727,141 +739,152 @@ function SkillDetail({ player, skill }: { player: PlayerSummary; skill: SkillDef
         </span>
       </div>
 
-      <Meter
-        label={
-          levelling
-            ? `Level ${lvl} → ${prog.nextLevel}`
-            : `Level ${skill.max} is the cap — banking XP to 200M`
-        }
-        value={meterValue(prog)}
-        pct={prog.pct}
-        accent={player.accent}
-      />
+      {/* The panel is full-row from xl, so it reflows into a progress/unlock
+          rail beside the methods list rather than running one narrow column
+          666px down the page. */}
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] xl:gap-6">
+        <div className="min-w-0 space-y-4">
+          <Meter
+            label={
+              levelling
+                ? `Level ${lvl} → ${prog.nextLevel}`
+                : `Level ${skill.max} is the cap — banking XP to 200M`
+            }
+            value={meterValue(prog)}
+            pct={prog.pct}
+            accent={player.accent}
+          />
 
-      {prog.state !== "levelling" && prog.virtualLevel > skill.max && (
-        <p className="text-[11.5px] text-ink-3">
-          {fmt(prog.xp)} XP is virtual level {prog.virtualLevel} on the{" "}
-          {skill.curve === "elite" ? "elite" : "standard"} curve — {skill.max} is
-          simply where the game stops counting levels.
-        </p>
-      )}
-
-      {unlock ? (
-        <a
-          href={wikiUrl(unlock.wiki)}
-          target="_blank"
-          rel="noreferrer"
-          className="block rounded-md border border-ash/30 bg-ash/5 p-3 transition-colors hover:border-ash/50"
-        >
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-ash-bright">
-              Next unlock
-            </span>
-            <span className="font-mono tabular text-[10.5px] text-ink-3">
-              level {unlock.level} · {unlock.level - lvl} to go
-            </span>
-            <ExternalLink size={11} className="ml-auto shrink-0 text-ink-3" />
-          </div>
-          <p className="mt-1.5 text-sm text-ink">{unlock.label}</p>
-          <p className="mt-0.5 text-[11.5px] leading-snug text-ink-3">{unlock.blurb}</p>
-        </a>
-      ) : (
-        <p className="text-[11.5px] text-ink-3">
-          No thresholds left above this level — everything in {skill.key} is already open.
-        </p>
-      )}
-
-      <div>
-        <h4 className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3 mb-1">
-          Best methods now
-        </h4>
-        {methods.length === 0 ? (
-          <p className="text-[11.5px] text-ink-3 py-2">
-            Nothing documented at level {lvl} — the ladder above picks back up at{" "}
-            {nextMethod ? nextMethod.minLevel : skill.max}.
-          </p>
-        ) : (
-          <ul>
-            {methods.map((m) => (
-              <li key={m.id} className="border-t border-line py-2.5 first:border-t-0">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <a
-                      href={wikiUrl(m.wiki)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-sm text-ink hover:text-prayer-bright transition-colors"
-                    >
-                      <span className="truncate">{m.name}</span>
-                      <ExternalLink size={11} className="shrink-0 text-ink-3" />
-                    </a>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                      <Pill tone={INTENSITY[m.intensity].tone}>
-                        {INTENSITY[m.intensity].label}
-                      </Pill>
-                      {m.gpPerHour != null && (
-                        <Pill tone="success">{fmtGp(m.gpPerHour)}/h</Pill>
-                      )}
-                      {!m.members && <Pill tone="neutral">f2p</Pill>}
-                    </div>
-                    {m.note && (
-                      <p className="mt-1.5 text-[11.5px] leading-snug text-ink-3">
-                        {m.note}
-                      </p>
-                    )}
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <div className="font-mono tabular text-sm text-ink">
-                      {fmtCompact(m.xpPerHour)}
-                    </div>
-                    <div className="font-mono text-[9.5px] uppercase tracking-wider text-ink-3">
-                      xp / h
-                    </div>
-                    {prog.state !== "xp-capped" && (
-                      <div
-                        className="mt-1.5 font-mono tabular text-[11px] text-ink-2"
-                        title={
-                          levelling
-                            ? `Hours at this rate to reach level ${prog.nextLevel}`
-                            : "Hours at this rate to reach the 200M XP cap"
-                        }
-                      >
-                        {fmtHours(timeToLevel(prog.xp, targetXp, m.xpPerHour))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {(nextMethod || laterUnlocks.length > 0) && (
-        <div className="border-t border-line pt-3 space-y-2">
-          {nextMethod && (
+          {prog.state !== "levelling" && prog.virtualLevel > skill.max && (
             <p className="text-[11.5px] text-ink-3">
+              {fmt(prog.xp)} XP is virtual level {prog.virtualLevel} on the{" "}
+              {skill.curve === "elite" ? "elite" : "standard"} curve — {skill.max} is
+              simply where the game stops counting levels.
+            </p>
+          )}
+
+          {unlock ? (
+            <a
+              href={wikiUrl(unlock.wiki)}
+              target="_blank"
+              rel="noreferrer"
+              className="block rounded-md border border-ash/30 bg-ash/5 p-3 transition-colors hover:border-ash/50"
+            >
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-ash-bright">
+                  Next unlock
+                </span>
+                <span className="font-mono tabular text-[10.5px] text-ink-3">
+                  level {unlock.level} · {unlock.level - lvl} to go
+                </span>
+                <ExternalLink size={11} className="ml-auto shrink-0 text-ink-3" />
+              </div>
+              <p className="mt-1.5 text-sm text-ink">{unlock.label}</p>
+              <p className="mt-0.5 text-[11.5px] leading-snug text-ink-3">{unlock.blurb}</p>
+            </a>
+          ) : (
+            <p className="text-[11.5px] text-ink-3">
+              No thresholds left above this level — everything in {skill.key} is already open.
+            </p>
+          )}
+
+          {laterUnlocks.length > 0 && (
+            <div>
+              <h4 className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3 mb-1.5">
+                Later thresholds
+              </h4>
+              <div className="flex flex-wrap gap-1.5">
+                {laterUnlocks.map((u) => (
+                  <span
+                    key={`${u.skill}-${u.level}-${u.label}`}
+                    className="inline-flex items-center gap-1.5 min-h-6 py-0.5 px-2 rounded-md border border-line text-[11px] font-mono text-ink-3"
+                  >
+                    <span className="tabular text-ink-3">{u.level}</span>
+                    <span className="truncate max-w-[20ch]">{u.label}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="min-w-0 space-y-3 xl:border-l xl:border-line xl:pl-6">
+          <div>
+            <h4 className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3 mb-1">
+              Best methods now
+            </h4>
+            {methods.length === 0 ? (
+              <p className="text-[11.5px] text-ink-3 py-2">
+                Nothing documented at level {lvl} — the ladder above picks back up at{" "}
+                {nextMethod ? nextMethod.minLevel : skill.max}.
+              </p>
+            ) : (
+              <ul>
+                {methods.map((m) => (
+                  <li key={m.id} className="border-t border-line py-2.5 first:border-t-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <a
+                          href={wikiUrl(m.wiki)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-sm text-ink hover:text-prayer-bright transition-colors"
+                        >
+                          <span className="truncate">{m.name}</span>
+                          <ExternalLink size={11} className="shrink-0 text-ink-3" />
+                        </a>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                          <Pill tone={INTENSITY[m.intensity].tone}>
+                            {INTENSITY[m.intensity].label}
+                          </Pill>
+                          {m.gpPerHour != null && (
+                            <Pill tone="success">{fmtGp(m.gpPerHour)}/h</Pill>
+                          )}
+                          {!m.members && <Pill tone="neutral">f2p</Pill>}
+                        </div>
+                        {m.note && (
+                          <p className="mt-1.5 text-[11.5px] leading-snug text-ink-3">
+                            {m.note}
+                          </p>
+                        )}
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <div className="font-mono tabular text-sm text-ink">
+                          {fmtCompact(m.xpPerHour)}
+                        </div>
+                        <div className="font-mono text-[9.5px] uppercase tracking-wider text-ink-3">
+                          xp / h
+                        </div>
+                        {prog.state !== "xp-capped" && (
+                          <div
+                            className="mt-1.5 font-mono tabular text-[11px] text-ink-2"
+                            title={
+                              levelling
+                                ? `Hours at this rate to reach level ${prog.nextLevel}`
+                                : "Hours at this rate to reach the 200M XP cap"
+                            }
+                          >
+                            {fmtHours(timeToLevel(prog.xp, targetXp, m.xpPerHour))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {nextMethod && (
+            <p className="border-t border-line pt-3 text-[11.5px] text-ink-3">
               Next method:{" "}
               <span className="text-ink-2">{nextMethod.name}</span> at level{" "}
               <span className="font-mono tabular text-ink-2">{nextMethod.minLevel}</span>{" "}
               ({fmtCompact(nextMethod.xpPerHour)} xp/h)
             </p>
           )}
-          {laterUnlocks.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {laterUnlocks.map((u) => (
-                <span
-                  key={`${u.skill}-${u.level}-${u.label}`}
-                  className="inline-flex items-center gap-1.5 h-6 px-2 rounded-md border border-line text-[11px] font-mono text-ink-3"
-                >
-                  <span className="tabular text-ink-3">{u.level}</span>
-                  <span className="truncate max-w-[20ch]">{u.label}</span>
-                </span>
-              ))}
-            </div>
-          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

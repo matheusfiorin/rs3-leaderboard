@@ -148,7 +148,7 @@ function TopBar({
   const { meta, refreshing, refreshedAt, refresh } = usePlayerData();
 
   return (
-    <header className="sticky top-0 z-30 h-14 border-b border-line bg-bg/85 backdrop-blur-md">
+    <header className="sticky top-0 z-30 h-14 border-b border-line bg-bg backdrop-blur-md">
       <div className="h-full max-w-[1400px] mx-auto flex items-center justify-between gap-3 px-4 sm:px-6 md:px-8">
         <div className="flex items-center gap-3 min-w-0">
           <button
@@ -235,7 +235,7 @@ function Sidebar({
             : "hidden md:block",
         )}
       >
-        <nav className="px-3 py-5 space-y-5" aria-label="Main">
+        <nav className="px-3 py-5 pb-28 md:pb-5 space-y-5" aria-label="Main">
           {GROUPS.map((g) => (
             <div key={g}>
               <div className="px-2 mb-1 text-[10px] uppercase tracking-[0.18em] text-ink-faint font-mono">

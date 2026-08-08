@@ -2,7 +2,7 @@
 
 import { Fragment, useMemo, useState } from "react";
 import { clsx } from "clsx";
-import { ArrowUpRight, DoorOpen, Lock } from "lucide-react";
+import { ArrowUpRight, ChevronDown, DoorOpen, Lock } from "lucide-react";
 import { Card, EmptyState, Pill, SectionHead, Skeleton, Stat } from "@/components/primitives";
 import {
   ACCENT_BORDER,
@@ -89,6 +89,25 @@ function needsQuests(entry: { requirements: Requirement[] }): boolean {
 
 type Section = "all" | "elite" | "raids" | "necro";
 
+/** The three top-level sections, in reading order. */
+type Fold = Exclude<Section, "all">;
+const FOLDS: Fold[] = ["elite", "raids", "necro"];
+
+/**
+ * Defaults, not preferences. Unfolded, this page was 11,200px at 360px — about
+ * fifteen viewports, with the Necromancy ladder alone accounting for 6,300px of
+ * it. Elite Dungeons is the shortest section and the one most accounts can walk
+ * straight into, so it opens; Raids is group content you cannot act on while
+ * reading, and the ladder is 29 rungs of a single skill's roadmap, most of it
+ * out of reach. Both start folded, with their counts still on the header so a
+ * folded section is a summary rather than a blank.
+ */
+const FOLD_DEFAULT: Record<Fold, boolean> = {
+  elite: true,
+  raids: false,
+  necro: false,
+};
+
 /**
  * Every recurring label on this page used to carry its own explanation inside
  * every card — the same four sentences reprinted nineteen times, outweighing
@@ -157,6 +176,8 @@ export default function DungeonsClient() {
   const { players, loading, gate } = useEval();
   const { selected, setSelected } = usePlayerData();
   const [section, setSection] = useState<Section>("all");
+  /** Explicit user collapse/expand, keyed by section. Absent = use the default. */
+  const [fold, setFold] = useState<Partial<Record<Fold, boolean>>>({});
 
   const ladder = useMemo(
     () =>
@@ -185,17 +206,32 @@ export default function DungeonsClient() {
 
   // "Open" counts only gates the game checks — recommendations and prep are
   // deliberately excluded, because neither stops you at the door.
-  const open = instances.filter((e) =>
-    splitReqs(gate(player.slug, e.requirements).results).required.every((r) => r.met),
-  ).length;
+  const doorsOpen = (entries: ContentEntry[]) =>
+    entries.filter((e) =>
+      splitReqs(gate(player.slug, e.requirements).results).required.every((r) => r.met),
+    ).length;
+  const eliteOpen = doorsOpen(ELITE_DUNGEONS);
+  const raidsOpen = doorsOpen(RAIDS);
+  const open = eliteOpen + raidsOpen;
 
   const reached = ladder.filter((r) => r.level <= necroLevel).length;
   const next = ladder.find((r) => r.level > necroLevel);
   const cleared = ALL_CONTENT.filter((e) => gate(player.slug, e.requirements).complete).length;
 
-  const showInstances = section !== "necro";
+  // Narrowing the Segmented to one section is an explicit request to read it,
+  // so that section is forced open and its header stops offering to fold.
+  const isOpen = (k: Fold) => (section === "all" ? (fold[k] ?? FOLD_DEFAULT[k]) : true);
+  const allOpen = FOLDS.every(isOpen);
+  const toggleAll = () =>
+    setFold(
+      Object.fromEntries(FOLDS.map((k) => [k, !allOpen] as const)) as Record<Fold, boolean>,
+    );
+
+  const showInstances = section !== "necro" && (isOpen("elite") || isOpen("raids"));
   const legendKeys: LegendKey[] =
-    section === "raids" ? ["prep", "recommended"] : ["gear", "story", "prep", "recommended"];
+    section === "raids" || !isOpen("elite")
+      ? ["prep", "recommended"]
+      : ["gear", "story", "prep", "recommended"];
 
   return (
     <div className="space-y-6">
@@ -240,82 +276,130 @@ export default function DungeonsClient() {
             loading={loading}
           />
 
-          <Segmented<Section>
-            ariaLabel="Jump to section"
-            value={section}
-            onChange={setSection}
-            options={[
-              { value: "all", label: "All" },
-              { value: "elite", label: "Elite", count: ELITE_DUNGEONS.length },
-              { value: "raids", label: "Raids", count: RAIDS.length },
-              { value: "necro", label: "Necro", count: ladder.length },
-            ]}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <Segmented<Section>
+              ariaLabel="Jump to section"
+              value={section}
+              onChange={setSection}
+              options={[
+                { value: "all", label: "All" },
+                { value: "elite", label: "Elite", count: ELITE_DUNGEONS.length },
+                { value: "raids", label: "Raids", count: RAIDS.length },
+                { value: "necro", label: "Necro", count: ladder.length },
+              ]}
+            />
+            {section === "all" && (
+              <button
+                type="button"
+                onClick={toggleAll}
+                className="inline-flex h-11 items-center gap-2 rounded-lg border border-line px-3 font-mono text-[11px] uppercase tracking-wider text-ink-3 transition-colors hover:border-line-strong hover:text-ink-2 sm:h-8"
+              >
+                <ChevronDown
+                  size={14}
+                  aria-hidden="true"
+                  className={clsx("transition-transform", allOpen && "rotate-180")}
+                />
+                {allOpen ? "Fold all" : "Open all"}
+              </button>
+            )}
+          </div>
 
           {showInstances && <Legend keys={legendKeys} />}
 
           {(section === "all" || section === "elite") && (
             <section className="space-y-4" aria-labelledby="dungeons-elite">
-              <SubHead
+              <FoldHead
                 id="dungeons-elite"
+                panelId="dungeons-elite-panel"
                 title="Elite Dungeons"
+                meta={`${eliteOpen} of ${ELITE_DUNGEONS.length} open`}
+                folded={`${ELITE_DUNGEONS.length} folded`}
                 note="Instanced three-boss runs. Only ED1 and ED4 have a door check — the other two you can simply walk into."
+                open={isOpen("elite")}
+                locked={section !== "all"}
+                onToggle={() => setFold((p) => ({ ...p, elite: !isOpen("elite") }))}
               />
-              <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-                {ELITE_DUNGEONS.map((d) => (
-                  <InstanceCard
-                    key={d.id}
-                    entry={d}
-                    accent={player.accent}
-                    gate={gate(player.slug, d.requirements)}
-                    pending={loading && needsQuests(d)}
-                    meta={<DungeonMeta entry={d} />}
-                    list={{ label: "Bosses", items: d.bosses }}
-                  />
-                ))}
-              </div>
+              {isOpen("elite") && (
+                <div
+                  id="dungeons-elite-panel"
+                  className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3"
+                >
+                  {ELITE_DUNGEONS.map((d) => (
+                    <InstanceCard
+                      key={d.id}
+                      entry={d}
+                      accent={player.accent}
+                      gate={gate(player.slug, d.requirements)}
+                      pending={loading && needsQuests(d)}
+                      meta={<DungeonMeta entry={d} />}
+                      list={{ label: "Bosses", items: d.bosses }}
+                    />
+                  ))}
+                </div>
+              )}
             </section>
           )}
 
           {(section === "all" || section === "raids") && (
             <section className="space-y-4" aria-labelledby="dungeons-raids">
-              <SubHead
+              <FoldHead
                 id="dungeons-raids"
+                panelId="dungeons-raids-panel"
                 title="Raids"
+                meta={`${raidsOpen} of ${RAIDS.length} open`}
+                folded={`${RAIDS.length} folded`}
                 note="Group content with HP that scales to team size. Sanctum sits here rather than with the Elite Dungeons — the wiki is explicit that it is not one."
+                open={isOpen("raids")}
+                locked={section !== "all"}
+                onToggle={() => setFold((p) => ({ ...p, raids: !isOpen("raids") }))}
               />
-              <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-                {RAIDS.map((r) => (
-                  <InstanceCard
-                    key={r.id}
-                    entry={r}
-                    accent={player.accent}
-                    gate={gate(player.slug, r.requirements)}
-                    pending={loading && needsQuests(r)}
-                    meta={<RaidMeta entry={r} />}
-                    list={{ label: "Full clear", items: r.phases, ordered: true }}
-                  />
-                ))}
-              </div>
+              {isOpen("raids") && (
+                <div
+                  id="dungeons-raids-panel"
+                  className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3"
+                >
+                  {RAIDS.map((r) => (
+                    <InstanceCard
+                      key={r.id}
+                      entry={r}
+                      accent={player.accent}
+                      gate={gate(player.slug, r.requirements)}
+                      pending={loading && needsQuests(r)}
+                      meta={<RaidMeta entry={r} />}
+                      list={{ label: "Full clear", items: r.phases, ordered: true }}
+                    />
+                  ))}
+                </div>
+              )}
             </section>
           )}
 
           {(section === "all" || section === "necro") && (
             <section className="space-y-4" aria-labelledby="dungeons-necro">
-              <SubHead
+              <FoldHead
                 id="dungeons-necro"
+                panelId="dungeons-necro-panel"
                 title="Necromancy ladder"
+                meta={`${reached} of ${ladder.length} reached`}
+                folded={`${ladder.length} rungs folded`}
                 note="Every unlock from the Underworld portal to Rasial, in the order the levels arrive. The number on each rung is the Necromancy level it unlocks at."
+                open={isOpen("necro")}
+                locked={section !== "all"}
+                onToggle={() => setFold((p) => ({ ...p, necro: !isOpen("necro") }))}
               />
-              <NecroLadder
-                rungs={ladder}
-                player={player}
-                necroLevel={necroLevel}
-                xpPct={toNext.pct}
-                xpNeeded={toNext.needed}
-                gate={gate}
-                loading={loading}
-              />
+              {isOpen("necro") && (
+                <div id="dungeons-necro-panel">
+                  <NecroLadder
+                    rungs={ladder}
+                    player={player}
+                    necroLevel={necroLevel}
+                    xpPct={toNext.pct}
+                    xpNeeded={toNext.needed}
+                    gate={gate}
+                    loading={loading}
+                  />
+                </div>
+              )}
             </section>
           )}
         </div>
@@ -420,14 +504,73 @@ function Hero({
   );
 }
 
-/** h2, because the page title is now the h1 — nothing may skip a level. */
-function SubHead({ id, title, note }: { id: string; title: string; note: React.ReactNode }) {
+/**
+ * h2, because the page title is now the h1 — nothing may skip a level. The
+ * heading is also the section's disclosure, matching /pvm: chevron, coloured
+ * rule, live counts, and a "N folded" tail so a closed section still says how
+ * much is behind it. The note is part of the panel — a folded section is a
+ * one-line summary, and three paragraphs of preamble is what made scrolling
+ * past this page expensive in the first place.
+ */
+function FoldHead({
+  id,
+  panelId,
+  title,
+  meta,
+  folded,
+  note,
+  open,
+  locked,
+  onToggle,
+}: {
+  id: string;
+  panelId: string;
+  title: string;
+  meta: string;
+  folded: string;
+  note: React.ReactNode;
+  open: boolean;
+  locked: boolean;
+  onToggle: () => void;
+}) {
   return (
     <div className="pt-2">
-      <h2 id={id} className="font-display italic text-lg leading-none tracking-tight text-ink">
-        {title}
+      <h2 id={id}>
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={open}
+          aria-controls={open ? panelId : undefined}
+          disabled={locked}
+          className={clsx(
+            "flex min-h-[44px] w-full flex-wrap items-center gap-x-3 gap-y-1 border-b-2 border-line-strong py-2 text-left transition-colors",
+            !locked && "cursor-pointer rounded-t hover:bg-bg-surface/60",
+          )}
+        >
+          {!locked && (
+            <ChevronDown
+              size={18}
+              aria-hidden="true"
+              className={clsx(
+                "shrink-0 text-ink-3 transition-transform",
+                !open && "-rotate-90",
+              )}
+            />
+          )}
+          <span className="font-display italic text-lg leading-none tracking-tight text-ink sm:text-xl">
+            {title}
+          </span>
+          <span className="font-mono tabular text-[10.5px] uppercase tracking-[0.14em] text-ink-2">
+            {meta}
+          </span>
+          {!open && (
+            <span className="ml-auto font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3">
+              {folded}
+            </span>
+          )}
+        </button>
       </h2>
-      <p className="mt-1.5 max-w-prose text-xs leading-relaxed text-ink-3">{note}</p>
+      {open && <p className="mt-2 max-w-prose text-xs leading-relaxed text-ink-3">{note}</p>}
     </div>
   );
 }
@@ -654,6 +797,15 @@ function Group({
 // Necromancy ladder
 // ---------------------------------------------------------------------------
 
+/**
+ * How much of a 29-rung ladder opens by default: the rung just cleared, the
+ * marker, and the next three. All 29 rendered at once was 6,300px at 360px, and
+ * 25 of them are levels away — the rest stay one tap behind a rail stub so the
+ * ladder is still a ladder, top to bottom, rather than a paginated grid.
+ */
+const RUNGS_BEFORE = 1;
+const RUNGS_AFTER = 3;
+
 function NecroLadder({
   rungs,
   player,
@@ -671,12 +823,23 @@ function NecroLadder({
   gate: Gate;
   loading: boolean;
 }) {
+  const [showEarlier, setShowEarlier] = useState(false);
+  const [showLater, setShowLater] = useState(false);
+
   if (!rungs.length) return <EmptyState title="No Necromancy unlocks tracked" />;
 
   // The marker sits immediately before the first rung still out of reach, so
-  // "where I stand" and "what is next" read as one continuous step.
+  // "where I stand" and "what is next" read as one continuous step — and the
+  // window is measured from it, so the page always opens on the reader's rung.
   const found = rungs.findIndex((r) => r.level > necroLevel);
   const markerIndex = found === -1 ? rungs.length : found;
+  const windowStart = Math.max(0, markerIndex - RUNGS_BEFORE);
+  const windowEnd = Math.min(rungs.length, markerIndex + RUNGS_AFTER);
+  /** Rungs outside the default window — the counts the two stubs report. */
+  const earlier = windowStart;
+  const later = rungs.length - windowEnd;
+  const start = showEarlier ? 0 : windowStart;
+  const end = showLater ? rungs.length : windowEnd;
   const marker = (
     <YouAreHere player={player} necroLevel={necroLevel} xpPct={xpPct} xpNeeded={xpNeeded} />
   );
@@ -689,9 +852,17 @@ function NecroLadder({
         aria-hidden="true"
       />
       <ol>
-        {rungs.map((rung, i) => (
+        {earlier > 0 && (
+          <RailStub
+            count={earlier}
+            direction="earlier"
+            expanded={showEarlier}
+            onClick={() => setShowEarlier((v) => !v)}
+          />
+        )}
+        {rungs.slice(start, end).map((rung, i) => (
           <Fragment key={rung.entry.id}>
-            {i === markerIndex && marker}
+            {start + i === markerIndex && marker}
             <Rung
               entry={rung.entry}
               level={rung.level}
@@ -703,8 +874,60 @@ function NecroLadder({
           </Fragment>
         ))}
         {markerIndex === rungs.length && marker}
+        {later > 0 && (
+          <RailStub
+            count={later}
+            direction="later"
+            expanded={showLater}
+            onClick={() => setShowLater((v) => !v)}
+          />
+        )}
       </ol>
     </div>
+  );
+}
+
+/**
+ * A folded stretch of ladder, rendered as one more rung on the same rail: the
+ * node carries the count, the row is the control. Dashed so it never reads as a
+ * real unlock you have missed.
+ */
+function RailStub({
+  count,
+  direction,
+  expanded,
+  onClick,
+}: {
+  count: number;
+  direction: "earlier" | "later";
+  expanded: boolean;
+  onClick: () => void;
+}) {
+  const plural = count === 1 ? "rung" : "rungs";
+  return (
+    <li className="relative pb-3 pl-12">
+      <span
+        className="absolute left-0 top-0 grid h-9 w-9 place-items-center rounded-full border border-dashed border-line bg-bg font-mono tabular text-[11px] text-ink-3"
+        aria-hidden="true"
+      >
+        {expanded ? (
+          <ChevronDown
+            size={14}
+            className={direction === "earlier" ? "rotate-180" : undefined}
+          />
+        ) : (
+          `+${count}`
+        )}
+      </span>
+      <button
+        type="button"
+        onClick={onClick}
+        aria-expanded={expanded}
+        className="flex min-h-[44px] w-full items-center rounded-lg border border-dashed border-line/70 px-3 text-left font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3 transition-colors hover:border-line-strong hover:text-ink-2"
+      >
+        {expanded ? "Fold" : "Show"} {count} {direction} {plural}
+      </button>
+    </li>
   );
 }
 

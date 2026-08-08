@@ -311,7 +311,7 @@ export default function CapesClient() {
           hint={`${active.name} · ranked by work left, not percent done`}
         />
         {loading ? (
-          <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+          <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {[0, 1, 2, 3, 4, 5].map((i) => (
               <Skeleton key={i} className="h-[132px]" />
             ))}
@@ -321,7 +321,12 @@ export default function CapesClient() {
         ) : (
           // items-start: one card with ten requirement chips used to set the row
           // height for three cards with two, leaving half of each box empty.
-          <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+          //
+          // Four columns is the ceiling. A sixth column made 223px cards, whose
+          // 191px content box cannot hold a "Construction 9969 / 99" chip (189px
+          // squeezed, 195px at rest) — one more character and every requirement
+          // chip breaks onto two lines. Four columns leaves ~247px of chip room.
+          <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {closest.map((d) => (
               <ClosestCard key={d.item.id} distance={d} accent={active.accent} />
             ))}
@@ -364,22 +369,26 @@ export default function CapesClient() {
             hint={`${active.name} · manual ticks are saved per player`}
           />
           {loading ? (
-            <div className="grid items-start gap-4 lg:grid-cols-2 2xl:grid-cols-3">
-              <Skeleton className="h-64" />
-              <Skeleton className="h-64" />
+            <div className="columns-1 gap-x-4 lg:columns-2 2xl:columns-3">
+              <Skeleton className="mb-4 h-64 break-inside-avoid" />
+              <Skeleton className="mb-4 h-64 break-inside-avoid" />
             </div>
           ) : (
             // Every Check below writes into the selected player's namespace,
             // which is the same namespace the gates above are evaluated from.
             <PlayerScope slug={active.slug}>
-              <div className="grid items-start gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+              {/* Columns, not a grid. These cards run from 232px (one manual
+                  tick) to 740px (the trimmed comp checklist), so a 3-track grid
+                  spent 1100px on empty card bottoms — 1653px tall to hold
+                  1426px of cards. Stretching only moves that void inside the
+                  border. Multicol packs them, and because flow order is
+                  top-to-bottom then across, the BIG_ORDER priority still reads
+                  in order. break-inside-avoid keeps a card whole. */}
+              <div className="columns-1 gap-x-4 lg:columns-2 2xl:columns-3">
                 {bigCards.map(({ cape, gate }) => (
-                  <BigCapeCard
-                    key={cape.id}
-                    cape={cape}
-                    gate={gate}
-                    accent={active.accent}
-                  />
+                  <div key={cape.id} className="mb-4 break-inside-avoid">
+                    <BigCapeCard cape={cape} gate={gate} accent={active.accent} />
+                  </div>
                 ))}
               </div>
             </PlayerScope>
