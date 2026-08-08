@@ -7,22 +7,19 @@ import { Card, Pill, SectionHead, Skeleton } from "@/components/primitives";
 import {
   ACCENT_TEXT,
   Check,
+  PlayerScope,
   ReqList,
   Ring,
   Segmented,
   SkillIcon,
   TierBadge,
 } from "@/components/ui";
+import { usePlayerData } from "@/components/PlayerDataProvider";
 import { useEval } from "@/components/useEval";
-import {
-  CAPES,
-  capeProgress,
-  nextCapes,
-  skillCapes,
-  type CapeEntry,
-} from "@/lib/content/capes";
-import { fmt } from "@/lib/format";
+import { CAPES, capeProgress, skillCapes, type CapeEntry } from "@/lib/content/capes";
+import { fmt, fmtCompact } from "@/lib/format";
 import { wikiUrl } from "@/lib/paths";
+import type { EvalContext } from "@/lib/requirements";
 import { SKILLS, xpForLevel } from "@/lib/skills";
 import type { Accent, GateResult, PlayerSummary } from "@/lib/types";
 
@@ -104,14 +101,115 @@ const CATEGORY_LABEL: Record<CapeEntry["category"], string> = {
 };
 
 // ---------------------------------------------------------------------------
+// "Closest capes" — ranked by work left, not by percent done
+//
+// The old ranking used gate.pct, the mean per-requirement progress. That put
+// "Every skill at its cap" — one aggregate requirement, total level 1678/3283,
+// 51% — above a Herblore cape sitting at 80/99 (16%), i.e. it presented the
+// hardest goal in the game as the nearest one. Percent-done is the wrong axis
+// for "what do I do next"; what is still owed is the right one.
+//
+// Distance is measured in real XP for every requirement that has an XP price
+// and in "steps" for the ones that do not (a quest, a self-reported tick).
+// Sorting needs one scalar, so a step is priced at STEP_XP — but that exchange
+// rate is never rendered: the cards print XP and steps separately, so nothing
+// the user reads depends on the fudge.
+// ---------------------------------------------------------------------------
+
+/**
+ * One outstanding quest or achievement, priced as roughly a late-game level of
+ * grind. Zero would float a cape whose gate is a 300-quest catch-all above one
+ * you are a single level from; a huge value would bury the quest capes forever.
+ */
+const STEP_XP = 4_000_000;
+
+interface CapeDistance {
+  item: CapeEntry;
+  gate: GateResult;
+  /** Real XP still owed by the skill / total-level requirements. */
+  xp: number;
+  /** Quests and self-reported ticks still outstanding. */
+  steps: number;
+  /** Sort key only — deliberately never displayed. */
+  cost: number;
+}
+
+const skillXp = (player: PlayerSummary, id: number) => player.skills[id]?.xp ?? 0;
+
+/**
+ * XP behind a total-level target: what every skill still owes toward its own
+ * cap, pro-rated to the share of those levels the target actually asks for.
+ * For "Every skill at its cap" the share is 1, so the answer is exact.
+ */
+function totalLevelXp(player: PlayerSummary, target: number): number {
+  let levelsLeft = 0;
+  let xpLeft = 0;
+  for (const s of SKILLS) {
+    levelsLeft += Math.max(0, s.max - (player.skills[s.id]?.level ?? 1));
+    xpLeft += Math.max(0, xpForLevel(s.max) - skillXp(player, s.id));
+  }
+  if (levelsLeft <= 0) return 0;
+  return xpLeft * Math.min(1, Math.max(0, target - player.totalLevel) / levelsLeft);
+}
+
+function distanceOf(
+  item: CapeEntry,
+  gate: GateResult,
+  player: PlayerSummary,
+): CapeDistance {
+  let xp = 0;
+  let steps = 0;
+  for (const r of gate.missing) {
+    switch (r.req.kind) {
+      case "skill":
+        xp += Math.max(0, xpForLevel(r.req.level) - skillXp(player, r.req.skill));
+        break;
+      case "stat":
+        if (r.req.stat === "totalLevel") xp += totalLevelXp(player, r.req.value);
+        else steps += 1;
+        break;
+      default:
+        steps += 1;
+    }
+  }
+  return { item, gate, xp, steps, cost: xp + steps * STEP_XP };
+}
+
+/**
+ * Unearned capes, least work left first.
+ *
+ * Capes whose entire remaining gate is self-reported — Max XP, First 200M, the
+ * trimmed cape — are dropped rather than ranked: a lone manual tick carries no
+ * distance, so on any effort metric they read as one step from done. They are
+ * still fully present in "Long goals" below, which is where they belong.
+ */
+function rankByRemainingWork(ctx: EvalContext, limit: number): CapeDistance[] {
+  return CAPES.map((c) => distanceOf(c, capeProgress(c, ctx), ctx.player))
+    .filter(
+      (d) => !d.gate.complete && d.gate.missing.some((r) => r.req.kind !== "manual"),
+    )
+    .sort((a, b) => a.cost - b.cost || a.item.name.localeCompare(b.item.name))
+    .slice(0, limit);
+}
+
+/** Honest, unweighted summary of what is left. Never shows the STEP_XP rate. */
+function workLeft(d: CapeDistance): string {
+  const bits: string[] = [];
+  if (d.xp >= 1) bits.push(`${fmtCompact(Math.round(d.xp))} xp`);
+  if (d.steps > 0) bits.push(`${d.steps} step${d.steps === 1 ? "" : "s"}`);
+  return bits.length ? `${bits.join(" · ")} to go` : "—";
+}
+
+// ---------------------------------------------------------------------------
 
 export default function CapesClient() {
-  const { players, contexts, loading } = useEval();
-  const [slug, setSlug] = useState<string>("");
+  const { contexts, loading } = useEval();
+  // Player selection is shared and persisted across routes, so it lives in the
+  // provider rather than in this page's state.
+  const { players, selected, setSelected } = usePlayerData();
   const [filter, setFilter] = useState<Filter>("all");
 
-  const active: PlayerSummary | undefined =
-    players.find((p) => p.slug === slug) ?? players[0];
+  const active: PlayerSummary | undefined = selected ?? players[0];
 
   // Both players' headline numbers — the header compares them, so it can't
   // read off the selected player alone.
@@ -121,14 +219,14 @@ export default function CapesClient() {
         const ctx = contexts[p.slug];
         if (!ctx) return { player: p, earned: 0, next: null };
         const earned = CAPES.filter((c) => capeProgress(c, ctx).complete).length;
-        return { player: p, earned, next: nextCapes(ctx, 1)[0] ?? null };
+        return { player: p, earned, next: rankByRemainingWork(ctx, 1)[0] ?? null };
       }),
     [players, contexts],
   );
 
   const ctx = active ? contexts[active.slug] : undefined;
 
-  const closest = useMemo(() => (ctx ? nextCapes(ctx, 4) : []), [ctx]);
+  const closest = useMemo(() => (ctx ? rankByRemainingWork(ctx, 6) : []), [ctx]);
 
   const bigCards = useMemo(() => {
     if (!ctx) return [];
@@ -158,7 +256,11 @@ export default function CapesClient() {
   if (!active) {
     return (
       <div className="space-y-6">
-        <SectionHead title="Capes" hint="Capes of Accomplishment · completionist track" />
+        <SectionHead
+          as="h1"
+          title="Capes"
+          hint="Capes of Accomplishment · completionist track"
+        />
         <Skeleton className="h-40" />
       </div>
     );
@@ -167,6 +269,7 @@ export default function CapesClient() {
   return (
     <div className="space-y-8">
       <SectionHead
+        as="h1"
         title="Capes"
         hint={`${CAPES.length} capes and milestones`}
         right={
@@ -176,8 +279,10 @@ export default function CapesClient() {
         }
       />
 
-      {/* Headline — where each player stands, and what falls next. */}
-      <div className="grid gap-3 sm:grid-cols-2">
+      {/* Headline — where each player stands, and what falls next. The measure
+          is capped instead of stretched: two 700px-wide cards holding a ring and
+          three short lines is dead space, not layout. */}
+      <div className="grid gap-3 sm:grid-cols-2 xl:max-w-[860px]">
         {loading
           ? players.map((p) => <Skeleton key={p.slug} className="h-[92px]" />)
           : summaries.map((s) => <PlayerHeader key={s.player.slug} {...s} />)}
@@ -188,7 +293,7 @@ export default function CapesClient() {
           ariaLabel="Player"
           options={players.map((p) => ({ value: p.slug, label: p.name }))}
           value={active.slug}
-          onChange={setSlug}
+          onChange={setSelected}
         />
         <Segmented
           ariaLabel="Cape category"
@@ -203,25 +308,22 @@ export default function CapesClient() {
       <section>
         <SubHead
           title="Closest capes"
-          hint={`${active.name} · ranked by how much is already done`}
+          hint={`${active.name} · ranked by work left, not percent done`}
         />
         {loading ? (
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {[0, 1, 2, 3].map((i) => (
+          <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+            {[0, 1, 2, 3, 4, 5].map((i) => (
               <Skeleton key={i} className="h-[132px]" />
             ))}
           </div>
         ) : closest.length === 0 ? (
           <p className="text-sm text-ink-3">Every cape earned. There is nothing left.</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {closest.map(({ item, gate }) => (
-              <ClosestCard
-                key={item.id}
-                cape={item}
-                gate={gate}
-                accent={active.accent}
-              />
+          // items-start: one card with ten requirement chips used to set the row
+          // height for three cards with two, leaving half of each box empty.
+          <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+            {closest.map((d) => (
+              <ClosestCard key={d.item.id} distance={d} accent={active.accent} />
             ))}
           </div>
         )}
@@ -259,24 +361,28 @@ export default function CapesClient() {
         <section>
           <SubHead
             title="Long goals"
-            hint="Manual ticks are shared across both players"
+            hint={`${active.name} · manual ticks are saved per player`}
           />
           {loading ? (
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid items-start gap-4 lg:grid-cols-2 2xl:grid-cols-3">
               <Skeleton className="h-64" />
               <Skeleton className="h-64" />
             </div>
           ) : (
-            <div className="grid gap-4 lg:grid-cols-2">
-              {bigCards.map(({ cape, gate }) => (
-                <BigCapeCard
-                  key={cape.id}
-                  cape={cape}
-                  gate={gate}
-                  accent={active.accent}
-                />
-              ))}
-            </div>
+            // Every Check below writes into the selected player's namespace,
+            // which is the same namespace the gates above are evaluated from.
+            <PlayerScope slug={active.slug}>
+              <div className="grid items-start gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+                {bigCards.map(({ cape, gate }) => (
+                  <BigCapeCard
+                    key={cape.id}
+                    cape={cape}
+                    gate={gate}
+                    accent={active.accent}
+                  />
+                ))}
+              </div>
+            </PlayerScope>
           )}
         </section>
       )}
@@ -310,23 +416,20 @@ function PlayerHeader({
 }: {
   player: PlayerSummary;
   earned: number;
-  next: { item: CapeEntry; gate: GateResult } | null;
+  next: CapeDistance | null;
 }) {
   const pct = (earned / CAPES.length) * 100;
   return (
     <Card accent={player.accent} className="p-4">
       <div className="flex items-center gap-4">
+        {/* No children — Ring's own centre already prints the % with its unit. */}
         <Ring
           pct={pct}
           size={60}
           stroke={5}
           accent={player.accent}
           label={`${player.name}: ${earned} of ${CAPES.length} capes earned`}
-        >
-          <span className="font-mono tabular text-[11px] font-bold text-ink-2">
-            {Math.round(pct)}%
-          </span>
-        </Ring>
+        />
         <div className="min-w-0">
           <div
             className={clsx(
@@ -338,12 +441,10 @@ function PlayerHeader({
           </div>
           <div className="font-mono tabular text-xl font-bold text-ink">
             {earned}
-            <span className="text-ink-faint"> / {CAPES.length}</span>
+            <span className="text-ink-3"> / {CAPES.length}</span>
           </div>
           <p className="mt-0.5 truncate text-[11px] text-ink-3">
-            {next
-              ? `Next: ${next.item.name} · ${Math.round(next.gate.pct)}%`
-              : "Everything earned"}
+            {next ? `Next: ${next.item.name} · ${workLeft(next)}` : "Everything earned"}
           </p>
         </div>
       </div>
@@ -352,14 +453,13 @@ function PlayerHeader({
 }
 
 function ClosestCard({
-  cape,
-  gate,
+  distance,
   accent,
 }: {
-  cape: CapeEntry;
-  gate: GateResult;
+  distance: CapeDistance;
   accent: Accent;
 }) {
+  const { item: cape, gate } = distance;
   return (
     <Card className="p-4">
       <div className="flex items-start gap-3">
@@ -368,20 +468,25 @@ function ClosestCard({
           size={48}
           stroke={4}
           accent={accent}
-          label={`${cape.name}: ${Math.round(gate.pct)}% complete`}
+          label={`${cape.name}: ${Math.round(gate.pct)}% complete, ${workLeft(distance)}`}
         />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
-            <h4 className="truncate text-sm text-ink">{cape.name}</h4>
+            {/* Wraps rather than truncates — the name is the whole point. */}
+            <h4 className="text-sm text-ink">{cape.name}</h4>
             <TierBadge tier={cape.tier} />
           </div>
-          <p className="mt-1 font-mono text-[10.5px] uppercase tracking-wider text-ink-3">
+          {/* The ranked quantity, spelled out. */}
+          <p className="mt-1 font-mono tabular text-[11.5px] font-bold text-ink-2">
+            {workLeft(distance)}
+          </p>
+          <p className="mt-0.5 font-mono text-[10.5px] uppercase tracking-wider text-ink-3">
             {gate.met.length} / {gate.results.length} met
           </p>
         </div>
       </div>
       <div className="mt-3">
-        <ReqList results={gate.missing} limit={4} />
+        <ReqList results={gate.missing} limit={3} />
       </div>
     </Card>
   );
@@ -415,8 +520,13 @@ function SkillCapeTile({
   const done = level >= target;
 
   const targetXp = xpForLevel(target);
-  const pct = done ? 100 : targetXp > 0 ? Math.min(100, (xp / targetXp) * 100) : 0;
   const remaining = Math.max(0, targetXp - xp);
+  // The arc used to encode XP-toward-target while the number under it read
+  // "61 / 99": at level 61 that is a 2.5% arc, a 3px tick at 12 o'clock that
+  // looks like a notification dot rather than two thirds of the way up a level
+  // bar. Arc and number now measure the same thing; the XP truth moves to the
+  // line below and the tooltip, where it can be read exactly.
+  const pct = done ? 100 : Math.min(100, (level / target) * 100);
 
   const entry = chasingMaster ? pair?.master : pair?.cape;
   const label = `${name} — level ${level} of ${target}${done ? ", earned" : ""}`;
@@ -426,8 +536,8 @@ function SkillCapeTile({
       href={wikiUrl(entry?.wiki ?? `${name} cape`)}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={label}
-      title={done ? `${label} ✓` : `${fmt(remaining)} XP to ${target}`}
+      aria-label={done ? label : `${label}, ${fmt(remaining)} XP to go`}
+      title={done ? `${label} ✓` : `${label} · ${fmt(remaining)} XP to ${target}`}
       className={clsx(
         "flex min-h-[44px] flex-col items-center gap-1.5 rounded-lg border px-1 py-3 transition-colors",
         done
@@ -440,10 +550,20 @@ function SkillCapeTile({
       </Ring>
       <span className="font-mono tabular text-[11px] font-bold leading-none">
         <span className={done ? "text-success" : "text-ink"}>{level}</span>
-        {!done && <span className="text-ink-faint">/{target}</span>}
+        {!done && <span className="text-ink-3">/{target}</span>}
       </span>
       <span className="w-full truncate px-1 text-center text-[10px] leading-none text-ink-3">
         {name}
+      </span>
+      {/* The XP the ring no longer encodes, on screen instead of in a tooltip
+          nobody on a phone can open. */}
+      <span
+        className={clsx(
+          "w-full truncate px-1 text-center font-mono text-[10px] leading-none",
+          done ? "text-success/80" : "text-ink-3",
+        )}
+      >
+        {done ? "earned" : `${fmtCompact(remaining)} xp`}
       </span>
     </a>
   );
@@ -499,7 +619,7 @@ function BigCapeCard({
 
       {trackedMissing.length > 0 && (
         <div className="mt-4">
-          <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-faint">
+          <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
             Still missing
           </p>
           <ReqList results={trackedMissing} limit={8} />
@@ -508,7 +628,7 @@ function BigCapeCard({
 
       {manual.length > 0 && (
         <div className="mt-4 border-t border-line pt-3">
-          <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-faint">
+          <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
             Track yourself
           </p>
           <div className="divide-y divide-line">
@@ -523,7 +643,7 @@ function BigCapeCard({
               ) : null,
             )}
           </div>
-          <p className="mt-2 text-[11px] leading-relaxed text-ink-faint">
+          <p className="mt-2 text-[11px] leading-relaxed text-ink-3">
             This is a curated subset — the full checklist runs to several hundred
             achievements and changes with every update.{" "}
             <a

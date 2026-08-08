@@ -68,7 +68,7 @@ export default async function ArchivePage() {
   ];
 
   return (
-    <div className="max-w-2xl mx-auto space-y-10 py-4 sm:py-10">
+    <div className="max-w-2xl xl:max-w-5xl mx-auto space-y-10 py-4 sm:py-10">
       <header className="text-center">
         <p className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-ink-3">
           In Memoriam
@@ -76,7 +76,9 @@ export default async function ArchivePage() {
         <h1 className="mt-3 font-display italic text-4xl sm:text-5xl text-ink tracking-tight break-words">
           {player.name}
         </h1>
-        <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint">
+        {/* The dateline is the second most important fact on the page. It was
+            ink-faint, which is decoration-only contrast. */}
+        <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.14em] text-ink-2">
           Retired {DATE_FMT.format(RETIRED)}
         </p>
       </header>
@@ -93,7 +95,7 @@ export default async function ArchivePage() {
         <h2 className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-3">
           Final skill levels
         </h2>
-        <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+        <div className="grid grid-cols-4 sm:grid-cols-6 xl:grid-cols-10 gap-2">
           {skills.map((s) => (
             <div
               key={s.id}
@@ -101,7 +103,9 @@ export default async function ArchivePage() {
               className="rounded-md bg-bg-surface border border-line px-1.5 py-2 text-center"
             >
               <SkillIcon id={s.id} size={15} />
-              <div className="mt-0.5 font-mono text-[8.5px] uppercase tracking-wider text-ink-faint truncate">
+              {/* 8.5px in ink-faint made these ghosts under their numbers, so
+                  the grid read as 29 orphaned integers. */}
+              <div className="mt-0.5 font-mono text-[10px] uppercase tracking-wider text-ink-3 truncate">
                 {s.abbr}
               </div>
               <div
@@ -118,55 +122,60 @@ export default async function ArchivePage() {
         </div>
       </section>
 
-      <section className="space-y-3">
-        <h2 className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-3">
-          What was left behind
-        </h2>
-        <Card className="divide-y divide-line">
-          {notable.map((n) => (
-            <div
-              key={n.label}
-              className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-4 py-3"
-            >
-              <span className="text-sm text-ink-3">{n.label}</span>
-              <span className="text-sm text-ink text-right min-w-0 break-words">
-                {n.value}
-              </span>
-            </div>
-          ))}
-        </Card>
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-3">
-          Last recorded
-        </h2>
-        {player.activities.length === 0 ? (
-          <p className="text-sm text-ink-3">Nothing was logged before the account went quiet.</p>
-        ) : (
+      {/* Two short lists. Stacked they left ~700px of empty page at 1440px. */}
+      <div className="grid gap-10 xl:grid-cols-2 xl:gap-8 xl:items-start">
+        <section className="space-y-3">
+          <h2 className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-3">
+            What was left behind
+          </h2>
           <Card className="divide-y divide-line">
-            {player.activities.slice(0, 6).map((a, i) => {
-              const d = parseActivityDate(a.date);
-              return (
-                <div key={`${a.date}-${i}`} className="px-4 py-3">
-                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                    <p className="text-sm text-ink-2 min-w-0 break-words">{a.text}</p>
-                    <span className="font-mono text-[10px] tabular text-ink-faint shrink-0">
-                      {d ? STAMP_FMT.format(d) : a.date}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
+            {notable.map((n) => (
+              <div
+                key={n.label}
+                className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-4 py-3"
+              >
+                <span className="text-sm text-ink-3">{n.label}</span>
+                <span className="text-sm text-ink text-right min-w-0 break-words">
+                  {n.value}
+                </span>
+              </div>
+            ))}
           </Card>
-        )}
-        {lastSeen && (
-          <p className="text-xs text-ink-faint">
-            Final entry {STAMP_FMT.format(lastSeen)}. The account was retired{" "}
-            {DATE_FMT.format(RETIRED)}; these numbers have not moved since.
-          </p>
-        )}
-      </section>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-3">
+            Last recorded
+          </h2>
+          {player.activities.length === 0 ? (
+            <p className="text-sm text-ink-3">
+              Nothing was logged before the account went quiet.
+            </p>
+          ) : (
+            <Card className="divide-y divide-line">
+              {player.activities.slice(0, 6).map((a, i) => {
+                const d = parseActivityDate(a.date);
+                return (
+                  <div key={`${a.date}-${i}`} className="px-4 py-3">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                      <p className="text-sm text-ink-2 min-w-0 break-words">{a.text}</p>
+                      <span className="font-mono text-[10.5px] tabular text-ink-3 shrink-0">
+                        {d ? STAMP_FMT.format(d) : a.date}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </Card>
+          )}
+          {lastSeen && (
+            <p className="text-xs text-ink-3 leading-relaxed">
+              Final entry {STAMP_FMT.format(lastSeen)}. The account was retired{" "}
+              {DATE_FMT.format(RETIRED)}; these numbers have not moved since.
+            </p>
+          )}
+        </section>
+      </div>
 
       <p className="text-center text-sm text-ink-3 italic leading-relaxed max-w-md mx-auto">
         Frozen in the Sixth Age. The Well of Souls is wide; the Last Call is open.

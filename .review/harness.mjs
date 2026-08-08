@@ -70,6 +70,11 @@ async function audit(page) {
       )) {
         const r = el.getBoundingClientRect();
         if (r.width === 0 || r.height === 0) continue;
+        // Skip visually-hidden affordances (skip links, sr-only inputs behind
+        // a styled label). They are 1x1 by design and are not touch targets.
+        if (r.width <= 2 || r.height <= 2) continue;
+        const cs = getComputedStyle(el);
+        if (cs.visibility === "hidden" || cs.opacity === "0") continue;
         if (r.height < 44 || r.width < 24) {
           small.push({
             tag: el.tagName.toLowerCase(),
@@ -148,7 +153,10 @@ export async function review({ routes, viewport, out, fullPage = true }) {
     const started = Date.now();
     let status = 0;
     try {
-      const res = await page.goto(url, { waitUntil: "networkidle", timeout: 30000 });
+      // `domcontentloaded`, not `networkidle`: /live polls third-party CORS
+      // proxies on a retry loop that never goes idle, which reported a 21s
+      // "load" for a page that actually paints in well under a second.
+      const res = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
       status = res?.status() ?? 0;
     } catch (e) {
       report.push({ route, error: String(e).slice(0, 200) });
@@ -157,8 +165,16 @@ export async function review({ routes, viewport, out, fullPage = true }) {
     }
     const loadMs = Date.now() - started;
 
-    // Let client revalidation and any entry animation settle.
-    await page.waitForTimeout(900);
+    // Real paint timing, independent of any background polling.
+    const paint = await page
+      .evaluate(() => {
+        const fcp = performance.getEntriesByName("first-contentful-paint")[0];
+        return fcp ? Math.round(fcp.startTime) : null;
+      })
+      .catch(() => null);
+
+    // Let client revalidation and the entry animation settle.
+    await page.waitForTimeout(1200);
 
     const metrics = await audit(page);
     const name = route === "/" ? "home" : route.replace(/\//g, "");
@@ -169,6 +185,7 @@ export async function review({ routes, viewport, out, fullPage = true }) {
       route,
       status,
       loadMs,
+      fcpMs: paint,
       screenshot: file,
       ...metrics,
       consoleErrors,
@@ -214,7 +231,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       r.unlabelledControls.length ? `${r.unlabelledControls.length} unlabelled` : "",
     ].filter(Boolean);
     console.log(
-      `${r.route.padEnd(12)} ${String(r.status).padEnd(4)} ${String(r.loadMs).padStart(5)}ms  ` +
+      `${r.route.padEnd(12)} ${String(r.status).padEnd(4)} ${String(r.loadMs).padStart(5)}ms  fcp ${String(r.fcpMs ?? "-").padStart(4)}ms  ` +
         `${String(r.pageHeight).padStart(6)}px tall  ${flags.join(" · ") || "clean"}`,
     );
   }

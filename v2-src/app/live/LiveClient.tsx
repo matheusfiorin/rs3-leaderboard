@@ -68,8 +68,9 @@ interface Track {
 type Status = "idle" | "polling" | "live" | "error";
 
 export default function LiveClient() {
-  const { players } = usePlayerData();
-  const [slug, setSlug] = useState<string>("");
+  // Player choice is shared and persisted across routes — a page-local
+  // useState here silently reset it every time you navigated away.
+  const { players, selected, setSelected } = usePlayerData();
   const [tracks, setTracks] = useState<Record<string, Track>>({});
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +80,7 @@ export default function LiveClient() {
   // Bumping this restarts the polling effect — the "retry now" button.
   const [nonce, setNonce] = useState(0);
 
-  const active = players.find((p) => p.slug === slug) ?? players[0];
+  const active = selected;
   const name = active?.name;
   const activeSlug = active?.slug;
 
@@ -151,6 +152,11 @@ export default function LiveClient() {
   const track = activeSlug ? tracks[activeSlug] : undefined;
   const newest = track?.snaps[track.snaps.length - 1];
   const displayXp = newest?.xp ?? active?.totalXp ?? 0;
+  // Is the big number on screen the result of a poll that actually succeeded,
+  // and did the most recent poll also succeed? Anything else is a snapshot and
+  // has to be labelled as one. The old condition (`!track && !error`) hid the
+  // badge the instant a poll failed — i.e. exactly when it was needed.
+  const fromLivePoll = Boolean(newest) && !error;
   const sessionDelta = track && newest ? newest.xp - track.baseXp : 0;
   const spanMs = track && newest ? newest.ts - track.start : 0;
   const xph = spanMs >= 60_000 && sessionDelta > 0
@@ -169,7 +175,7 @@ export default function LiveClient() {
   if (!active) {
     return (
       <div className="space-y-6">
-        <SectionHead title="Live" hint="XP ticker · polled every 30 s" />
+        <SectionHead as="h1" title="Live" hint="XP ticker · polled every 30 s" />
         <EmptyState title="No tracked accounts" hint="The roster snapshot is empty." />
       </div>
     );
@@ -178,6 +184,7 @@ export default function LiveClient() {
   return (
     <div className="space-y-6">
       <SectionHead
+        as="h1"
         title="Live"
         hint="RuneMetrics ticker · polled every 30 s"
         right={<StatusPill status={status} />}
@@ -187,7 +194,7 @@ export default function LiveClient() {
         <Segmented
           ariaLabel="Choose player to track"
           value={active.slug}
-          onChange={setSlug}
+          onChange={setSelected}
           options={players.map((p) => ({ value: p.slug, label: p.name }))}
         />
         <p className="font-mono text-[11px] uppercase tracking-wider text-ink-3">
@@ -208,7 +215,7 @@ export default function LiveClient() {
                 Poll failed{failures > 1 ? ` (${failures} in a row)` : ""}
               </p>
               <p className="mt-1 text-xs text-ink-3 break-words">{error}</p>
-              <p className="mt-1 text-xs text-ink-faint">
+              <p className="mt-1 text-xs text-ink-3">
                 The number below is the last value we managed to read, not a live one.
               </p>
             </div>
@@ -224,83 +231,98 @@ export default function LiveClient() {
         </Card>
       )}
 
-      <Card accent={active.accent} className="p-6 sm:p-8 text-center lit-edge">
-        <p className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-3">
-          {active.name} · total XP
-        </p>
-        <div
-          className={clsx(
-            "mt-3 font-mono tabular font-bold leading-none break-all",
-            ACCENT_TEXT[active.accent],
-          )}
-          style={{ fontSize: "clamp(38px, 11vw, 104px)" }}
-        >
-          {fmt(displayXp)}
-        </div>
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-          <Pill tone="neutral">{fmtCompact(displayXp)}</Pill>
-          {online != null && (
-            <Pill tone={online ? "success" : "neutral"}>
-              {online ? "in game" : "logged out"}
-            </Pill>
-          )}
-          {!track && !error && <Pill tone="neutral">last snapshot</Pill>}
-        </div>
-      </Card>
-
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Stat
-          label="Session gain"
-          value={sessionDelta > 0 ? `+${fmt(sessionDelta)}` : "—"}
-          accent={active.accent}
-          hint={
-            track ? <RelativeTime prefix="since" date={track.start} /> : "since page open"
-          }
-        />
-        <Stat
-          label="XP / hour"
-          value={xph != null ? fmtCompact(xph) : "—"}
-          accent="ash"
-          hint={xph == null ? "needs a minute of data" : undefined}
-        />
-        <Stat label="Polls" value={fmt(track?.polls ?? 0)} hint="successful" />
-        <Stat label="Ticks" value={fmt(gains.length)} hint="XP changes seen" />
-      </div>
-
-      <section className="space-y-3">
-        <h3 className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-3">
-          Session log
-        </h3>
-        {gains.length === 0 ? (
-          <EmptyState
-            title="No XP change yet"
-            hint={`Every 30 s we re-read ${active.name}'s total. Gains appear here the moment one lands.`}
-          />
-        ) : (
-          <Card className="divide-y divide-line">
-            {gains.map((g) => (
-              <div
-                key={g.ts}
-                className="flex items-center justify-between gap-3 px-4 py-2.5"
-              >
-                <span
-                  className={clsx(
-                    "font-mono tabular text-sm font-bold",
-                    g.delta > 0 ? ACCENT_TEXT[active.accent] : "text-ink-3",
-                  )}
-                >
-                  {g.delta > 0 ? "+" : ""}
-                  {fmt(g.delta)}
-                </span>
-                <RelativeTime
-                  className="font-mono text-[10.5px] tabular text-ink-faint"
-                  date={g.ts}
-                />
-              </div>
-            ))}
+      {/* At 1440px+ the hero and the four stats do not need 1400px, and the
+          log's two-item rows were being stretched to opposite edges. The log
+          becomes a rail beside them instead. */}
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
+        <div className="min-w-0 space-y-6">
+          <Card accent={active.accent} className="p-6 sm:p-8 text-center lit-edge">
+            <p className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-3">
+              {active.name} · total XP
+            </p>
+            <div
+              className={clsx(
+                "mt-3 font-mono tabular font-bold leading-none break-all",
+                // The largest element on the page must not sit there in full
+                // live crimson while the poller is stalled.
+                fromLivePoll ? ACCENT_TEXT[active.accent] : "text-ink-2",
+              )}
+              style={{ fontSize: "clamp(38px, 9vw, 96px)" }}
+            >
+              {fmt(displayXp)}
+            </div>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              <Pill tone="neutral">{fmtCompact(displayXp)}</Pill>
+              {online != null && (
+                // Green "in game" is a live claim; drop it to neutral once the
+                // reading it came from is no longer current.
+                <Pill tone={online && fromLivePoll ? "success" : "neutral"}>
+                  {online ? "in game" : "logged out"}
+                </Pill>
+              )}
+              {!fromLivePoll && (
+                <Pill tone={error ? "warn" : "neutral"}>
+                  {error ? "stale snapshot" : "last snapshot"}
+                </Pill>
+              )}
+            </div>
           </Card>
-        )}
-      </section>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Stat
+              label="Session gain"
+              value={sessionDelta > 0 ? `+${fmt(sessionDelta)}` : "—"}
+              accent={active.accent}
+              hint={
+                track ? <RelativeTime prefix="since" date={track.start} /> : "since page open"
+              }
+            />
+            <Stat
+              label="XP / hour"
+              value={xph != null ? fmtCompact(xph) : "—"}
+              accent="ash"
+              hint={xph == null ? "needs a minute of data" : undefined}
+            />
+            <Stat label="Polls" value={fmt(track?.polls ?? 0)} hint="successful" />
+            <Stat label="Ticks" value={fmt(gains.length)} hint="XP changes seen" />
+          </div>
+        </div>
+
+        <section className="min-w-0 space-y-3">
+          <h2 className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-3">
+            Session log
+          </h2>
+          {gains.length === 0 ? (
+            <EmptyState
+              title="No XP change yet"
+              hint={`Every 30 s we re-read ${active.name}'s total. Gains appear here the moment one lands.`}
+            />
+          ) : (
+            <Card className="divide-y divide-line">
+              {gains.map((g) => (
+                <div
+                  key={g.ts}
+                  className="flex items-center justify-between gap-3 px-4 py-2.5"
+                >
+                  <span
+                    className={clsx(
+                      "font-mono tabular text-sm font-bold",
+                      g.delta > 0 ? ACCENT_TEXT[active.accent] : "text-ink-3",
+                    )}
+                  >
+                    {g.delta > 0 ? "+" : ""}
+                    {fmt(g.delta)}
+                  </span>
+                  <RelativeTime
+                    className="font-mono text-[10.5px] tabular text-ink-3"
+                    date={g.ts}
+                  />
+                </div>
+              ))}
+            </Card>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

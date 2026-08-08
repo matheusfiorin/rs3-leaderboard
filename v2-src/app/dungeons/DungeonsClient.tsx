@@ -9,12 +9,14 @@ import {
   ACCENT_TEXT,
   Check,
   CountInput,
+  PlayerScope,
   ReqList,
   Ring,
   Segmented,
   SkillIcon,
   TierBadge,
 } from "@/components/ui";
+import { usePlayerData } from "@/components/PlayerDataProvider";
 import { useEval } from "@/components/useEval";
 import {
   ELITE_DUNGEONS,
@@ -87,9 +89,73 @@ function needsQuests(entry: { requirements: Requirement[] }): boolean {
 
 type Section = "all" | "elite" | "raids" | "necro";
 
+/**
+ * Every recurring label on this page used to carry its own explanation inside
+ * every card — the same four sentences reprinted nineteen times, outweighing
+ * the boss lists they sat above. They are said once here instead, and each
+ * in-card label points back at its entry with aria-describedby.
+ */
+type LegendKey = "gear" | "story" | "prep" | "recommended";
+
+/** `plain` is the same sentence for the native tooltip, which cannot take JSX. */
+const LEGEND: Record<LegendKey, { term: string; plain: string; body?: React.ReactNode }> = {
+  gear: {
+    term: "Gear floor",
+    plain: "An RS3 equipment tier, not a difficulty band.",
+    body: (
+      <>
+        An RS3 <em>equipment</em> tier, not a difficulty band.
+      </>
+    ),
+  },
+  story: {
+    term: "Story mode",
+    plain: "Halves enemy HP, but strips most loot and achievements.",
+  },
+  prep: {
+    term: "Prep",
+    plain:
+      "Things no API can see — a team, bane ammo, a learned rotation. Ticked by hand, saved per player.",
+  },
+  recommended: {
+    term: "Recommended",
+    plain: "Community floors. The game does not check these, so they never lock a door.",
+  },
+};
+
+const legendId = (k: LegendKey) => `dungeon-legend-${k}`;
+
+function Legend({ keys }: { keys: LegendKey[] }) {
+  return (
+    <div className="rounded-lg border border-line bg-bg-surface p-3 sm:p-4">
+      <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">
+        What the labels mean
+      </p>
+      <dl
+        className={clsx(
+          "mt-2 grid gap-x-8 gap-y-3 sm:grid-cols-2",
+          // Full literals, never a built class name.
+          keys.length > 2 ? "xl:grid-cols-4" : "xl:grid-cols-2",
+        )}
+      >
+        {keys.map((k) => (
+          <div key={k} id={legendId(k)} className="max-w-prose">
+            <dt className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-2">
+              {LEGEND[k].term}
+            </dt>
+            <dd className="mt-1 text-xs leading-relaxed text-ink-3">
+              {LEGEND[k].body ?? LEGEND[k].plain}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
 export default function DungeonsClient() {
   const { players, loading, gate } = useEval();
-  const [slug, setSlug] = useState<string | null>(null);
+  const { selected, setSelected } = usePlayerData();
   const [section, setSection] = useState<Section>("all");
 
   const ladder = useMemo(
@@ -100,12 +166,12 @@ export default function DungeonsClient() {
     [],
   );
 
-  const player = players.find((p) => p.slug === slug) ?? players[0];
+  const player = selected ?? players[0];
 
   if (!player) {
     return (
       <div className="space-y-6">
-        <SectionHead title="Dungeons" hint="Elite dungeons · raids · necromancy" />
+        <SectionHead as="h1" title="Dungeons" hint="Elite dungeons · raids · necromancy" />
         <Skeleton className="h-44 w-full" />
         <Skeleton className="h-64 w-full" />
       </div>
@@ -127,9 +193,13 @@ export default function DungeonsClient() {
   const next = ladder.find((r) => r.level > necroLevel);
   const cleared = ALL_CONTENT.filter((e) => gate(player.slug, e.requirements).complete).length;
 
+  const showInstances = section !== "necro";
+  const legendKeys: LegendKey[] =
+    section === "raids" ? ["prep", "recommended"] : ["gear", "story", "prep", "recommended"];
+
   return (
     <div className="space-y-6">
-      <SectionHead title="Dungeons" hint="Elite dungeons · raids · necromancy" />
+      <SectionHead as="h1" title="Dungeons" hint="Elite dungeons · raids · necromancy" />
 
       <div className="flex gap-2" role="group" aria-label="Select player">
         {players.map((p) => {
@@ -138,7 +208,7 @@ export default function DungeonsClient() {
             <button
               key={p.slug}
               type="button"
-              onClick={() => setSlug(p.slug)}
+              onClick={() => setSelected(p.slug)}
               aria-current={active ? "true" : undefined}
               className={clsx(
                 "h-11 flex-1 rounded-md border px-3 font-mono text-[11px] uppercase tracking-wider transition-colors sm:flex-none",
@@ -153,92 +223,103 @@ export default function DungeonsClient() {
         })}
       </div>
 
-      <Hero
-        player={player}
-        necroLevel={necroLevel}
-        reached={reached}
-        total={ladder.length}
-        next={next}
-        xpNeeded={toNext.needed}
-        open={open}
-        instanceCount={instances.length}
-        cleared={cleared}
-        loading={loading}
-      />
-
-      <Segmented<Section>
-        ariaLabel="Jump to section"
-        value={section}
-        onChange={setSection}
-        options={[
-          { value: "all", label: "All" },
-          { value: "elite", label: "Elite", count: ELITE_DUNGEONS.length },
-          { value: "raids", label: "Raids", count: RAIDS.length },
-          { value: "necro", label: "Necro", count: ladder.length },
-        ]}
-      />
-
-      {(section === "all" || section === "elite") && (
-        <section className="space-y-4">
-          <SubHead
-            title="Elite Dungeons"
-            note="Instanced three-boss runs. Only ED1 and ED4 have a door check — the other two you can simply walk into."
-          />
-          <div className="grid gap-4 lg:grid-cols-2">
-            {ELITE_DUNGEONS.map((d) => (
-              <InstanceCard
-                key={d.id}
-                entry={d}
-                accent={player.accent}
-                gate={gate(player.slug, d.requirements)}
-                pending={loading && needsQuests(d)}
-                meta={<DungeonMeta entry={d} />}
-                list={{ label: "Bosses", items: d.bosses }}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {(section === "all" || section === "raids") && (
-        <section className="space-y-4">
-          <SubHead
-            title="Raids"
-            note="Group content with HP that scales to team size. Sanctum sits here rather than with the Elite Dungeons — the wiki is explicit that it is not one."
-          />
-          <div className="grid gap-4 lg:grid-cols-2">
-            {RAIDS.map((r) => (
-              <InstanceCard
-                key={r.id}
-                entry={r}
-                accent={player.accent}
-                gate={gate(player.slug, r.requirements)}
-                pending={loading && needsQuests(r)}
-                meta={<RaidMeta entry={r} />}
-                list={{ label: "Full clear", items: r.phases, ordered: true }}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {(section === "all" || section === "necro") && (
-        <section className="space-y-4">
-          <SubHead
-            title="Necromancy ladder"
-            note="Every unlock from the Underworld portal to Rasial, in the order the levels arrive."
-          />
-          <NecroLadder
-            rungs={ladder}
+      {/* Manual ticks and kill counts below belong to the selected player, not
+          to the browser, so everything player-specific sits inside one scope. */}
+      <PlayerScope slug={player.slug}>
+        <div className="space-y-6">
+          <Hero
             player={player}
             necroLevel={necroLevel}
-            xpPct={toNext.pct}
+            reached={reached}
+            total={ladder.length}
+            next={next}
             xpNeeded={toNext.needed}
-            gate={gate}
+            open={open}
+            instanceCount={instances.length}
+            cleared={cleared}
             loading={loading}
           />
-        </section>
-      )}
+
+          <Segmented<Section>
+            ariaLabel="Jump to section"
+            value={section}
+            onChange={setSection}
+            options={[
+              { value: "all", label: "All" },
+              { value: "elite", label: "Elite", count: ELITE_DUNGEONS.length },
+              { value: "raids", label: "Raids", count: RAIDS.length },
+              { value: "necro", label: "Necro", count: ladder.length },
+            ]}
+          />
+
+          {showInstances && <Legend keys={legendKeys} />}
+
+          {(section === "all" || section === "elite") && (
+            <section className="space-y-4" aria-labelledby="dungeons-elite">
+              <SubHead
+                id="dungeons-elite"
+                title="Elite Dungeons"
+                note="Instanced three-boss runs. Only ED1 and ED4 have a door check — the other two you can simply walk into."
+              />
+              <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                {ELITE_DUNGEONS.map((d) => (
+                  <InstanceCard
+                    key={d.id}
+                    entry={d}
+                    accent={player.accent}
+                    gate={gate(player.slug, d.requirements)}
+                    pending={loading && needsQuests(d)}
+                    meta={<DungeonMeta entry={d} />}
+                    list={{ label: "Bosses", items: d.bosses }}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {(section === "all" || section === "raids") && (
+            <section className="space-y-4" aria-labelledby="dungeons-raids">
+              <SubHead
+                id="dungeons-raids"
+                title="Raids"
+                note="Group content with HP that scales to team size. Sanctum sits here rather than with the Elite Dungeons — the wiki is explicit that it is not one."
+              />
+              <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                {RAIDS.map((r) => (
+                  <InstanceCard
+                    key={r.id}
+                    entry={r}
+                    accent={player.accent}
+                    gate={gate(player.slug, r.requirements)}
+                    pending={loading && needsQuests(r)}
+                    meta={<RaidMeta entry={r} />}
+                    list={{ label: "Full clear", items: r.phases, ordered: true }}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {(section === "all" || section === "necro") && (
+            <section className="space-y-4" aria-labelledby="dungeons-necro">
+              <SubHead
+                id="dungeons-necro"
+                title="Necromancy ladder"
+                note="Every unlock from the Underworld portal to Rasial, in the order the levels arrive. The number on each rung is the Necromancy level it unlocks at."
+              />
+              <NecroLadder
+                rungs={ladder}
+                player={player}
+                necroLevel={necroLevel}
+                xpPct={toNext.pct}
+                xpNeeded={toNext.needed}
+                gate={gate}
+                loading={loading}
+              />
+            </section>
+          )}
+        </div>
+      </PlayerScope>
     </div>
   );
 }
@@ -339,10 +420,13 @@ function Hero({
   );
 }
 
-function SubHead({ title, note }: { title: string; note: string }) {
+/** h2, because the page title is now the h1 — nothing may skip a level. */
+function SubHead({ id, title, note }: { id: string; title: string; note: React.ReactNode }) {
   return (
     <div className="pt-2">
-      <h3 className="font-display italic text-lg leading-none tracking-tight text-ink">{title}</h3>
+      <h2 id={id} className="font-display italic text-lg leading-none tracking-tight text-ink">
+        {title}
+      </h2>
       <p className="mt-1.5 max-w-prose text-xs leading-relaxed text-ink-3">{note}</p>
     </div>
   );
@@ -352,33 +436,39 @@ function SubHead({ title, note }: { title: string; note: string }) {
 // Elite dungeons & raids
 // ---------------------------------------------------------------------------
 
+/**
+ * Data only. Both labels are defined once in the page legend — reprinting the
+ * definitions here cost two grey lines per card and said nothing new.
+ */
 function DungeonMeta({ entry }: { entry: DungeonEntry }) {
   return (
-    <div className="space-y-2">
-      <dl className="grid grid-cols-2 gap-3">
-        <div>
-          <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">
-            Gear floor
-          </dt>
-          <dd className="mt-1 font-mono tabular text-sm text-ink-2">
-            Tier {entry.recommendedTier}
-            <span className="ml-1.5 text-[11px] text-ink-faint">equipment</span>
-          </dd>
-        </div>
-        <div>
-          <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">
-            Story mode
-          </dt>
-          <dd className="mt-1 text-sm text-ink-2">
-            {entry.storyMode ? "Available" : "Not available"}
-          </dd>
-        </div>
-      </dl>
-      <p className="text-[11px] leading-relaxed text-ink-faint">
-        Gear floor is an RS3 <em>equipment</em> tier, not a difficulty band.
-        {entry.storyMode && " Story mode halves enemy HP but strips most loot and achievements."}
-      </p>
-    </div>
+    <dl className="grid grid-cols-2 gap-3">
+      <div>
+        <dt
+          className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3"
+          aria-describedby={legendId("gear")}
+          title={LEGEND.gear.plain}
+        >
+          Gear floor
+        </dt>
+        <dd className="mt-1 font-mono tabular text-sm text-ink-2">
+          Tier {entry.recommendedTier}
+          <span className="ml-1.5 text-[11px] text-ink-3">equipment</span>
+        </dd>
+      </div>
+      <div>
+        <dt
+          className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3"
+          aria-describedby={legendId("story")}
+          title={LEGEND.story.plain}
+        >
+          Story mode
+        </dt>
+        <dd className="mt-1 text-sm text-ink-2">
+          {entry.storyMode ? "Available" : "Not available"}
+        </dd>
+      </div>
+    </dl>
   );
 }
 
@@ -475,7 +565,7 @@ function InstanceCard({
           <ol className="space-y-1">
             {list.items.map((item, i) => (
               <li key={item} className="flex gap-2 text-sm text-ink-2">
-                <span className="font-mono tabular text-[11px] text-ink-faint">{i + 1}</span>
+                <span className="font-mono tabular text-[11px] text-ink-3">{i + 1}</span>
                 <span className="min-w-0">{item}</span>
               </li>
             ))}
@@ -507,7 +597,7 @@ function InstanceCard({
             </Group>
           )}
           {prep.length > 0 && (
-            <Group label="Prep" hint="tracked by hand, shared across players">
+            <Group label="Prep" legend="prep">
               <div className="divide-y divide-line">
                 {prep.map((r) =>
                   r.req.kind === "manual" ? (
@@ -523,7 +613,7 @@ function InstanceCard({
             </Group>
           )}
           {recommended.length > 0 && (
-            <Group label="Recommended" hint="the game does not check these">
+            <Group label="Recommended" legend="recommended">
               <ReqList results={recommended} showMet limit={6} />
             </Group>
           )}
@@ -533,20 +623,27 @@ function InstanceCard({
   );
 }
 
+/**
+ * `legend` points the label at its one definition at the top of the page
+ * instead of restating it under every card.
+ */
 function Group({
   label,
-  hint,
+  legend,
   children,
 }: {
   label: string;
-  hint?: string;
+  legend?: LegendKey;
   children: React.ReactNode;
 }) {
   return (
     <div className="space-y-2">
-      <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">
+      <p
+        className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3"
+        aria-describedby={legend ? legendId(legend) : undefined}
+        title={legend ? LEGEND[legend].plain : undefined}
+      >
         {label}
-        {hint && <span className="ml-2 normal-case tracking-normal text-ink-faint">{hint}</span>}
       </p>
       {children}
     </div>
@@ -648,7 +745,7 @@ function YouAreHere({
         </span>
         <span className="font-mono tabular text-[11px] text-ink-2">Necromancy {necroLevel}</span>
         {necroLevel < NECRO_MAX && (
-          <span className="font-mono tabular text-[11px] text-ink-faint">
+          <span className="font-mono tabular text-[11px] text-ink-3">
             {Math.round(xpPct)}% to {necroLevel + 1} · {fmt(xpNeeded)} xp
           </span>
         )}
@@ -687,60 +784,54 @@ function Rung({
 
   return (
     <li className="relative pb-3 pl-12">
+      {/* The rail node carries the Necromancy level. It used to be repeated as a
+          token pinned to the far right of the row, which both duplicated the
+          number and left ~390px of dead space between the two. */}
       <span
         className={clsx(
           "absolute left-0 top-0 grid h-9 w-9 place-items-center rounded-full border bg-bg font-mono tabular text-[12px]",
-          reached
-            ? clsx(ACCENT_BORDER[accent], ACCENT_TEXT[accent])
-            : "border-line text-ink-faint",
+          reached ? clsx(ACCENT_BORDER[accent], ACCENT_TEXT[accent]) : "border-line text-ink-3",
         )}
       >
+        <span className="sr-only">Necromancy level </span>
         {level}
       </span>
 
       <div
         className={clsx(
           "rounded-lg border p-3",
+          // Two columns from lg up: the row's own width now carries the state
+          // and the outstanding requirements instead of stacking them, which
+          // both fills the desktop measure and shortens a 29-rung ladder.
+          // At xl the prose lane is capped at a comfortable measure and the
+          // remaining width goes to the chips and controls — the old layout
+          // stretched a sentence and pinned a token to the far edge instead.
+          "lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] lg:items-start lg:gap-4",
+          "xl:grid-cols-[minmax(0,34rem)_minmax(0,1fr)] xl:gap-6",
           reached ? "border-line bg-bg-surface" : "border-line/60 bg-bg-surface/40",
         )}
       >
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <a
-            href={wikiUrl(entry.wiki)}
-            target="_blank"
-            rel="noreferrer"
-            className={clsx(
-              "group inline-flex min-h-[44px] items-center gap-1 text-sm font-medium leading-tight sm:min-h-0",
-              reached ? "text-ink hover:text-ink-2" : "text-ink-2 hover:text-ink",
-            )}
-          >
-            {entry.name}
-            <ArrowUpRight size={13} className="shrink-0 text-ink-faint" aria-hidden="true" />
-          </a>
-          <TierBadge tier={entry.tier} />
-          <span className="ml-auto inline-flex shrink-0 items-center gap-1.5">
-            <SkillIcon id={NECROMANCY} size={13} />
-            <span
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <a
+              href={wikiUrl(entry.wiki)}
+              target="_blank"
+              rel="noreferrer"
               className={clsx(
-                "font-mono tabular text-[11px]",
-                reached ? "text-ink-3" : "text-ink-faint",
+                "group inline-flex min-h-[44px] items-center gap-1 text-sm font-medium leading-tight sm:min-h-0",
+                reached ? "text-ink hover:text-ink-2" : "text-ink-2 hover:text-ink",
               )}
             >
-              {level}
-            </span>
-          </span>
+              {entry.name}
+              <ArrowUpRight size={13} className="shrink-0 text-ink-faint" aria-hidden="true" />
+            </a>
+            <TierBadge tier={entry.tier} />
+          </div>
+
+          <p className="mt-1 max-w-prose text-xs leading-relaxed text-ink-3">{entry.blurb}</p>
         </div>
 
-        <p
-          className={clsx(
-            "mt-1 text-xs leading-relaxed",
-            reached ? "text-ink-3" : "text-ink-faint",
-          )}
-        >
-          {entry.blurb}
-        </p>
-
-        <div className="mt-2 space-y-2">
+        <div className="mt-2 space-y-2 lg:mt-0">
           {pending ? (
             <Skeleton className="h-5 w-36" />
           ) : gate.complete ? (
@@ -756,24 +847,24 @@ function Rung({
             </Pill>
           )}
           {!pending && chips.length > 0 && <ReqList results={chips} limit={4} />}
-        </div>
 
-        {!pending && actionable.length > 0 && (
-          <div className="mt-2 divide-y divide-line border-t border-line pt-1">
-            {actionable.map((r) =>
-              r.req.kind === "manual" ? (
-                <Check key={r.req.id} storeKey={r.req.id} label={r.req.label} hint={r.req.note} />
-              ) : r.req.kind === "kc" ? (
-                <CountInput
-                  key={r.req.boss}
-                  storeKey={kcKey(r.req.boss)}
-                  label={r.req.boss}
-                  target={r.req.count}
-                />
-              ) : null,
-            )}
-          </div>
-        )}
+          {!pending && actionable.length > 0 && (
+            <div className="divide-y divide-line border-t border-line pt-1">
+              {actionable.map((r) =>
+                r.req.kind === "manual" ? (
+                  <Check key={r.req.id} storeKey={r.req.id} label={r.req.label} hint={r.req.note} />
+                ) : r.req.kind === "kc" ? (
+                  <CountInput
+                    key={r.req.boss}
+                    storeKey={kcKey(r.req.boss)}
+                    label={r.req.boss}
+                    target={r.req.count}
+                  />
+                ) : null,
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </li>
   );

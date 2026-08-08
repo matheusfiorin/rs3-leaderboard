@@ -1,7 +1,15 @@
 "use client";
 
-import { memo, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Crown, Search, X } from "lucide-react";
+import {
+  memo,
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { ArrowRight, ArrowUp, Crown, ExternalLink, Search, X } from "lucide-react";
 import { clsx } from "clsx";
 import {
   Card,
@@ -43,11 +51,24 @@ const STATUS_LABEL: Record<QuestStatus, string> = {
   NOT_STARTED: "not started",
 };
 
-// Shared column template so the header row and the 363 body rows can never
-// drift apart. Below sm the two middle columns are display:none, so the status
-// cell falls into column 2 and each quest reads as a card.
-const ROW_COLS =
-  "grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_4.5rem_2.5rem_2.5rem_auto] items-center gap-x-3";
+// Shared column template so the header row and every body row can never drift
+// apart. `display` is deliberately NOT baked in: the second header copy needs
+// `hidden xl:grid`, and a `grid` in this string would fight it.
+//
+// Below sm the fixed columns are display:none, so the status cell falls into
+// column 2 and each quest reads as a two-line card. Type (F2P/P2P) only earns a
+// column from lg up — narrower than that, the members toggle covers the same
+// ground and the space belongs to the quest name.
+const ROW_COLS = clsx(
+  "grid-cols-[minmax(0,1fr)_auto]",
+  "sm:grid-cols-[minmax(0,1fr)_2.75rem_2rem_3rem_auto]",
+  "lg:grid-cols-[minmax(0,1fr)_2.75rem_2rem_2rem_3rem_auto]",
+  "items-center gap-x-2.5",
+);
+
+// 363 rows at ~81px was a 30,000px document and a second-long commit on every
+// filter change. Render a couple of screenfuls and let the reader ask for more.
+const PAGE_SIZE = 60;
 
 export default function QuestsExplorer() {
   const { players } = usePlayerData();
@@ -72,9 +93,29 @@ export default function QuestsExplorer() {
     );
   }, [players, quests, loading]);
 
+  // Who could start each quest right now. buildQuestTable keeps one canonical
+  // QuestEntry per title while `userEligible` is per player, so it has to come
+  // from the raw lists. Values are joined slugs — a string, not an array — so
+  // handing one to a memoized row can never break the memo.
+  const readyByTitle = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const p of players) {
+      for (const q of quests[p.slug] ?? []) {
+        if (q.status === "COMPLETED" || !q.userEligible) continue;
+        const prev = m.get(q.title);
+        m.set(q.title, prev ? `${prev},${p.slug}` : p.slug);
+      }
+    }
+    return m;
+  }, [players, quests]);
+
   const [bucket, setBucket] = useState<Bucket>("all");
   const [membersOnly, setMembersOnly] = useState(false);
   const [query, setQuery] = useState("");
+  const [limit, setLimit] = useState(PAGE_SIZE);
+  // Bumping this remounts the search box, which is how "All 106" clears text
+  // the user can still see sitting in it.
+  const [searchKey, setSearchKey] = useState(0);
   const tableRef = useRef<HTMLDivElement>(null);
 
   // Members toggle applies first so the bucket counts describe what the user
@@ -104,6 +145,32 @@ export default function QuestsExplorer() {
     return out;
   }, [scoped, bucket, query]);
 
+  const visible = useMemo(() => filtered.slice(0, limit), [filtered, limit]);
+  const remaining = filtered.length - visible.length;
+
+  // Every filter change re-slices from the top, and runs inside a transition so
+  // mounting the new rows can't block the click that asked for them.
+  const chooseBucket = useCallback((b: Bucket) => {
+    startTransition(() => {
+      setBucket(b);
+      setLimit(PAGE_SIZE);
+    });
+  }, []);
+
+  const toggleMembers = useCallback(() => {
+    startTransition(() => {
+      setMembersOnly((v) => !v);
+      setLimit(PAGE_SIZE);
+    });
+  }, []);
+
+  const applyQuery = useCallback((v: string) => {
+    startTransition(() => {
+      setQuery(v);
+      setLimit(PAGE_SIZE);
+    });
+  }, []);
+
   // The co-op insight: exactly one of them has cleared it, easiest first.
   const doNext = useMemo(
     () =>
@@ -129,7 +196,7 @@ export default function QuestsExplorer() {
   if (!players.length) {
     return (
       <div className="space-y-6">
-        <SectionHead title="Quests" />
+        <SectionHead as="h1" title="Quests" />
         <EmptyState title="No players loaded" hint="Data will appear after the next refresh." />
       </div>
     );
@@ -138,6 +205,7 @@ export default function QuestsExplorer() {
   return (
     <div className="space-y-6">
       <SectionHead
+        as="h1"
         title="Quests"
         hint={`${fmt(total)} in the log · Sixth Age compared`}
       />
@@ -151,16 +219,14 @@ export default function QuestsExplorer() {
           return (
             <Card key={p.slug} accent={p.accent} className="p-4">
               <div className="flex items-center gap-4">
+                {/* No children: Ring's own centre renders the value with its
+                    unit, so passing a duplicate is one more place to drift. */}
                 <Ring
                   pct={pct}
                   accent={p.accent}
                   size={54}
                   label={`${p.name}: ${Math.round(pct)} percent of quests complete`}
-                >
-                  <span className="font-mono tabular text-[11px] font-bold text-ink-2">
-                    {Math.round(pct)}%
-                  </span>
-                </Ring>
+                />
                 <div className="min-w-0">
                   <div
                     className={clsx(
@@ -194,29 +260,32 @@ export default function QuestsExplorer() {
       {/* Catch-up list */}
       {cols.length > 1 && (
         <Card accent="ash" className="p-4">
-          <div className="flex items-end justify-between gap-3 mb-3">
-            <div>
+          <div className="mb-3">
+            <div className="flex items-start justify-between gap-3">
               <h2 className="font-display italic text-[19px] leading-none text-ink">
                 Do next
               </h2>
-              <p className="mt-1.5 text-[11px] font-mono uppercase tracking-[0.14em] text-ink-3">
-                {loading ? "Loading" : `${fmt(doNext.length)} one of you has cleared`}
-              </p>
+              {!loading && doNext.length > 6 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    chooseBucket("one-done");
+                    applyQuery("");
+                    setSearchKey((k) => k + 1);
+                    tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                  className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-line text-[11px] font-mono uppercase tracking-wider text-ink-2 hover:text-ink hover:border-line-strong transition-colors"
+                >
+                  All {doNext.length}
+                  <ArrowRight size={13} aria-hidden="true" />
+                </button>
+              )}
             </div>
-            {!loading && doNext.length > 6 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setBucket("one-done");
-                  setQuery("");
-                  tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
-                className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-line text-[11px] font-mono uppercase tracking-wider text-ink-2 hover:text-ink hover:border-line-strong transition-colors"
-              >
-                All {doNext.length}
-                <ArrowRight size={13} />
-              </button>
-            )}
+            {/* Its own line: as a third item in an items-end row it read as
+                "106 one of you has cleared" wrapped against the button. */}
+            <p className="mt-1.5 text-[11px] font-mono uppercase tracking-[0.14em] text-ink-3">
+              {loading ? "Loading" : `${fmt(doNext.length)} cleared by one of you`}
+            </p>
           </div>
 
           {loading ? (
@@ -230,7 +299,9 @@ export default function QuestsExplorer() {
               Nothing to catch up on — every cleared quest is cleared by both.
             </p>
           ) : (
-            <ul>
+            /* Two columns above xl: six rows of name-left / name-right across
+               1150px put the label and its value at opposite screen edges. */
+            <ul className="xl:grid xl:grid-cols-2 xl:gap-x-8">
               {doNext.slice(0, 6).map((r) => {
                 const behind = cols.filter(
                   (c) => r.statuses[c.slug] !== "COMPLETED",
@@ -245,13 +316,18 @@ export default function QuestsExplorer() {
                         href={wikiUrl(r.quest.title)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block truncate text-sm text-ink hover:text-ash-bright transition-colors"
+                        className="inline-flex max-w-full items-center gap-1 text-sm text-ink hover:text-ash-bright transition-colors"
                       >
-                        {r.quest.title}
+                        <span className="truncate">{r.quest.title}</span>
+                        <ExternalLink
+                          size={11}
+                          aria-hidden="true"
+                          className="shrink-0 text-ink-3"
+                        />
                       </a>
                       <div className="mt-1 flex items-center gap-2">
                         <Stars difficulty={r.quest.difficulty} />
-                        <span className="font-mono tabular text-[10px] text-ink-faint">
+                        <span className="font-mono tabular text-[10px] text-ink-3">
                           {r.quest.questPoints} QP
                         </span>
                       </div>
@@ -267,7 +343,7 @@ export default function QuestsExplorer() {
                       >
                         {behind.map((c) => c.name).join(" + ")}
                       </span>
-                      <span className="block text-[10px] text-ink-faint">
+                      <span className="block text-[10px] text-ink-3">
                         to catch up
                       </span>
                     </div>
@@ -279,72 +355,120 @@ export default function QuestsExplorer() {
         </Card>
       )}
 
-      {/* Controls */}
-      <div ref={tableRef} className="space-y-3 scroll-mt-16">
-        <SearchBox onQuery={setQuery} />
+      {/* ------------------------------------------------------------------ */}
+      {/* The table. Search, filters and the column header are ONE sticky
+          block: stacking two stickies would need the controls' height as a
+          magic number, and that block wraps differently at every width. */}
+      {/* ------------------------------------------------------------------ */}
+      <div ref={tableRef} className="scroll-mt-16">
+        <p className="mb-2 text-[11px] text-ink-3">
+          Tap a row to open that quest on the RuneScape Wiki in a new tab.
+        </p>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Segmented<Bucket>
-            ariaLabel="Filter quests by completion"
-            value={bucket}
-            onChange={setBucket}
-            options={[
-              { value: "all", label: "All", count: scoped.length },
-              { value: "one-done", label: "One", count: counts["one-done"] },
-              { value: "both-done", label: "Both", count: counts["both-done"] },
-              { value: "in-progress", label: "Started", count: counts["in-progress"] },
-              { value: "none", label: "None", count: counts.none },
-            ]}
-          />
-          <button
-            type="button"
-            aria-pressed={membersOnly}
-            onClick={() => setMembersOnly((v) => !v)}
-            className={clsx(
-              "inline-flex items-center gap-1.5 h-10 px-3 rounded-lg border text-[11px] font-mono uppercase tracking-wider transition-colors",
-              membersOnly
-                ? "border-warn/40 text-warn bg-warn/10"
-                : "border-line text-ink-3 hover:text-ink-2 hover:border-line-strong",
-            )}
-          >
-            <Crown size={13} />
-            Members only
-          </button>
-        </div>
+        <div
+          id="quest-filters"
+          className="sticky top-14 z-10 -mt-1 pt-1 bg-bg scroll-mt-16"
+        >
+          <div className="pb-2 space-y-2 border-b border-line sm:border-b-0">
+            <div className="flex items-center gap-2.5">
+              <SearchBox key={searchKey} onQuery={applyQuery} />
+              <p
+                className="shrink-0 font-mono tabular text-[11px] text-ink-3"
+                aria-live="polite"
+              >
+                {loading
+                  ? "Loading…"
+                  : filterActive
+                    ? `${fmt(filtered.length)} / ${fmt(rows.length)}`
+                    : `${fmt(rows.length)} quests`}
+              </p>
+            </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-          <p className="font-mono tabular text-[11px] text-ink-3" aria-live="polite">
-            {loading
-              ? "Loading quest lists…"
-              : filterActive
-                ? `${fmt(filtered.length)} of ${fmt(rows.length)}`
-                : `${fmt(rows.length)} quests`}
-          </p>
-          {/* Column key — the sm+ table has a header row, mobile does not. */}
-          <p className="sm:hidden flex items-center gap-3">
-            {cols.map((c) => (
-              <span key={c.slug} className="inline-flex items-center gap-1.5">
-                <span
-                  aria-hidden="true"
+            {/* One scrollable line on a phone. Left to wrap, these five chips
+                plus the members toggle stacked 150px of controls between the
+                app header and the first quest. */}
+            <div className="overflow-x-auto lg:overflow-visible">
+              <div
+                className={clsx(
+                  "flex items-center gap-2 min-w-max lg:min-w-0 lg:flex-wrap",
+                  // Segmented wraps and self-limits by default, which fights a
+                  // horizontal scroller. Overridden from out here so the shared
+                  // component keeps its own sensible defaults everywhere else.
+                  "[&>[role=group]]:flex-nowrap [&>[role=group]]:max-w-none",
+                  "lg:[&>[role=group]]:flex-wrap",
+                )}
+              >
+                <Segmented<Bucket>
+                  ariaLabel="Filter quests by completion"
+                  value={bucket}
+                  onChange={chooseBucket}
+                  options={[
+                    { value: "all", label: "All", count: scoped.length },
+                    { value: "one-done", label: "One", count: counts["one-done"] },
+                    { value: "both-done", label: "Both", count: counts["both-done"] },
+                    { value: "in-progress", label: "Started", count: counts["in-progress"] },
+                    { value: "none", label: "None", count: counts.none },
+                  ]}
+                />
+                <button
+                  type="button"
+                  aria-pressed={membersOnly}
+                  onClick={toggleMembers}
                   className={clsx(
-                    "grid place-items-center w-5 h-5 rounded border font-mono text-[10px] font-bold",
-                    ACCENT_TEXT[c.accent],
-                    ACCENT_BORDER[c.accent],
+                    "shrink-0 inline-flex items-center gap-1.5 h-11 sm:h-10 px-3 rounded-lg border text-[11px] font-mono uppercase tracking-wider transition-colors",
+                    membersOnly
+                      ? "border-warn/40 text-warn bg-warn/10"
+                      : "border-line text-ink-3 hover:text-ink-2 hover:border-line-strong",
                   )}
                 >
-                  {c.initial}
+                  <Crown size={13} aria-hidden="true" />
+                  Members only
+                </button>
+              </div>
+            </div>
+
+            {/* Column key. sm+ gets the real header row below instead. */}
+            <p className="sm:hidden flex items-center gap-3">
+              {cols.map((c) => (
+                <span key={c.slug} className="inline-flex items-center gap-1.5">
+                  <span
+                    aria-hidden="true"
+                    className={clsx(
+                      "grid place-items-center w-5 h-5 rounded-full border font-mono text-[10px] font-bold",
+                      ACCENT_TEXT[c.accent],
+                      ACCENT_BORDER[c.accent],
+                    )}
+                  >
+                    {c.initial}
+                  </span>
+                  <span className="text-[11px] text-ink-3">{c.name}</span>
                 </span>
-                <span className="text-[11px] text-ink-3">{c.name}</span>
-              </span>
-            ))}
-          </p>
+              ))}
+            </p>
+          </div>
+
+          {!loading && filtered.length > 0 && (
+            <div className="hidden sm:grid xl:grid-cols-2 bg-bg-surface border border-line rounded-t-lg text-[10px] uppercase tracking-[0.14em] font-mono text-ink-3">
+              <div className={clsx("grid", ROW_COLS, "px-4 py-2")}>
+                <HeaderCells cols={cols} />
+              </div>
+              <div
+                className={clsx(
+                  "hidden xl:grid",
+                  ROW_COLS,
+                  "px-4 py-2 border-l border-line",
+                )}
+              >
+                <HeaderCells cols={cols} />
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Table */}
         {loading ? (
           <div className="space-y-1.5">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <Skeleton key={i} className="h-14 sm:h-11 w-full" />
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="h-[81px] sm:h-11 w-full" />
             ))}
           </div>
         ) : filtered.length === 0 ? (
@@ -353,34 +477,57 @@ export default function QuestsExplorer() {
             hint="Try a different filter or clear the search."
           />
         ) : (
-          <div className="bg-bg-surface border border-line rounded-lg overflow-hidden">
-            <div
-              className={clsx(
-                "hidden sm:grid sm:grid-cols-[minmax(0,1fr)_4.5rem_2.5rem_2.5rem_auto] items-center gap-x-3",
-                "px-4 py-2 border-b border-line text-[10px] uppercase tracking-[0.14em] font-mono text-ink-3",
-              )}
-            >
-              <span>Quest</span>
-              <span>Diff</span>
-              <span>Type</span>
-              <span className="text-right">QP</span>
-              <span className="flex items-center justify-end gap-1.5">
-                {cols.map((c) => (
-                  <span
-                    key={c.slug}
-                    title={c.name}
-                    className={clsx("w-6 text-center", ACCENT_TEXT[c.accent])}
-                  >
-                    {c.initial}
-                  </span>
-                ))}
-              </span>
-            </div>
-            <ul>
-              {filtered.map((r) => (
-                <QuestRowItem key={r.quest.title} row={r} cols={cols} />
+          <div className="bg-bg-surface border border-line rounded-lg sm:border-t-0 sm:rounded-t-none overflow-hidden">
+            {/* Two columns above xl. One column left ~770px of void per row and
+                a 30,000px page; the eye had nothing to follow across it. */}
+            <ul className="xl:grid xl:grid-cols-2">
+              {visible.map((r) => (
+                <QuestRowItem
+                  key={r.quest.title}
+                  row={r}
+                  cols={cols}
+                  ready={readyByTitle.get(r.quest.title) ?? ""}
+                />
               ))}
             </ul>
+
+            {/* No border-t: every row keeps its own bottom hairline, so at xl
+                the two columns end on the same line instead of one of them
+                dropping its border and leaving a half-width rule. */}
+            <div className="flex flex-wrap items-center justify-between gap-3 px-3 sm:px-4 py-3">
+              <p className="font-mono tabular text-[11px] text-ink-3">
+                Showing {fmt(visible.length)} of {fmt(filtered.length)}
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                {remaining > 0 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        startTransition(() => setLimit((n) => n + PAGE_SIZE))
+                      }
+                      className="inline-flex items-center h-10 px-3.5 rounded-lg border border-line-strong text-[11px] font-mono uppercase tracking-wider text-ink-2 hover:text-ink hover:bg-bg-raised transition-colors"
+                    >
+                      Show {fmt(Math.min(PAGE_SIZE, remaining))} more
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => startTransition(() => setLimit(filtered.length))}
+                      className="inline-flex items-center h-10 px-3.5 rounded-lg border border-line text-[11px] font-mono uppercase tracking-wider text-ink-3 hover:text-ink-2 hover:border-line-strong transition-colors"
+                    >
+                      All {fmt(filtered.length)}
+                    </button>
+                  </>
+                )}
+                <a
+                  href="#quest-filters"
+                  className="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg text-[11px] font-mono uppercase tracking-wider text-ink-3 hover:text-ink-2 transition-colors"
+                >
+                  <ArrowUp size={13} aria-hidden="true" />
+                  Filters
+                </a>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -390,7 +537,7 @@ export default function QuestsExplorer() {
 
 // ---------------------------------------------------------------------------
 // Search — owns its own text state so a keystroke re-renders one input, not
-// 363 rows. The parent only hears about it once the debounce settles.
+// the whole table. The parent only hears about it once the debounce settles.
 // ---------------------------------------------------------------------------
 
 function SearchBox({ onQuery }: { onQuery: (v: string) => void }) {
@@ -402,7 +549,7 @@ function SearchBox({ onQuery }: { onQuery: (v: string) => void }) {
   }, [text, onQuery]);
 
   return (
-    <div className="relative">
+    <div className="relative flex-1 min-w-0">
       <Search
         size={16}
         aria-hidden="true"
@@ -431,61 +578,117 @@ function SearchBox({ onQuery }: { onQuery: (v: string) => void }) {
 }
 
 // ---------------------------------------------------------------------------
+// Table header — rendered once per list column, so it is still overhead when
+// the list splits in two above xl.
+// ---------------------------------------------------------------------------
+
+function HeaderCells({ cols }: { cols: Col[] }) {
+  return (
+    <>
+      <span>Quest</span>
+      <span>Diff</span>
+      <span className="hidden lg:block">Type</span>
+      <span className="text-right">QP</span>
+      <span>Start</span>
+      <span className="flex items-center justify-end gap-1.5">
+        {cols.map((c) => (
+          <span
+            key={c.slug}
+            title={c.name}
+            className={clsx("w-6 text-center", ACCENT_TEXT[c.accent])}
+          >
+            {c.initial}
+          </span>
+        ))}
+      </span>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Row
 // ---------------------------------------------------------------------------
 
 const QuestRowItem = memo(function QuestRowItem({
   row,
   cols,
+  ready,
 }: {
   row: QuestRow;
   cols: Col[];
+  /** Comma-joined slugs of the players who can start this quest right now. */
+  ready: string;
 }) {
   const q = row.quest;
   const done = row.bucket === "both-done";
+  const behind = cols.filter((c) => row.statuses[c.slug] !== "COMPLETED");
   return (
     <li
       className={clsx(
+        "group relative grid",
         ROW_COLS,
-        "px-3 sm:px-4 py-2.5 border-b border-line/60 last:border-b-0",
+        "px-3 sm:px-4 py-2.5 border-b border-line/60",
         "hover:bg-bg-raised/40 transition-colors",
-        // 363 rows is enough that laying out the offscreen ones costs a visible
-        // beat on mobile; the intrinsic size keeps the scrollbar honest.
-        "[content-visibility:auto] [contain-intrinsic-size:auto_60px]",
+        // The divider between the two xl columns sits on the same edge as the
+        // header's, so the two can never land a pixel apart.
+        "xl:[&:nth-child(even)]:border-l xl:[&:nth-child(even)]:border-line",
       )}
     >
+      {/* The link IS the row: absolute inset-0 makes its own box the full 81px
+          hit target (a 266x20 text run was the whole of the reported "380
+          undersized tap targets"), and gives keyboard users a focus ring around
+          the row instead of around a word. The title lives outside it so the
+          accessible name stays one line. */}
+      <a
+        href={wikiUrl(q.title)}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`${q.title} — RuneScape Wiki`}
+        title={`${q.title} — RuneScape Wiki`}
+        className="absolute inset-0 rounded-md"
+      />
+
       <div className="min-w-0">
-        <a
-          href={wikiUrl(q.title)}
-          target="_blank"
-          rel="noopener noreferrer"
+        <div
           className={clsx(
-            "block truncate text-sm transition-colors",
-            done ? "text-ink-3 hover:text-ink-2" : "text-ink hover:text-prayer-bright",
+            "flex items-center gap-1 text-sm transition-colors",
+            done
+              ? "text-ink-3 group-hover:text-ink-2"
+              : "text-ink group-hover:text-prayer-bright",
           )}
         >
-          {q.title}
-        </a>
+          <span className="truncate">{q.title}</span>
+          <ExternalLink size={11} aria-hidden="true" className="shrink-0 text-ink-3" />
+        </div>
         <div className="sm:hidden mt-1 flex items-center gap-2.5">
           <Stars difficulty={q.difficulty} />
-          <span className="font-mono tabular text-[10px] text-ink-faint">
+          <span className="font-mono tabular text-[10px] text-ink-3">
             {q.questPoints} QP
           </span>
           <MembersFlag members={q.members} />
+          <Readiness behind={behind} ready={ready} />
         </div>
       </div>
 
+      {/* These cells sit UNDER the row-wide link overlay on purpose — a
+          `relative` cell here punched a dead zone in the middle of the row.
+          Everything they said in a title is also on an aria-label. */}
       <span className="hidden sm:block">
         <Stars difficulty={q.difficulty} />
       </span>
-      <span className="hidden sm:block">
+      <span className="hidden lg:block">
         <MembersFlag members={q.members} />
       </span>
       <span className="hidden sm:block text-right font-mono tabular text-xs text-ink-3">
         {q.questPoints}
       </span>
+      <span className="hidden sm:block">
+        <Readiness behind={behind} ready={ready} />
+      </span>
 
-      <span className="flex items-center justify-end gap-1.5">
+      {/* The one cell kept above the overlay: the D/S marks are the most
+          cryptic thing in the row, so their tooltips have to work. */}
+      <span className="relative flex items-center justify-end gap-1.5">
         {cols.map((c) => (
           <StatusMark
             key={c.slug}
@@ -498,6 +701,48 @@ const QuestRowItem = memo(function QuestRowItem({
   );
 });
 
+/**
+ * Can anyone start this right now? RuneMetrics ships `userEligible` per quest
+ * per player — the closest thing in the data to "what can I do next" — and it
+ * was being thrown away, leaving a name column 864px wide to hold a 90px title.
+ */
+function Readiness({ behind, ready }: { behind: Col[]; ready: string }) {
+  if (!behind.length) return null;
+  const slugs = ready ? ready.split(",") : [];
+  const can = behind.filter((c) => slugs.includes(c.slug));
+  const names = (list: Col[]) => list.map((c) => c.name).join(" and ");
+
+  if (!can.length) {
+    const label = `${names(behind)} cannot start this yet`;
+    return (
+      <span
+        role="img"
+        aria-label={label}
+        title={label}
+        className="font-mono text-[10px] uppercase tracking-wider text-ink-3"
+      >
+        Locked
+      </span>
+    );
+  }
+  const label = `${names(can)} can start this now`;
+  return (
+    <span
+      role="img"
+      aria-label={label}
+      title={label}
+      className="font-mono text-[10px] uppercase tracking-wider text-success"
+    >
+      Ready
+    </span>
+  );
+}
+
+/**
+ * A status mark, not a control. It used to be a bordered rounded-rect the exact
+ * shape of the filter chips above it, so people tapped it expecting to tick a
+ * quest off. Circular and filled reads as a state badge instead.
+ */
 function StatusMark({ col, status }: { col: Col; status: QuestStatus }) {
   const label = `${col.name}: ${STATUS_LABEL[status]}`;
   return (
@@ -506,12 +751,12 @@ function StatusMark({ col, status }: { col: Col; status: QuestStatus }) {
       aria-label={label}
       title={label}
       className={clsx(
-        "grid place-items-center w-6 h-6 rounded-md border font-mono text-[10.5px] font-bold",
+        "grid place-items-center w-6 h-6 rounded-full font-mono text-[10.5px] font-bold",
         status === "COMPLETED"
-          ? clsx(ACCENT_TEXT[col.accent], ACCENT_BORDER[col.accent], "bg-bg-raised")
+          ? clsx(ACCENT_TEXT[col.accent], "bg-bg-raised")
           : status === "STARTED"
-            ? "border-warn/40 text-warn"
-            : "border-line text-ink-faint",
+            ? "text-warn bg-warn/10"
+            : "text-ink-3",
       )}
     >
       {col.initial}
@@ -557,7 +802,7 @@ function MembersFlag({ members }: { members: boolean }) {
       role="img"
       className={clsx(
         "font-mono text-[10px] tracking-wider",
-        members ? "text-ink-faint" : "text-success/80",
+        members ? "text-ink-3" : "text-success/90",
       )}
     >
       {members ? "P2P" : "F2P"}

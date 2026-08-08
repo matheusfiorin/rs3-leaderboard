@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Compass, Gem, Skull, Sparkles, TrendingUp } from "lucide-react";
 import { clsx } from "clsx";
-import { Card, EmptyState, SectionHead, Skeleton, Stat } from "@/components/primitives";
+import { Card, EmptyState, SectionHead, Skeleton } from "@/components/primitives";
 import { ACCENT_BG, ACCENT_TEXT, RelativeTime, Segmented } from "@/components/ui";
 import { usePlayerData } from "@/components/PlayerDataProvider";
 import {
@@ -74,13 +74,6 @@ export default function ActivityClient() {
   }
 
   const visible = filtered.slice(0, limit);
-  const latest = all[0];
-
-  const totals = useMemo(() => {
-    const t: Record<ActivityCategory, number> = { level: 0, quest: 0, boss: 0, drop: 0, other: 0 };
-    for (const a of all) t[a.category]++;
-    return t;
-  }, [all]);
 
   const catCounts = useMemo(() => {
     const t: Record<ActivityCategory, number> = { level: 0, quest: 0, boss: 0, drop: 0, other: 0 };
@@ -107,7 +100,7 @@ export default function ActivityClient() {
   if (!all.length) {
     return (
       <div className="space-y-6">
-        <SectionHead title="Activity" hint="Combined feed · newest first" />
+        <SectionHead as="h1" title="Activity" hint="Combined feed · newest first" />
         {stale ? (
           <div className="space-y-2">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -127,6 +120,7 @@ export default function ActivityClient() {
   return (
     <div className="space-y-6">
       <SectionHead
+        as="h1"
         title="Activity"
         hint="Combined feed · newest first"
         right={
@@ -136,97 +130,87 @@ export default function ActivityClient() {
         }
       />
 
-      {latest && (
-        <Card accent={latest.accent} className="p-5 sm:p-6">
-          <p className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-3">
-            Latest
-          </p>
-          <p className="mt-2 font-display italic text-xl sm:text-2xl leading-snug text-ink break-words">
-            {latest.text}
-          </p>
-          {latest.details && latest.details !== latest.text && (
-            <p className="mt-2 text-sm text-ink-2 break-words">{latest.details}</p>
-          )}
-          <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] uppercase tracking-wider">
-            <span className={ACCENT_TEXT[latest.accent]}>{latest.player}</span>
-            <span className="text-ink-faint">·</span>
-            <RelativeTime className="text-ink-3" date={latest.ts || null} />
-          </p>
-        </Card>
-      )}
+      {/* There used to be a "Latest" hero card and a 2x2 stat quad above this
+          point. The hero repeated the first feed row verbatim; the quad
+          restated counts the chips below already carried — under a different
+          name ("Kills" vs "Bosses") and missing "Other", so its four numbers
+          did not sum to the header's total. Both are gone: the feed leads and
+          the chips are the single source of the counts.
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Stat label="Levels" value={fmt(totals.level)} accent="prayer" />
-        <Stat label="Drops" value={fmt(totals.drop)} accent="ash" />
-        <Stat label="Kills" value={fmt(totals.boss)} accent="soul" />
-        <Stat label="Quests" value={fmt(totals.quest)} />
-      </div>
+          From xl the chips become a rail. Left as a full-width strip, the feed
+          below it stretched its player/timestamp rows across 1400px. */}
+      <div className="grid gap-x-8 gap-y-6 xl:grid-cols-[minmax(0,1fr)_264px] xl:items-start">
+        <div
+          className="order-1 min-w-0 flex flex-wrap items-start gap-2
+                     xl:order-none xl:col-start-2 xl:flex-col xl:sticky xl:top-16"
+        >
+          <Segmented
+            ariaLabel="Filter by player"
+            size="sm"
+            value={who}
+            onChange={setWho}
+            options={[
+              { value: "all", label: "Both", count: all.length },
+              ...players.map((p) => ({
+                value: p.name,
+                label: p.name,
+                count: all.filter((a) => a.player === p.name).length,
+              })),
+            ]}
+          />
+          <Segmented
+            ariaLabel="Filter by kind"
+            size="sm"
+            value={cat}
+            onChange={setCat}
+            options={[
+              { value: "all" as const, label: "All", count: byPlayer.length },
+              ...CATEGORY_ORDER.filter((c) => catCounts[c] > 0).map((c) => ({
+                value: c,
+                label: CATEGORY[c].label,
+                count: catCounts[c],
+              })),
+            ]}
+          />
+        </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Segmented
-          ariaLabel="Filter by player"
-          size="sm"
-          value={who}
-          onChange={setWho}
-          options={[
-            { value: "all", label: "Both", count: all.length },
-            ...players.map((p) => ({
-              value: p.name,
-              label: p.name,
-              count: all.filter((a) => a.player === p.name).length,
-            })),
-          ]}
-        />
-        <Segmented
-          ariaLabel="Filter by kind"
-          size="sm"
-          value={cat}
-          onChange={setCat}
-          options={[
-            { value: "all" as const, label: "All", count: byPlayer.length },
-            ...CATEGORY_ORDER.filter((c) => catCounts[c] > 0).map((c) => ({
-              value: c,
-              label: CATEGORY[c].label,
-              count: catCounts[c],
-            })),
-          ]}
-        />
-      </div>
+        <div className="order-2 min-w-0 xl:order-none xl:col-start-1 xl:row-start-1">
+          {!filtered.length ? (
+            <EmptyState
+              title="No events match"
+              hint="Try a different player or category."
+            />
+          ) : (
+            <div className="space-y-6">
+              {days.map((day) => (
+                <section key={day.key}>
+                  <h2 className="sticky top-14 z-10 -mx-1 px-1 py-2 bg-bg/95 backdrop-blur font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-3">
+                    {day.label}
+                  </h2>
+                  <Card className="divide-y divide-line">
+                    {day.items.map((a, i) => (
+                      <Row key={`${day.key}-${i}-${a.player}`} activity={a} />
+                    ))}
+                  </Card>
+                </section>
+              ))}
 
-      {!filtered.length ? (
-        <EmptyState
-          title="No events match"
-          hint="Try a different player or category."
-        />
-      ) : (
-        <div className="space-y-6">
-          {days.map((day) => (
-            <section key={day.key}>
-              <h3 className="sticky top-14 z-10 -mx-1 px-1 py-2 bg-bg/95 backdrop-blur font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-3">
-                {day.label}
-              </h3>
-              <Card className="divide-y divide-line">
-                {day.items.map((a, i) => (
-                  <Row key={`${day.key}-${i}-${a.player}`} activity={a} />
-                ))}
-              </Card>
-            </section>
-          ))}
-
-          {filtered.length > visible.length && (
-            <button
-              type="button"
-              onClick={() => setLimit((n) => n + PAGE)}
-              className="w-full min-h-[44px] rounded-lg border border-line text-sm text-ink-2 hover:text-ink hover:border-line-strong hover:bg-bg-raised/50 transition-colors"
-            >
-              Show {Math.min(PAGE, filtered.length - visible.length)} more
-              <span className="ml-2 font-mono text-[11px] tabular text-ink-faint">
-                {visible.length} / {filtered.length}
-              </span>
-            </button>
+              {filtered.length > visible.length && (
+                <button
+                  type="button"
+                  onClick={() => setLimit((n) => n + PAGE)}
+                  className="w-full min-h-[44px] rounded-lg border border-line text-sm text-ink-2 hover:text-ink hover:border-line-strong hover:bg-bg-raised/50 transition-colors"
+                >
+                  Show {Math.min(PAGE, filtered.length - visible.length)} more
+                  <span className="ml-2 font-mono text-[11px] tabular text-ink-3">
+                    {visible.length} / {filtered.length}
+                  </span>
+                </button>
+              )}
+            </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -257,7 +241,7 @@ function Row({ activity }: { activity: CombinedActivity }) {
             {activity.player}
           </span>
           <RelativeTime
-            className="font-mono text-[10.5px] tabular text-ink-faint shrink-0"
+            className="font-mono text-[10.5px] tabular text-ink-3 shrink-0"
             date={activity.ts || null}
           />
         </div>

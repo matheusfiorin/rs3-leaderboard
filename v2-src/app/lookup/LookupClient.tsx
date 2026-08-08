@@ -23,6 +23,32 @@ const PROXIES: ((url: string) => string)[] = [
   (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
 ];
 
+// A hung proxy used to hold the whole lookup open until the browser gave up,
+// so two of them in series meant ~20 s of unexplained blank skeleton before an
+// otherwise good error message. Each relay now gets its own deadline, which
+// bounds the worst case at PROXIES.length * this.
+const PROXY_TIMEOUT_MS = 4_000;
+
+/**
+ * A signal that aborts when `outer` aborts OR after `ms`, whichever is first.
+ * Written out rather than using AbortSignal.any so the caller can tell a
+ * per-proxy timeout apart from a user cancellation.
+ */
+function deadline(outer: AbortSignal, ms: number) {
+  const ac = new AbortController();
+  const onAbort = () => ac.abort();
+  if (outer.aborted) ac.abort();
+  else outer.addEventListener("abort", onAbort, { once: true });
+  const id = setTimeout(onAbort, ms);
+  return {
+    signal: ac.signal,
+    release() {
+      clearTimeout(id);
+      outer.removeEventListener("abort", onAbort);
+    },
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Recent searches — localStorage is an external store, so it is read through
 // useSyncExternalStore rather than mirrored into state from an effect. That
@@ -95,7 +121,8 @@ function writeHistory(next: string[]) {
 
 type Outcome =
   | { kind: "idle" }
-  | { kind: "loading"; rsn: string }
+  /** `attempt` is the zero-based index of the proxy currently being tried. */
+  | { kind: "loading"; rsn: string; attempt: number }
   | { kind: "ok"; rsn: string; profile: RuneMetricsProfile }
   | { kind: "invalid"; message: string }
   | { kind: "private"; rsn: string }
@@ -103,13 +130,19 @@ type Outcome =
   | { kind: "members"; rsn: string }
   | { kind: "unavailable"; rsn: string; detail: string };
 
-async function fetchProfile(rsn: string, signal: AbortSignal): Promise<RuneMetricsProfile> {
+async function fetchProfile(
+  rsn: string,
+  signal: AbortSignal,
+  onAttempt: (index: number) => void,
+): Promise<RuneMetricsProfile> {
   const target = `https://apps.runescape.com/runemetrics/profile/profile?user=${encodeURIComponent(rsn)}&activities=20`;
   const failures: string[] = [];
-  for (const make of PROXIES) {
+  for (let i = 0; i < PROXIES.length; i++) {
+    onAttempt(i);
+    const gate = deadline(signal, PROXY_TIMEOUT_MS);
     try {
-      const res = await fetch(make(target), {
-        signal,
+      const res = await fetch(PROXIES[i](target), {
+        signal: gate.signal,
         headers: { Accept: "application/json" },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -120,8 +153,15 @@ async function fetchProfile(rsn: string, signal: AbortSignal): Promise<RuneMetri
         throw new Error("proxy returned non-JSON");
       }
     } catch (err) {
+      // The caller aborting (a new search, or Cancel) is not a proxy failure.
       if (signal.aborted) throw err;
-      failures.push(err instanceof Error ? err.message : String(err));
+      failures.push(
+        gate.signal.aborted
+          ? `proxy ${i + 1} did not answer within ${PROXY_TIMEOUT_MS / 1000}s`
+          : `proxy ${i + 1}: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    } finally {
+      gate.release();
     }
   }
   throw new Error(failures.join("; "));
@@ -151,10 +191,14 @@ export default function LookupClient() {
     inflight.current?.abort();
     const controller = new AbortController();
     inflight.current = controller;
-    setOutcome({ kind: "loading", rsn: name });
+    setOutcome({ kind: "loading", rsn: name, attempt: 0 });
 
     try {
-      const data = await fetchProfile(name, controller.signal);
+      const data = await fetchProfile(name, controller.signal, (attempt) => {
+        if (!controller.signal.aborted) {
+          setOutcome({ kind: "loading", rsn: name, attempt });
+        }
+      });
       if (controller.signal.aborted) return;
 
       if (data.error === "PROFILE_PRIVATE") {
@@ -196,16 +240,22 @@ export default function LookupClient() {
     }
   }, [history]);
 
+  const cancel = useCallback(() => {
+    inflight.current?.abort();
+    inflight.current = null;
+    setOutcome({ kind: "idle" });
+  }, []);
+
   return (
     <div className="space-y-6">
-      <SectionHead title="Lookup" hint="Any RuneScape 3 account by name" />
+      <SectionHead as="h1" title="Lookup" hint="Any RuneScape 3 account by name" />
 
       <form
         onSubmit={(e) => {
           e.preventDefault();
           void search(rsn);
         }}
-        className="relative"
+        className="relative max-w-2xl"
         role="search"
       >
         <Search
@@ -224,17 +274,20 @@ export default function LookupClient() {
           placeholder="Enter any RSN…"
           className="w-full h-14 pl-11 pr-28 rounded-lg bg-bg-surface border border-line text-base text-ink placeholder:text-ink-3 focus:border-prayer/40 outline-none"
         />
+        {/* Deliberately not disabled while loading. A disabled submit button
+            also kills the form's implicit submission, so pressing Enter did
+            nothing and there was no way to retype without waiting the lookup
+            out. Submitting again just replaces the in-flight request. */}
         <button
           type="submit"
-          disabled={outcome.kind === "loading"}
-          className="absolute right-2 top-1/2 -translate-y-1/2 h-10 px-4 rounded-md bg-prayer text-bg text-sm font-semibold hover:bg-prayer-bright transition-colors disabled:opacity-50"
+          className="absolute right-2 top-1/2 -translate-y-1/2 h-10 px-4 rounded-md bg-prayer text-bg text-sm font-semibold hover:bg-prayer-bright transition-colors"
         >
           {outcome.kind === "loading" ? "Looking…" : "Look up"}
         </button>
       </form>
 
       {history.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 max-w-2xl">
           <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-3">
             Recent
           </span>
@@ -263,7 +316,34 @@ export default function LookupClient() {
       )}
 
       {outcome.kind === "loading" && (
-        <div className="space-y-3">
+        <div className="space-y-3 max-w-2xl">
+          {/* Two bare grey slabs and nothing else, for up to 20 seconds, was
+              the whole pending state. Say what is being attempted. */}
+          <Card className="p-4">
+            <div
+              className="flex flex-wrap items-center justify-between gap-3"
+              aria-live="polite"
+            >
+              <p className="text-sm text-ink-2 min-w-0">
+                Asking RuneMetrics for{" "}
+                <span className="text-ink font-semibold break-words">{outcome.rsn}</span>{" "}
+                via relay {outcome.attempt + 1} of {PROXIES.length}…
+              </p>
+              <button
+                type="button"
+                onClick={cancel}
+                className="shrink-0 inline-flex items-center gap-1.5 min-h-[36px] px-3 rounded-md border border-line text-xs text-ink-2 hover:text-ink hover:border-line-strong transition-colors"
+              >
+                <X size={12} />
+                Cancel
+              </button>
+            </div>
+            <p className="mt-1.5 text-xs text-ink-3 leading-relaxed">
+              RuneMetrics sends no CORS headers, so the request is relayed through a
+              public proxy. Each relay gets {PROXY_TIMEOUT_MS / 1000}s before we move
+              on to the next.
+            </p>
+          </Card>
           <Skeleton className="h-24" />
           <Skeleton className="h-48" />
         </div>
@@ -312,10 +392,12 @@ export default function LookupClient() {
       )}
 
       {outcome.kind === "idle" && (
-        <EmptyState
-          title="Look up any player"
-          hint="Live from RuneMetrics: levels, XP and the last 20 things they did."
-        />
+        <div className="max-w-2xl">
+          <EmptyState
+            title="Look up any player"
+            hint="Live from RuneMetrics: levels, XP and the last 20 things they did."
+          />
+        </div>
       )}
 
       {outcome.kind === "ok" && <Profile rsn={outcome.rsn} profile={outcome.profile} />}
@@ -337,7 +419,7 @@ function Message({
   return (
     <Card
       className={clsx(
-        "p-5",
+        "p-5 max-w-2xl",
         tone === "danger" && "border-danger/40",
         tone === "warn" && "border-warn/40",
       )}
@@ -361,9 +443,9 @@ function Profile({ rsn, profile }: { rsn: string; profile: RuneMetricsProfile })
     <div className="space-y-5">
       <Card className="p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
-          <h3 className="font-display italic text-3xl text-ink tracking-tight break-words min-w-0">
+          <h2 className="font-display italic text-3xl text-ink tracking-tight break-words min-w-0">
             {rsn}
-          </h3>
+          </h2>
           <div className="flex items-center gap-2">
             <Pill tone={profile.loggedIn === "true" ? "success" : "neutral"}>
               {profile.loggedIn === "true" ? "in game" : "logged out"}
@@ -381,72 +463,76 @@ function Profile({ rsn, profile }: { rsn: string; profile: RuneMetricsProfile })
         </div>
       </Card>
 
-      <section className="space-y-3">
-        <h4 className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-3">
-          Skills
-        </h4>
-        <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-7 gap-2">
-          {SKILLS.map((sk) => {
-            const s = levels.get(sk.id);
-            const level = s?.level ?? 1;
-            const xp = s ? Math.floor(s.xp / 10) : 0;
-            return (
-              <div
-                key={sk.id}
-                className="rounded-md bg-bg-surface border border-line px-2 py-2.5 text-center"
-                title={`${sk.key} — ${fmt(xp)} XP`}
-              >
-                <SkillIcon id={sk.id} size={16} />
-                <div className="mt-1 font-mono text-[9px] uppercase tracking-wider text-ink-3 truncate">
-                  {sk.abbr}
-                </div>
-                <div
-                  className={clsx(
-                    "font-mono tabular text-lg font-bold leading-tight",
-                    level >= 99 ? "text-ash-bright" : "text-ink",
-                  )}
-                >
-                  {level}
-                </div>
-                <div className="font-mono text-[9.5px] tabular text-ink-faint">
-                  {fmtCompact(xp)}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <h4 className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-3">
-          Recent activity
-        </h4>
-        {activities.length === 0 ? (
-          <EmptyState title="No recent activity" hint="RuneMetrics reports nothing for this account." />
-        ) : (
-          <Card className="divide-y divide-line">
-            {activities.map((a, i) => {
-              const d = parseActivityDate(a.date);
+      {/* Skills and activity are both short. Stacked, they left most of a
+          1400px page empty and stretched the activity rows edge to edge. */}
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] xl:gap-6 xl:items-start">
+        <section className="space-y-3 min-w-0">
+          <h3 className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-3">
+            Skills
+          </h3>
+          <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-7 gap-2">
+            {SKILLS.map((sk) => {
+              const s = levels.get(sk.id);
+              const level = s?.level ?? 1;
+              const xp = s ? Math.floor(s.xp / 10) : 0;
               return (
-                <div key={`${a.date}-${i}`} className="px-4 py-3">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <p className="text-sm text-ink min-w-0 break-words">{a.text}</p>
-                    <RelativeTime
-                      className="font-mono text-[10.5px] tabular text-ink-faint shrink-0"
-                      date={d}
-                    />
+                <div
+                  key={sk.id}
+                  className="rounded-md bg-bg-surface border border-line px-2 py-2.5 text-center"
+                  title={`${sk.key} — ${fmt(xp)} XP`}
+                >
+                  <SkillIcon id={sk.id} size={16} />
+                  <div className="mt-1 font-mono text-[10px] uppercase tracking-wider text-ink-3 truncate">
+                    {sk.abbr}
                   </div>
-                  {a.details && a.details !== a.text && (
-                    <p className="mt-1 text-xs text-ink-3 break-words">{a.details}</p>
-                  )}
+                  <div
+                    className={clsx(
+                      "font-mono tabular text-lg font-bold leading-tight",
+                      level >= 99 ? "text-ash-bright" : "text-ink",
+                    )}
+                  >
+                    {level}
+                  </div>
+                  <div className="font-mono text-[10px] tabular text-ink-3">
+                    {fmtCompact(xp)}
+                  </div>
                 </div>
               );
             })}
-          </Card>
-        )}
-      </section>
+          </div>
+        </section>
 
-      <p className="text-xs text-ink-faint leading-relaxed">
+        <section className="space-y-3 min-w-0">
+          <h3 className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-3">
+            Recent activity
+          </h3>
+          {activities.length === 0 ? (
+            <EmptyState title="No recent activity" hint="RuneMetrics reports nothing for this account." />
+          ) : (
+            <Card className="divide-y divide-line">
+              {activities.map((a, i) => {
+                const d = parseActivityDate(a.date);
+                return (
+                  <div key={`${a.date}-${i}`} className="px-4 py-3">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <p className="text-sm text-ink min-w-0 break-words">{a.text}</p>
+                      <RelativeTime
+                        className="font-mono text-[10.5px] tabular text-ink-3 shrink-0"
+                        date={d}
+                      />
+                    </div>
+                    {a.details && a.details !== a.text && (
+                      <p className="mt-1 text-xs text-ink-3 break-words">{a.details}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </Card>
+          )}
+        </section>
+      </div>
+
+      <p className="text-xs text-ink-3 leading-relaxed max-w-2xl">
         Read live from RuneMetrics through a public CORS proxy. Private profiles and
         free-to-play accounts publish nothing, so a blank result is usually a setting
         rather than a missing player.

@@ -20,7 +20,10 @@ export function Card({
   return (
     <div
       className={clsx(
-        "bg-bg-surface border border-line rounded-lg",
+        // min-w-0 matters: as a grid or flex item a Card defaults to
+        // min-width:auto, so its widest min-content child can push it past its
+        // track and scroll the whole page sideways on a phone.
+        "bg-bg-surface border border-line rounded-lg min-w-0",
         accentClass,
         className,
       )}
