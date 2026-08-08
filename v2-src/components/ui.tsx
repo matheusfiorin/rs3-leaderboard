@@ -375,7 +375,7 @@ export function ReqList({
         <button
           type="button"
           onClick={() => setExpanded(true)}
-          className="inline-flex items-center h-6 px-2 rounded-md border border-dashed border-line text-[11px] font-mono text-ink-2 hover:text-ink hover:border-line-strong transition-colors"
+          className="inline-flex items-center h-11 sm:h-6 px-3 sm:px-2 rounded-md border border-dashed border-line text-[11px] font-mono text-ink-2 hover:text-ink hover:border-line-strong transition-colors"
         >
           +{hidden} more
         </button>
@@ -384,7 +384,7 @@ export function ReqList({
         <button
           type="button"
           onClick={() => setExpanded(false)}
-          className="inline-flex items-center h-6 px-2 rounded-md text-[11px] font-mono text-ink-3 hover:text-ink-2 transition-colors"
+          className="inline-flex items-center h-11 sm:h-6 px-3 sm:px-2 rounded-md text-[11px] font-mono text-ink-3 hover:text-ink-2 transition-colors"
         >
           Show less
         </button>

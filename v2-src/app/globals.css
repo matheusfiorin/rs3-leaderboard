@@ -98,6 +98,12 @@ body::before {
   /* Numeric inputs: strip the spinner everywhere, we ship our own +/- buttons. */
   input[type="number"] { -moz-appearance: textfield; }
 
+  /* Content links sit in dense lists at 13-15px, which leaves their hit box
+     around 20px tall — just under the 24px WCAG 2.5.8 (AA) minimum. Vertical
+     padding grows the target without changing the line box, so the layout is
+     unaffected. Nav and skip links are already large enough and unharmed. */
+  main a { padding-block: 2px; }
+
   /* Honour the OS-level motion preference. All motion in the app is CSS, so
      this is the single place it is disabled. */
   @media (prefers-reduced-motion: reduce) {

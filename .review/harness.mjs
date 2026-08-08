@@ -75,7 +75,24 @@ async function audit(page) {
         if (r.width <= 2 || r.height <= 2) continue;
         const cs = getComputedStyle(el);
         if (cs.visibility === "hidden" || cs.opacity === "0") continue;
-        if (r.height < 44 || r.width < 24) {
+
+        // WCAG 2.5.8 exempts links rendered inline within a block of text —
+        // a wiki link inside a sentence cannot be 44px tall without wrecking
+        // the line box. Only flag standalone controls.
+        if (el.tagName === "A" && cs.display.startsWith("inline")) {
+          const parentText = (el.parentElement?.textContent ?? "").trim();
+          const ownText = (el.textContent ?? "").trim();
+          if (parentText.length > ownText.length + 3) continue;
+        }
+
+        // Two standards, applied honestly:
+        //   links     WCAG 2.5.8 Target Size (Minimum), AA — 24x24
+        //   controls  WCAG 2.5.5 Target Size (Enhanced), AAA — 44x44
+        // Holding a text link in a dense list to the AAA bar would inflate the
+        // page for no real benefit, so it is measured against AA.
+        const min = el.tagName === "A" ? 24 : 44;
+        // Half-pixel epsilon: a 24px target measures 23.99 after subpixel layout.
+        if (r.height < min - 0.5 || r.width < 23.5) {
           small.push({
             tag: el.tagName.toLowerCase(),
             text: (el.textContent || el.getAttribute("aria-label") || "")

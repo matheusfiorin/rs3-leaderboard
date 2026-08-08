@@ -154,7 +154,7 @@ function TopBar({
           <button
             ref={menuButtonRef}
             type="button"
-            className="md:hidden -ml-1 p-2 text-ink-2 hover:text-ink"
+            className="md:hidden -ml-1 grid h-11 w-11 place-items-center text-ink-2 hover:text-ink"
             onClick={onMenu}
             aria-label={menuOpen ? "Close navigation" : "Open navigation"}
             aria-expanded={menuOpen}
@@ -162,7 +162,7 @@ function TopBar({
             {menuOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
 
-          <Link href="/" className="flex items-baseline gap-1 shrink-0">
+          <Link href="/" className="flex h-11 items-center gap-1 shrink-0">
             <span className="font-display text-[20px] leading-none text-ink tracking-tight">
               Sexta
             </span>
@@ -190,7 +190,7 @@ function TopBar({
             onClick={() => void refresh()}
             title="Refresh data"
             aria-label="Refresh data"
-            className="group flex items-center gap-2 h-8 px-2.5 rounded-md border border-line text-ink-3 hover:text-ink hover:border-line-strong transition-colors"
+            className="group flex items-center gap-2 h-11 sm:h-8 px-3 sm:px-2.5 rounded-md border border-line text-ink-3 hover:text-ink hover:border-line-strong transition-colors"
           >
             <RefreshCw
               size={13}
