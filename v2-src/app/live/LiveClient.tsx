@@ -7,6 +7,7 @@ import { Card, EmptyState, Pill, SectionHead, Stat } from "@/components/primitiv
 import { ACCENT_TEXT, RelativeTime, Segmented } from "@/components/ui";
 import { usePlayerData } from "@/components/PlayerDataProvider";
 import { fmt, fmtCompact } from "@/lib/format";
+import { dataUrl } from "@/lib/paths";
 import type { RuneMetricsProfile } from "@/lib/types";
 
 const POLL_MS = 30_000;
@@ -25,10 +26,14 @@ function profileUrl(rsn: string): string {
   return `https://apps.runescape.com/runemetrics/profile/profile?user=${encodeURIComponent(rsn)}&activities=1`;
 }
 
+/** Where a reading came from, which decides how it may be labelled. */
+type Source = "proxy" | "cache";
+
 async function fetchProfile(
   rsn: string,
+  slug: string,
   signal: AbortSignal,
-): Promise<RuneMetricsProfile> {
+): Promise<{ profile: RuneMetricsProfile; source: Source }> {
   const failures: string[] = [];
   for (const make of PROXIES) {
     try {
@@ -39,7 +44,7 @@ async function fetchProfile(
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const text = await res.text();
       try {
-        return JSON.parse(text) as RuneMetricsProfile;
+        return { profile: JSON.parse(text) as RuneMetricsProfile, source: "proxy" };
       } catch {
         // A proxy that is rate-limiting returns an HTML notice with a 200.
         throw new Error("proxy returned non-JSON");
@@ -49,6 +54,24 @@ async function fetchProfile(
       failures.push(err instanceof Error ? err.message : String(err));
     }
   }
+
+  // Every public proxy is dead or rate-limited more often than not, and
+  // RuneMetrics itself sends no CORS headers, so a browser on a static host
+  // cannot reach it directly. Rather than sit at "awaiting first poll" forever,
+  // fall back to the copy the cron refreshes every 30 minutes. It is not live,
+  // and the UI says so — but the number moves and the session log fills in.
+  try {
+    const res = await fetch(dataUrl(`${slug}_profile.json`), {
+      signal,
+      cache: "no-cache",
+    });
+    if (res.ok) {
+      return { profile: (await res.json()) as RuneMetricsProfile, source: "cache" };
+    }
+  } catch (err) {
+    if (signal.aborted) throw err;
+  }
+
   throw new Error(`every proxy failed — ${failures.join("; ")}`);
 }
 
@@ -65,7 +88,7 @@ interface Track {
   snaps: Snap[];
 }
 
-type Status = "idle" | "polling" | "live" | "error";
+type Status = "idle" | "polling" | "live" | "cached" | "error";
 
 export default function LiveClient() {
   // Player choice is shared and persisted across routes — a page-local
@@ -93,7 +116,11 @@ export default function LiveClient() {
       if (cancelled || document.hidden) return;
       setStatus("polling");
       try {
-        const data = await fetchProfile(name, controller.signal);
+        const { profile: data, source } = await fetchProfile(
+          name,
+          activeSlug,
+          controller.signal,
+        );
         if (cancelled) return;
         if (data.error) throw new Error(errorLabel(data.error));
         if (typeof data.totalxp !== "number") {
@@ -118,11 +145,14 @@ export default function LiveClient() {
               : [...cur.snaps, { ts: now, xp }].slice(-MAX_SNAPS);
           return { ...prev, [activeSlug]: { ...cur, polls: cur.polls + 1, snaps } };
         });
-        setOnline(data.loggedIn === "true");
+        setOnline(source === "proxy" ? data.loggedIn === "true" : null);
         setLastPollAt(new Date());
         setFailures(0);
         setError(null);
-        setStatus("live");
+        // A cached reading must never claim to be live — it is at most 30
+        // minutes old, and saying otherwise is the same class of lie as the
+        // staleness pill that used to be inverted.
+        setStatus(source === "proxy" ? "live" : "cached");
       } catch (err) {
         if (cancelled || controller.signal.aborted) return;
         setFailures((n) => n + 1);
@@ -156,7 +186,9 @@ export default function LiveClient() {
   // and did the most recent poll also succeed? Anything else is a snapshot and
   // has to be labelled as one. The old condition (`!track && !error`) hid the
   // badge the instant a poll failed — i.e. exactly when it was needed.
-  const fromLivePoll = Boolean(newest) && !error;
+  // Only a successful proxy poll counts as live. A cached reading is real data
+  // but up to 30 minutes old, so it wears the snapshot badge too.
+  const fromLivePoll = status === "live" && Boolean(newest);
   const sessionDelta = track && newest ? newest.xp - track.baseXp : 0;
   const spanMs = track && newest ? newest.ts - track.start : 0;
   const xph = spanMs >= 60_000 && sessionDelta > 0
@@ -329,9 +361,15 @@ export default function LiveClient() {
 
 function StatusPill({ status }: { status: Status }) {
   const tone =
-    status === "live" ? "success" : status === "error" ? "danger" : "neutral";
+    status === "live" ? "success"
+    : status === "cached" ? "warn"
+    : status === "error" ? "danger"
+    : "neutral";
   const label =
-    status === "live" ? "live" : status === "error" ? "stalled" : status;
+    status === "live" ? "live"
+    : status === "cached" ? "cached · 30 min"
+    : status === "error" ? "stalled"
+    : status;
   return (
     <Pill tone={tone}>
       <Radio size={11} className={status === "polling" ? "animate-pulse" : undefined} />
