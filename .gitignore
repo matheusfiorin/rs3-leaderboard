@@ -35,3 +35,6 @@ v2-src/node_modules/
 v2-src/public/data/
 v2-src/v2-src/
 # (v2/ at repo root IS committed — it's the deployed build artefact.)
+
+# local review harness output
+.review/shots/
